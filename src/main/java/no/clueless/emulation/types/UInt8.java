@@ -20,6 +20,10 @@ public record UInt8(int value) implements UInt<UInt8> {
         }
     }
 
+    public UInt8(byte b) {
+        this(b & 0xFF);
+    }
+
     public static final UInt8 ZERO      = new UInt8(0);
     public static final UInt8 ONE       = new UInt8(1);
     public static final UInt8 MAX_VALUE = new UInt8(0xFF);

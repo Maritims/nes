@@ -17,6 +17,7 @@ public class CPU {
      */
     private final Bus  bus;
     private       long totalCycles = 0;
+    private       boolean decimalModeSupported = true;
 
     private       StackPointer   stackPointer;
     private final ProgramCounter programCounter;
@@ -78,6 +79,38 @@ public class CPU {
 
     public void consumeCycles(long cycles) {
         this.totalCycles += cycles;
+    }
+
+    public ProgramCounter getProgramCounter() {
+        return programCounter;
+    }
+
+    public Accumulator getAccumulator() {
+        return accumulator;
+    }
+
+    public X getX() {
+        return x;
+    }
+
+    public Y getY() {
+        return y;
+    }
+
+    public StatusRegister getStatusRegister() {
+        return statusRegister;
+    }
+
+    public StackPointer getStackPointer() {
+        return stackPointer;
+    }
+
+    public void setProgramCounter(UInt16 pc) {
+        this.programCounter.updateValue(pc);
+    }
+
+    public void setDecimalModeSupported(boolean supported) {
+        this.decimalModeSupported = supported;
     }
 
     /**
@@ -226,13 +259,16 @@ public class CPU {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        if (registerValue == null) {
-            throw new IllegalArgumentException("registerValue cannot be null");
-        }
-
         var memoryData = bus.read(address);
-        var hasCarry   = registerValue.isGreaterThanOrEqualTo(memoryData);
-        var tmp        = registerValue.subtract(memoryData);
+        compare(registerValue, memoryData);
+    }
+
+    private void compare(UInt8 registerValue, UInt8 memoryValue) {
+        if (registerValue == null || memoryValue == null) {
+            throw new IllegalArgumentException("values cannot be null");
+        }
+        var hasCarry = registerValue.isGreaterThanOrEqualTo(memoryValue);
+        var tmp = registerValue.subtract(memoryValue);
 
         this.statusRegister.updateFlag(Flag.Carry, hasCarry);
         this.statusRegister.updateNegativeAndZero(tmp);
@@ -437,9 +473,9 @@ public class CPU {
         var currentAccumulator = accumulator.getValue();
         var carryIn            = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
 
-        if (statusRegister.hasFlag(Flag.Decimal)) {
+        if (decimalModeSupported && statusRegister.hasFlag(Flag.Decimal)) {
             // Decimal mode addition
-            int low  = (currentAccumulator.value() & 0x0F) + (memoryData.value() & 0x0F) + carryIn;
+            int low = (currentAccumulator.value() & 0x0F) + (memoryData.value() & 0x0F) + carryIn;
             if (low > 9) low += 6;
             int high = (currentAccumulator.value() >> 4) + (memoryData.value() >> 4) + (low > 15 ? 1 : 0);
 
@@ -542,13 +578,7 @@ public class CPU {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-
-        var memoryData         = bus.read(address);
-        var currentAccumulator = accumulator.getValue();
-        var result8            = currentAccumulator.and(memoryData);
-
-        this.statusRegister.updateNegativeAndZero(result8);
-        this.accumulator.updateValue(result8);
+        AND(bus.read(address));
     }
 
     /**
@@ -558,31 +588,13 @@ public class CPU {
      * @param address The address of the memory location to perform the operation on, or null if the accumulator should be operated on.
      */
     public void ASL(UInt16 address) {
-        UInt8 value;
         if (address == null) {
-            value = accumulator.getValue();
-            if (value == null) {
-                throw new IllegalStateException("accumulator value is null");
-            }
+            accumulator.updateValue(shiftLeft(accumulator.getValue()));
         } else {
-            value = bus.read(address);
-            if (value == null) {
-                throw new IllegalStateException("memory value at address 0x%02X is null".formatted(address.value()));
-            }
-        }
-
-        var highBitSet   = value.isBitSet(7);
-        var shiftedValue = value.shiftLeft(1);
-
-        this.statusRegister.updateFlag(Flag.Carry, highBitSet);
-        this.statusRegister.updateNegativeAndZero(shiftedValue);
-
-        if (address == null) {
-            this.accumulator.updateValue(shiftedValue);
-        } else {
-            // Real 6502 behaviour: Write the original value to the bus first.
-            bus.write(address, value);
-            bus.write(address, shiftedValue);
+            var original = bus.read(address);
+            var shifted = shiftLeft(original);
+            bus.write(address, original);
+            bus.write(address, shifted);
         }
     }
 
@@ -596,13 +608,7 @@ public class CPU {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-
-        var memoryData         = bus.read(address);
-        var currentAccumulator = accumulator.getValue();
-        var result             = currentAccumulator.xor(memoryData);
-
-        this.statusRegister.updateNegativeAndZero(result);
-        this.accumulator.updateValue(result);
+        EOR(bus.read(address));
     }
 
     /**
@@ -612,19 +618,13 @@ public class CPU {
      * @throws IllegalArgumentException if address is null.
      */
     public void LSR(UInt16 address) {
-        var value        = address == null ? accumulator.getValue() : bus.read(address);
-        var lowBitSet    = value.isBitSet(0);
-        var shiftedValue = value.shiftRight(1);
-
-        this.statusRegister.updateFlag(Flag.Carry, lowBitSet);
-        this.statusRegister.updateNegativeAndZero(shiftedValue);
-
         if (address == null) {
-            this.accumulator.updateValue(shiftedValue);
+            accumulator.updateValue(shiftRight(accumulator.getValue()));
         } else {
-            // Real 6502 behaviour: Write the original value to the bus first.
-            bus.write(address, value);
-            bus.write(address, shiftedValue);
+            var original = bus.read(address);
+            var shifted = shiftRight(original);
+            bus.write(address, original);
+            bus.write(address, shifted);
         }
     }
 
@@ -638,13 +638,7 @@ public class CPU {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-
-        var memoryData         = bus.read(address);
-        var currentAccumulator = accumulator.getValue();
-        var result             = currentAccumulator.or(memoryData);
-
-        this.statusRegister.updateNegativeAndZero(result);
-        this.accumulator.updateValue(result);
+        ORA(bus.read(address));
     }
 
     /**
@@ -653,20 +647,13 @@ public class CPU {
      * @param address The address of the memory location to perform the operation on, or null if the accumulator should be operated on.
      */
     public void ROL(UInt16 address) {
-        var value        = address == null ? accumulator.getValue() : bus.read(address);
-        var oldCarryBit  = this.statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
-        var newCarry     = value.isBitSet(7);
-        var rotatedValue = value.shiftLeft(1).or(new UInt8(oldCarryBit));
-
-        this.statusRegister.updateFlag(Flag.Carry, newCarry);
-        this.statusRegister.updateNegativeAndZero(rotatedValue);
-
         if (address == null) {
-            this.accumulator.updateValue(rotatedValue);
+            accumulator.updateValue(rotateLeft(accumulator.getValue()));
         } else {
-            // Real 6502 behaviour: Write the original value to the bus first.
-            bus.write(address, value);
-            bus.write(address, rotatedValue);
+            var original = bus.read(address);
+            var rotated = rotateLeft(original);
+            bus.write(address, original);
+            bus.write(address, rotated);
         }
     }
 
@@ -676,20 +663,13 @@ public class CPU {
      * @param address The address of the memory location to perform the operation on, or null if the accumulator should be operated on.
      */
     public void ROR(UInt16 address) {
-        var value        = address == null ? accumulator.getValue() : bus.read(address);
-        var oldCarryBit  = this.statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
-        var newCarry     = value.isBitSet(0);
-        var rotatedValue = value.shiftRight(1).or(new UInt8(oldCarryBit).shiftLeft(7));
-
-        this.statusRegister.updateFlag(Flag.Carry, newCarry);
-        this.statusRegister.updateNegativeAndZero(rotatedValue);
-
         if (address == null) {
-            this.accumulator.updateValue(rotatedValue);
+            accumulator.updateValue(rotateRight(accumulator.getValue()));
         } else {
-            // Real 6502 behaviour: Write the original value to the bus first.
-            bus.write(address, value);
-            bus.write(address, rotatedValue);
+            var original = bus.read(address);
+            var rotated = rotateRight(original);
+            bus.write(address, original);
+            bus.write(address, rotated);
         }
     }
     // endregion
@@ -970,7 +950,7 @@ public class CPU {
 
         var memoryData = bus.read(address);
 
-        if (statusRegister.hasFlag(Flag.Decimal)) {
+        if (decimalModeSupported && statusRegister.hasFlag(Flag.Decimal)) {
             // Decimal mode subtraction
             var currentAccumulator = accumulator.getValue();
             var carryIn            = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
@@ -1058,6 +1038,113 @@ public class CPU {
         statusRegister.updateNegativeAndZero(value);
     }
 
+    public void LAX(UInt16 address) {
+        if (address == null) {
+            throw new IllegalArgumentException("address cannot be null");
+        }
+        var value = bus.read(address);
+        accumulator.updateValue(value);
+        x.updateValue(value);
+        statusRegister.updateNegativeAndZero(value);
+    }
+
+    public void SAX(UInt16 address) {
+        if (address == null) {
+            throw new IllegalArgumentException("address cannot be null");
+        }
+        var value = accumulator.getValue().and(x.getValue());
+        bus.write(address, value);
+    }
+
+    public void DCP(UInt16 address) {
+        var value = bus.read(address).decrement();
+        bus.write(address, value);
+        compare(accumulator.getValue(), value);
+    }
+
+    public void ISB(UInt16 address) {
+        var value = bus.read(address).increment();
+        bus.write(address, value);
+        var invertedValue = value.xor(UInt8.MAX_VALUE);
+        performArithmeticAddition(invertedValue);
+    }
+
+    public void RLA(UInt16 address) {
+        var value = rotateLeft(bus.read(address));
+        bus.write(address, value);
+        AND(value);
+    }
+
+    public void RRA(UInt16 address) {
+        var value = rotateRight(bus.read(address));
+        bus.write(address, value);
+        performArithmeticAddition(value);
+    }
+
+    public void SLO(UInt16 address) {
+        var value = shiftLeft(bus.read(address));
+        bus.write(address, value);
+        ORA(value);
+    }
+
+    public void SRE(UInt16 address) {
+        var value = shiftRight(bus.read(address));
+        bus.write(address, value);
+        EOR(value);
+    }
+
+    private UInt8 rotateLeft(UInt8 value) {
+        var carryIn = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
+        var carryOut = value.isBitSet(7);
+        var result = new UInt8(((value.value() << 1) | carryIn) & 0xFF);
+        statusRegister.updateFlag(Flag.Carry, carryOut);
+        statusRegister.updateNegativeAndZero(result);
+        return result;
+    }
+
+    private UInt8 rotateRight(UInt8 value) {
+        var carryIn = statusRegister.hasFlag(Flag.Carry) ? 0x80 : 0;
+        var carryOut = value.isBitSet(0);
+        var result = new UInt8(((value.value() >> 1) | carryIn) & 0xFF);
+        statusRegister.updateFlag(Flag.Carry, carryOut);
+        statusRegister.updateNegativeAndZero(result);
+        return result;
+    }
+
+    private UInt8 shiftLeft(UInt8 value) {
+        var carryOut = value.isBitSet(7);
+        var result = new UInt8((value.value() << 1) & 0xFF);
+        statusRegister.updateFlag(Flag.Carry, carryOut);
+        statusRegister.updateNegativeAndZero(result);
+        return result;
+    }
+
+    private UInt8 shiftRight(UInt8 value) {
+        var carryOut = value.isBitSet(0);
+        var result = new UInt8((value.value() >> 1) & 0xFF);
+        statusRegister.updateFlag(Flag.Carry, carryOut);
+        statusRegister.updateNegativeAndZero(result);
+        return result;
+    }
+
+    private void AND(UInt8 value) {
+        var result = accumulator.getValue().and(value);
+        accumulator.updateValue(result);
+        statusRegister.updateNegativeAndZero(result);
+    }
+
+    private void ORA(UInt8 value) {
+        var result = accumulator.getValue().or(value);
+        accumulator.updateValue(result);
+        statusRegister.updateNegativeAndZero(result);
+    }
+
+    private void EOR(UInt8 value) {
+        var result = accumulator.getValue().xor(value);
+        accumulator.updateValue(result);
+        statusRegister.updateNegativeAndZero(result);
+    }
+
     public void PLP() {
         var status = pull8();
         statusRegister.update(StatusRegister.fromByte(status));
@@ -1137,6 +1224,14 @@ public class CPU {
             case PHP -> PHP();
             case PLA -> PLA();
             case PLP -> PLP();
+            case LAX -> LAX(address);
+            case SAX -> SAX(address);
+            case DCP -> DCP(address);
+            case ISB -> ISB(address);
+            case RLA -> RLA(address);
+            case RRA -> RRA(address);
+            case SLO -> SLO(address);
+            case SRE -> SRE(address);
         }
     }
 }

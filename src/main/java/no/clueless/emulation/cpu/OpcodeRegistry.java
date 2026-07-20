@@ -161,6 +161,34 @@ public class OpcodeRegistry {
 
         // NOP
         register(new Opcode(0xEA, NOP, 1, 2, cpu -> null));
+        // Illegal NOPs
+        register(new Opcode(0x04, NOP, 2, 3, CPU::addressZeroPage));
+        register(new Opcode(0x44, NOP, 2, 3, CPU::addressZeroPage));
+        register(new Opcode(0x64, NOP, 2, 3, CPU::addressZeroPage));
+        register(new Opcode(0x0C, NOP, 3, 4, CPU::addressAbsolute));
+        register(new Opcode(0x1C, NOP, 3, 4, CPU::addressAbsoluteX));
+        register(new Opcode(0x3C, NOP, 3, 4, CPU::addressAbsoluteX));
+        register(new Opcode(0x5C, NOP, 3, 4, CPU::addressAbsoluteX));
+        register(new Opcode(0x7C, NOP, 3, 4, CPU::addressAbsoluteX));
+        register(new Opcode(0xDC, NOP, 3, 4, CPU::addressAbsoluteX));
+        register(new Opcode(0xFC, NOP, 3, 4, CPU::addressAbsoluteX));
+        register(new Opcode(0x80, NOP, 2, 2, CPU::addressImmediate));
+        register(new Opcode(0x82, NOP, 2, 2, CPU::addressImmediate));
+        register(new Opcode(0x89, NOP, 2, 2, CPU::addressImmediate));
+        register(new Opcode(0xC2, NOP, 2, 2, CPU::addressImmediate));
+        register(new Opcode(0xE2, NOP, 2, 2, CPU::addressImmediate));
+        register(new Opcode(0x14, NOP, 2, 4, CPU::addressZeroPageX));
+        register(new Opcode(0x34, NOP, 2, 4, CPU::addressZeroPageX));
+        register(new Opcode(0x54, NOP, 2, 4, CPU::addressZeroPageX));
+        register(new Opcode(0x74, NOP, 2, 4, CPU::addressZeroPageX));
+        register(new Opcode(0xD4, NOP, 2, 4, CPU::addressZeroPageX));
+        register(new Opcode(0xF4, NOP, 2, 4, CPU::addressZeroPageX));
+        register(new Opcode(0x1A, NOP, 1, 2, cpu -> null));
+        register(new Opcode(0x3A, NOP, 1, 2, cpu -> null));
+        register(new Opcode(0x5A, NOP, 1, 2, cpu -> null));
+        register(new Opcode(0x7A, NOP, 1, 2, cpu -> null));
+        register(new Opcode(0xDA, NOP, 1, 2, cpu -> null));
+        register(new Opcode(0xFA, NOP, 1, 2, cpu -> null));
 
         // AND
         register(new Opcode(0x29, AND, 2, 2, CPU::addressImmediate));
@@ -251,5 +279,76 @@ public class OpcodeRegistry {
         register(new Opcode(0xD6, DEC, 2, 6, CPU::addressZeroPageX));
         register(new Opcode(0xCE, DEC, 3, 6, CPU::addressAbsolute));
         register(new Opcode(0xDE, DEC, 3, 7, CPU::addressAbsoluteX));
+        
+        // LAX (Illegal)
+        register(new Opcode(0xA7, LAX, 2, 3, CPU::addressZeroPage));
+        register(new Opcode(0xB7, LAX, 2, 4, CPU::addressZeroPageY));
+        register(new Opcode(0xAF, LAX, 3, 4, CPU::addressAbsolute));
+        register(new Opcode(0xBF, LAX, 3, 4, CPU::addressAbsoluteY));
+        register(new Opcode(0xA3, LAX, 2, 6, CPU::addressIndirectX));
+        register(new Opcode(0xB3, LAX, 2, 5, CPU::addressIndirectY));
+
+        // SAX (Illegal)
+        register(new Opcode(0x87, SAX, 2, 3, CPU::addressZeroPage));
+        register(new Opcode(0x97, SAX, 2, 4, CPU::addressZeroPageY));
+        register(new Opcode(0x8F, SAX, 3, 4, CPU::addressAbsolute));
+        register(new Opcode(0x83, SAX, 2, 6, CPU::addressIndirectX));
+
+        // SBC (Illegal/Duplicate)
+        register(new Opcode(0xEB, SBC, 2, 2, CPU::addressImmediate));
+
+        // DCP (Illegal)
+        register(new Opcode(0xC7, DCP, 2, 5, CPU::addressZeroPage));
+        register(new Opcode(0xD7, DCP, 2, 6, CPU::addressZeroPageX));
+        register(new Opcode(0xCF, DCP, 3, 6, CPU::addressAbsolute));
+        register(new Opcode(0xDF, DCP, 3, 7, CPU::addressAbsoluteX));
+        register(new Opcode(0xDB, DCP, 3, 7, CPU::addressAbsoluteY));
+        register(new Opcode(0xC3, DCP, 2, 8, CPU::addressIndirectX));
+        register(new Opcode(0xD3, DCP, 2, 8, CPU::addressIndirectY));
+
+        // ISB (Illegal)
+        register(new Opcode(0xE7, ISB, 2, 5, CPU::addressZeroPage));
+        register(new Opcode(0xF7, ISB, 2, 6, CPU::addressZeroPageX));
+        register(new Opcode(0xEF, ISB, 3, 6, CPU::addressAbsolute));
+        register(new Opcode(0xFF, ISB, 3, 7, CPU::addressAbsoluteX));
+        register(new Opcode(0xFB, ISB, 3, 7, CPU::addressAbsoluteY));
+        register(new Opcode(0xE3, ISB, 2, 8, CPU::addressIndirectX));
+        register(new Opcode(0xF3, ISB, 2, 8, CPU::addressIndirectY));
+
+        // RLA (Illegal)
+        register(new Opcode(0x27, RLA, 2, 5, CPU::addressZeroPage));
+        register(new Opcode(0x37, RLA, 2, 6, CPU::addressZeroPageX));
+        register(new Opcode(0x2F, RLA, 3, 6, CPU::addressAbsolute));
+        register(new Opcode(0x3F, RLA, 3, 7, CPU::addressAbsoluteX));
+        register(new Opcode(0x3B, RLA, 3, 7, CPU::addressAbsoluteY));
+        register(new Opcode(0x23, RLA, 2, 8, CPU::addressIndirectX));
+        register(new Opcode(0x33, RLA, 2, 8, CPU::addressIndirectY));
+
+        // RRA (Illegal)
+        register(new Opcode(0x67, RRA, 2, 5, CPU::addressZeroPage));
+        register(new Opcode(0x77, RRA, 2, 6, CPU::addressZeroPageX));
+        register(new Opcode(0x6F, RRA, 3, 6, CPU::addressAbsolute));
+        register(new Opcode(0x7F, RRA, 3, 7, CPU::addressAbsoluteX));
+        register(new Opcode(0x7B, RRA, 3, 7, CPU::addressAbsoluteY));
+        register(new Opcode(0x63, RRA, 2, 8, CPU::addressIndirectX));
+        register(new Opcode(0x73, RRA, 2, 8, CPU::addressIndirectY));
+
+        // SLO (Illegal)
+        register(new Opcode(0x07, SLO, 2, 5, CPU::addressZeroPage));
+        register(new Opcode(0x17, SLO, 2, 6, CPU::addressZeroPageX));
+        register(new Opcode(0x0F, SLO, 3, 6, CPU::addressAbsolute));
+        register(new Opcode(0x1F, SLO, 3, 7, CPU::addressAbsoluteX));
+        register(new Opcode(0x1B, SLO, 3, 7, CPU::addressAbsoluteY));
+        register(new Opcode(0x03, SLO, 2, 8, CPU::addressIndirectX));
+        register(new Opcode(0x13, SLO, 2, 8, CPU::addressIndirectY));
+
+        // SRE (Illegal)
+        register(new Opcode(0x47, SRE, 2, 5, CPU::addressZeroPage));
+        register(new Opcode(0x57, SRE, 2, 6, CPU::addressZeroPageX));
+        register(new Opcode(0x4F, SRE, 3, 6, CPU::addressAbsolute));
+        register(new Opcode(0x5F, SRE, 3, 7, CPU::addressAbsoluteX));
+        register(new Opcode(0x5B, SRE, 3, 7, CPU::addressAbsoluteY));
+        register(new Opcode(0x43, SRE, 2, 8, CPU::addressIndirectX));
+        register(new Opcode(0x53, SRE, 2, 8, CPU::addressIndirectY));
     }
 }

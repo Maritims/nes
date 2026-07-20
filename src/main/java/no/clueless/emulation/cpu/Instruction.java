@@ -56,7 +56,15 @@ public enum Instruction {
     TSX("transfer stack pointer to X"),
     TXA("transfer X to accumulator"),
     TXS("transfer X to stack pointer"),
-    TYA("transfer Y to accumulator");
+    TYA("transfer Y to accumulator"),
+    LAX("load accumulator and X"),
+    SAX("store accumulator and X"),
+    DCP("decrement and compare"),
+    ISB("increment and subtract"),
+    RLA("rotate left and and"),
+    RRA("rotate right and add"),
+    SLO("shift left and or"),
+    SRE("shift right and eor");
 
     private final String name;
 

@@ -1,4 +1,6 @@
 *.bin
+*.log
+*.nes
 
 target/
 !.mvn/wrapper/maven-wrapper.jar
