@@ -62,4 +62,22 @@ public sealed interface UInt<T extends UInt<T>> permits UInt8, UInt16 {
         }
         return factory().apply(value() ^ other.value());
     }
+
+    /**
+     * Shift the value left by the given number of bits.
+     *
+     * @param bits The number of bits to shift.
+     * @return The result.
+     * @throws IllegalArgumentException if bits is negative.
+     */
+    T shiftLeft(int bits);
+
+    /**
+     * Shift the value right by the given number of bits.
+     *
+     * @param bits The number of bits to shift.
+     * @return The result.
+     * @throws IllegalArgumentException if bits is negative.
+     */
+    T shiftRight(int bits);
 }

@@ -7,6 +7,78 @@ import static org.junit.jupiter.api.Assertions.*;
 class UInt16Test {
 
     @Test
+    void subtract16_should_handle_regular_subtraction_without_wraparound() {
+        // arrange
+        var value1   = new UInt16(0x1234);
+        var value2   = new UInt16(0x0024);
+        var expected = new UInt16(0x1210);
+
+        // act
+        var result = value1.subtract16(value2);
+
+        // assert
+        assertEquals(expected, result, "Subtracted result should correctly be 0x1210");
+    }
+
+    @Test
+    void subtract16_should_wrap_around_on_underflow() {
+        // arrange
+        var value1   = new UInt16(0x0000);
+        var value2   = new UInt16(0x0001);
+        var expected = new UInt16(0xFFFF);
+
+        // act
+        var result = value1.subtract16(value2);
+
+        // assert
+        assertEquals(expected, result, "Subtracted result should wrap around to 0xFFFF on underflow");
+    }
+
+    @Test
+    void subtract16_should_throw_exception_for_null_argument() {
+        // arrange
+        var value1 = new UInt16(0x1234);
+
+        // act and assert
+        assertThrows(IllegalArgumentException.class, () -> value1.subtract16(null), "Should throw exception when argument is null");
+    }
+
+    @Test
+    void shiftLeft_should_shift_correctly() {
+        // arrange
+        var value = new UInt16(0b01010101_10010011); // Binary representation
+
+        // act
+        var shifted1 = value.shiftLeft(1);
+        var shifted8 = value.shiftLeft(8);
+
+        // assert
+        assertEquals(0b10101011_00100110, shifted1.value(), "Shift left by 1 should correctly shift all bits left by 1");
+        assertEquals(0b10010011_00000000, shifted8.value(), "Shift left by 8 should correctly shift all bits left by 8");
+    }
+
+    @Test
+    void shiftLeft_should_return_zero_for_large_shifts() {
+        // arrange
+        var value = new UInt16(0b01010101_10010011); // Binary representation
+
+        // act
+        var shifted = value.shiftLeft(16);
+
+        // assert
+        assertEquals(0, shifted.value(), "Shift left by 16 or more should result in 0");
+    }
+
+    @Test
+    void shiftLeft_should_throw_exception_on_negative_shift() {
+        // arrange
+        var value = new UInt16(0b01010101_10010011);
+
+        // act and assert
+        assertThrows(IllegalArgumentException.class, () -> value.shiftLeft(-1), "Negative shifts should throw IllegalArgumentException");
+    }
+
+    @Test
     void isGreaterThan_should_return_true_when_value_is_greater_than_other() {
         // arrange
         var value = new UInt16(300);
@@ -192,6 +264,25 @@ class UInt16Test {
     }
 
     @Test
+    void subtract8_should_correctly_subtract_without_wraparound() {
+        var value      = new UInt16(0x1000);
+        var subtracted = value.subtract8(new UInt8(0x20));
+        assertEquals(0x0FE0, subtracted.value(), "Subtracted value should be 0x0FE0");
+    }
+
+    @Test
+    void subtract8_should_wrap_around_on_underflow() {
+        var value      = new UInt16(0x0010);
+        var subtracted = value.subtract8(new UInt8(0x20));
+        assertEquals(0xFFF0, subtracted.value(), "Subtracted value should wrap around to 0xFFF0");
+    }
+
+    @Test
+    void subtract8_should_throw_exception_on_null_argument() {
+        assertThrows(IllegalArgumentException.class, () -> new UInt16(0x0000).subtract8(null), "Subtracting null should throw IllegalArgumentException");
+    }
+
+    @Test
     void add_8_should_throw_exception_on_null_argument() {
         assertThrows(IllegalArgumentException.class, () -> new UInt16(0x0000).add8(null));
     }
@@ -308,5 +399,40 @@ class UInt16Test {
         // act and assert
         assertThrows(IllegalArgumentException.class, () -> factory.apply(-1), "Factory should throw an exception for negative values");
         assertThrows(IllegalArgumentException.class, () -> factory.apply(65536), "Factory should throw an exception for values exceeding 65535");
+    }
+
+    @Test
+    void shiftRight_should_shift_correctly() {
+        // arrange
+        var value = new UInt16(0b10010011_01010101); // Binary representation
+
+        // act
+        var shifted1 = value.shiftRight(1);
+        var shifted8 = value.shiftRight(8);
+
+        // assert
+        assertEquals(0b01001001_10101010, shifted1.value(), "Shift right by 1 should move all bits to the right by 1");
+        assertEquals(0b00000000_10010011, shifted8.value(), "Shift right by 8 should move all bits to the right by 8");
+    }
+
+    @Test
+    void shiftRight_should_return_zero_for_large_shifts() {
+        // arrange
+        var value = new UInt16(0b10010011_01010101); // Binary representation
+
+        // act
+        var shifted = value.shiftRight(16);
+
+        // assert
+        assertEquals(0, shifted.value(), "Shift right by 16 or more should result in 0");
+    }
+
+    @Test
+    void shiftRight_should_throw_exception_on_negative_shift() {
+        // arrange
+        var value = new UInt16(0b10010011_01010101);
+
+        // act and assert
+        assertThrows(IllegalArgumentException.class, () -> value.shiftRight(-1), "Negative shifts should throw IllegalArgumentException");
     }
 }

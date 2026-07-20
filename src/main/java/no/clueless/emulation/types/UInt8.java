@@ -47,6 +47,22 @@ public record UInt8(int value) implements UInt<UInt8> {
         return (value & (1 << bit)) != 0;
     }
 
+    @Override
+    public UInt8 shiftLeft(int bits) {
+        if (bits < 0) {
+            throw new IllegalArgumentException("bits must be non-negative");
+        }
+        return new UInt8((value << bits) & 0xFF);
+    }
+
+    @Override
+    public UInt8 shiftRight(int bits) {
+        if (bits < 0) {
+            throw new IllegalArgumentException("bits must be non-negative");
+        }
+        return new UInt8((value >> bits) & 0xFF);
+    }
+
     public UInt16 toUInt16() {
         return new UInt16(value);
     }
@@ -56,5 +72,19 @@ public record UInt8(int value) implements UInt<UInt8> {
             throw new IllegalArgumentException("value cannot be null");
         }
         return new UInt8((this.value() + value.value()) & 0xFF);
+    }
+
+    public UInt8 subtract(UInt8 value) {
+        if (value == null) {
+            throw new IllegalArgumentException("value cannot be null");
+        }
+        return new UInt8((this.value() - value.value()) & 0xFF);
+    }
+
+    public boolean isGreaterThanOrEqualTo(UInt8 other) {
+        if (other == null) {
+            throw new IllegalArgumentException("other cannot be null");
+        }
+        return value >= other.value();
     }
 }

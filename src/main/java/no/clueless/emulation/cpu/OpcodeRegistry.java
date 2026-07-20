@@ -41,6 +41,19 @@ public class OpcodeRegistry {
         // BRK
         register(new Opcode(0x00, BRK, 1, 7, cpu -> null));
 
+        register(new Opcode(0x24, Instruction.BIT, 2, 3, CPU::addressZeroPage));
+        register(new Opcode(0x2C, Instruction.BIT, 3, 4, CPU::addressAbsolute));
+
+        // --- Branch Operations ---
+        register(new Opcode(0x90, Instruction.BCC, 2, 2, CPU::addressRelative)); // Branch if Carry Clear
+        register(new Opcode(0xB0, Instruction.BCS, 2, 2, CPU::addressRelative)); // Branch if Carry Set
+        register(new Opcode(0xF0, Instruction.BEQ, 2, 2, CPU::addressRelative)); // Branch if Equal (Zero Set)
+        register(new Opcode(0xD0, Instruction.BNE, 2, 2, CPU::addressRelative)); // Branch if Not Equal (Zero Clear)
+        register(new Opcode(0x30, Instruction.BMI, 2, 2, CPU::addressRelative)); // Branch if Minus (Negative Set)
+        register(new Opcode(0x10, Instruction.BPL, 2, 2, CPU::addressRelative)); // Branch if Plus (Negative Clear)
+        register(new Opcode(0x50, Instruction.BVC, 2, 2, CPU::addressRelative)); // Branch if Overflow Clear
+        register(new Opcode(0x70, Instruction.BVS, 2, 2, CPU::addressRelative)); // Branch if Overflow Set
+
         // LDA (Load Accumulator)
         register(new Opcode(0xA9, LDA, 2, 2, CPU::addressImmediate));
         register(new Opcode(0xA5, LDA, 2, 3, CPU::addressZeroPage));

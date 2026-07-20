@@ -20,6 +20,10 @@ public record UInt16(int value) implements UInt<UInt16> {
         }
     }
 
+    public static UInt16 ZERO      = new UInt16(0);
+    public static UInt16 ONE       = new UInt16(1);
+    public static UInt16 MAX_VALUE = new UInt16(0xFFFF);
+
     /**
      * Creates a UInt16 from a low and high byte with a Little-Endian layout.
      *
@@ -36,6 +40,24 @@ public record UInt16(int value) implements UInt<UInt16> {
             throw new IllegalArgumentException("high cannot be null");
         }
         return new UInt16((high.value() << 8) | low.value());
+    }
+
+    /**
+     * Get the high byte of the UInt16.
+     *
+     * @return The high byte.
+     */
+    public UInt8 highByte() {
+        return new UInt8(value >> 8);
+    }
+
+    /**
+     * Get the low byte of the UInt16.
+     *
+     * @return The low byte.
+     */
+    public UInt8 lowByte() {
+        return new UInt8(value & 0xFF);
     }
 
     @Override
@@ -61,6 +83,22 @@ public record UInt16(int value) implements UInt<UInt16> {
         return (value & (1 << bit)) != 0;
     }
 
+    @Override
+    public UInt16 shiftLeft(int bits) {
+        if (bits < 0) {
+            throw new IllegalArgumentException("bits must be non-negative");
+        }
+        return new UInt16((value << bits) & 0xFFFF);
+    }
+
+    @Override
+    public UInt16 shiftRight(int bits) {
+        if (bits < 0) {
+            throw new IllegalArgumentException("bits must be non-negative");
+        }
+        return new UInt16((value >> bits) & 0xFFFF);
+    }
+
     public UInt16 add8(UInt8 value) {
         if (value == null) {
             throw new IllegalArgumentException("value cannot be null");
@@ -73,6 +111,20 @@ public record UInt16(int value) implements UInt<UInt16> {
             throw new IllegalArgumentException("value cannot be null");
         }
         return new UInt16((this.value() + value.value()) & 0xFFFF);
+    }
+
+    public UInt16 subtract8(UInt8 value) {
+        if (value == null) {
+            throw new IllegalArgumentException("value cannot be null");
+        }
+        return new UInt16((this.value() - value.value()) & 0xFFFF);
+    }
+
+    public UInt16 subtract16(UInt16 value) {
+        if (value == null) {
+            throw new IllegalArgumentException("value cannot be null");
+        }
+        return new UInt16((this.value() - value.value()) & 0xFFFF);
     }
 
     /**

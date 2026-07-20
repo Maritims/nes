@@ -8,6 +8,55 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 class UIntTest {
 
     @Test
+    void shiftRight_should_shift_bits_right_by_one_position() {
+        // arrange
+        var value    = new UInt8(0b00001110); // 14 in decimal
+        var expected = new UInt8(0b00000111); // 7 in decimal
+
+        // act
+        var result = value.shiftRight(1);
+
+        // assert
+        assertEquals(expected, result, "Shifting bits right by 1 should halve the value.");
+    }
+
+    @Test
+    void shiftRight_should_shift_bits_right_by_several_positions() {
+        // arrange
+        var value    = new UInt8(0b01000000); // 64 in decimal
+        var expected = new UInt8(0b00000010); // 2 in decimal
+
+        // act
+        var result = value.shiftRight(5);
+
+        // assert
+        assertEquals(expected, result, "Shifting bits right by multiple positions should work as expected.");
+    }
+
+    @Test
+    void shiftRight_should_return_zero_when_shifting_zero() {
+        // arrange
+        var value = UInt8.ZERO;
+
+        // act
+        var result = value.shiftRight(3);
+
+        // assert
+        assertEquals(UInt8.ZERO, result, "Shifting zero to the right should always return zero.");
+    }
+
+    @Test
+    void shiftRight_should_throw_with_negative_shift_value() {
+        // arrange
+        var value = new UInt8(0b00001111); // 15 in decimal
+
+        // assert
+        assertThrows(IllegalArgumentException.class,
+                () -> value.shiftRight(-1),
+                "Shifting by a negative value should throw an IllegalArgumentException.");
+    }
+
+    @Test
     void and_should_perform_bitwise_and_with_non_zero_values() {
         // arrange
         var value1   = new UInt8(0b10101010); // 170 in decimal
