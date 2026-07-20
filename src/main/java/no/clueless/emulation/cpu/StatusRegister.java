@@ -159,6 +159,9 @@ public class StatusRegister {
         }
 
         for (var flag : Flag.values()) {
+            if (flag == Flag.Break || flag == Flag.Five) {
+                continue;
+            }
             updateFlag(flag, other.hasFlag(flag));
         }
     }
@@ -184,10 +187,11 @@ public class StatusRegister {
 
     /**
      * Converts the status register to a byte.
+     * <p>On the physical 6502, bit 5 is always 1 when pushed to the stack (PHP/BRK).</p>
      *
      * @return The byte representation of the status register.
      */
     public UInt8 toByte() {
-        return new UInt8(flags.stream().mapToInt(Flag::getMask).sum());
+        return new UInt8(flags.stream().mapToInt(Flag::getMask).sum() | 0x20);
     }
 }

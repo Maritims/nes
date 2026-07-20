@@ -253,10 +253,10 @@ public class CPU {
             return;
         }
 
-        totalCycles++;
+        this.consumeCycles(1);
 
-        if (!programCounter.getValue().highByte().equals(address.highByte())) {
-            totalCycles++;
+        if (isPageCrossed(programCounter.getValue(), address)) {
+            this.consumeCycles(1);
         }
 
         this.programCounter.updateValue(address);
@@ -285,16 +285,26 @@ public class CPU {
         return address;
     }
 
+    private boolean isPageCrossed(UInt16 a, UInt16 b) {
+        return (a.value() & 0xFF00) != (b.value() & 0xFF00);
+    }
+
     /**
      * Reads a 16-bit absolute address from the current program counter position, adds the X register value, and advances the program counter by 2 bytes.
      *
      * @return The address.
      */
     public UInt16 addressAbsoluteX() {
-        var address = read16(this.programCounter.getValue());
+        var base = read16(this.programCounter.getValue());
         this.programCounter.increment();
         this.programCounter.increment();
-        return address.add8(x.getValue());
+
+        var address = base.add8(x.getValue());
+        if (isPageCrossed(base, address)) {
+            this.consumeCycles(1);
+        }
+
+        return address;
     }
 
     /**
@@ -303,10 +313,16 @@ public class CPU {
      * @return The address.
      */
     public UInt16 addressAbsoluteY() {
-        var address = read16(this.programCounter.getValue());
+        var base = read16(this.programCounter.getValue());
         this.programCounter.increment();
         this.programCounter.increment();
-        return address.add8(y.getValue());
+
+        var address = base.add8(y.getValue());
+        if (isPageCrossed(base, address)) {
+            this.consumeCycles(1);
+        }
+
+        return address;
     }
 
     /**
@@ -394,7 +410,12 @@ public class CPU {
         var high = bus.read(pointerHigh.toUInt16());
         var base = UInt16.fromBytes(low, high);
 
-        return base.add8(y.getValue());
+        var address = base.add8(y.getValue());
+        if (isPageCrossed(base, address)) {
+            this.consumeCycles(1);
+        }
+
+        return address;
     }
 
     /**
@@ -414,26 +435,46 @@ public class CPU {
         }
 
         var currentAccumulator = accumulator.getValue();
-        var carryIn            = statusRegister.hasFlag(Flag.Carry) ? UInt8.ONE : UInt8.ZERO;
+        var carryIn            = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
 
-        var sum16 = currentAccumulator.toUInt16()
-                .add16(memoryData.toUInt16())
-                .add16(carryIn.toUInt16());
+        if (statusRegister.hasFlag(Flag.Decimal)) {
+            // Decimal mode addition
+            int low  = (currentAccumulator.value() & 0x0F) + (memoryData.value() & 0x0F) + carryIn;
+            if (low > 9) low += 6;
+            int high = (currentAccumulator.value() >> 4) + (memoryData.value() >> 4) + (low > 15 ? 1 : 0);
 
-        var result8 = sum16.toUInt8();
+            var result8 = new UInt8(((high << 4) | (low & 0x0F)) & 0xFF);
+            this.statusRegister.updateNegativeAndZero(result8);
 
-        var accumulatorXorResult = currentAccumulator.xor(result8);
-        var memoryXorResult      = memoryData.xor(result8);
-        var overflow             = accumulatorXorResult.and(memoryXorResult);
+            // Overflow is still calculated based on binary rules for 6502 (but results are often ignored in decimal mode)
+            int binarySum = currentAccumulator.value() + memoryData.value() + carryIn;
+            var hasOverflow = ((currentAccumulator.value() ^ binarySum) & (memoryData.value() ^ binarySum) & 0x80) != 0;
+            this.statusRegister.updateFlag(Flag.Overflow, hasOverflow);
 
-        var hasCarry    = sum16.isGreaterThan(UInt8.MAX_VALUE);
-        var hasOverflow = overflow.isBitSet(7);
+            if (high > 9) high += 6;
+            this.statusRegister.updateFlag(Flag.Carry, high > 15);
+            this.accumulator.updateValue(new UInt8((high << 4 | (low & 0x0F)) & 0xFF));
+        } else {
+            // Binary mode addition
+            var sum16 = currentAccumulator.toUInt16()
+                    .add16(memoryData.toUInt16())
+                    .add16(new UInt16(carryIn));
 
-        this.statusRegister.updateFlag(Flag.Carry, hasCarry);
-        this.statusRegister.updateFlag(Flag.Overflow, hasOverflow);
-        this.statusRegister.updateNegativeAndZero(result8);
+            var result8 = sum16.toUInt8();
 
-        this.accumulator.updateValue(result8);
+            var accumulatorXorResult = currentAccumulator.xor(result8);
+            var memoryXorResult      = memoryData.xor(result8);
+            var overflow             = accumulatorXorResult.and(memoryXorResult);
+
+            var hasCarry    = sum16.isGreaterThan(UInt8.MAX_VALUE);
+            var hasOverflow = overflow.isBitSet(7);
+
+            this.statusRegister.updateFlag(Flag.Carry, hasCarry);
+            this.statusRegister.updateFlag(Flag.Overflow, hasOverflow);
+            this.statusRegister.updateNegativeAndZero(result8);
+
+            this.accumulator.updateValue(result8);
+        }
     }
 
     // region Flag instructions
@@ -929,20 +970,38 @@ public class CPU {
 
         var memoryData = bus.read(address);
 
-        // Invert the bits of the memory operand (ones' complement)
-        // This naturally transforms the subtraction problem into an addition problem
-        var invertedMemoryData = memoryData.xor(UInt8.MAX_VALUE);
+        if (statusRegister.hasFlag(Flag.Decimal)) {
+            // Decimal mode subtraction
+            var currentAccumulator = accumulator.getValue();
+            var carryIn            = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
 
-        this.performArithmeticAddition(invertedMemoryData);
+            int low = (currentAccumulator.value() & 0x0F) - (memoryData.value() & 0x0F) - (1 - carryIn);
+            if (low < 0) low -= 6;
+            int high = (currentAccumulator.value() >> 4) - (memoryData.value() >> 4) - (low < 0 ? 1 : 0);
+            if (high < 0) high -= 6;
+
+            // Flags are calculated based on the binary subtraction result on 6502
+            int binaryResult = currentAccumulator.value() - memoryData.value() - (1 - carryIn);
+            this.statusRegister.updateFlag(Flag.Carry, binaryResult >= 0);
+            this.statusRegister.updateFlag(Flag.Overflow, ((currentAccumulator.value() ^ memoryData.value()) & (currentAccumulator.value() ^ binaryResult) & 0x80) != 0);
+            this.statusRegister.updateNegativeAndZero(new UInt8(binaryResult & 0xFF));
+
+            this.accumulator.updateValue(new UInt8((high << 4 | (low & 0x0F)) & 0xFF));
+        } else {
+            // Binary mode subtraction
+            // Invert the bits of the memory operand (ones' complement)
+            // This naturally transforms the subtraction problem into an addition problem
+            var invertedMemoryData = memoryData.xor(UInt8.MAX_VALUE);
+            this.performArithmeticAddition(invertedMemoryData);
+        }
     }
 
     public void BRK() {
-        var returnAddress = programCounter.getValue().add8(UInt8.ONE);
+        var returnAddress = programCounter.getValue().add16(new UInt16(1));
         push16(returnAddress);
 
         var statusRegisterAsByte = statusRegister.toByte()
-                .or(new UInt8(Flag.Break.getMask()))
-                .or(new UInt8(Flag.Five.getMask()));
+                .or(new UInt8(Flag.Break.getMask()));
         push8(statusRegisterAsByte);
 
         statusRegister.updateFlag(Flag.InterruptDisable, true);
@@ -983,6 +1042,31 @@ public class CPU {
         programCounter.updateValue(address);
     }
 
+    public void PHA() {
+        push8(accumulator.getValue());
+    }
+
+    public void PHP() {
+        // PHP pushes the status register with bit 4 (Break) set to 1
+        var status = statusRegister.toByte().or(new UInt8(Flag.Break.getMask()));
+        push8(status);
+    }
+
+    public void PLA() {
+        var value = pull8();
+        accumulator.updateValue(value);
+        statusRegister.updateNegativeAndZero(value);
+    }
+
+    public void PLP() {
+        var status = pull8();
+        statusRegister.update(StatusRegister.fromByte(status));
+    }
+
+    public void NOP() {
+        // Do nothing
+    }
+
     public void step() {
         var rawOpcode = bus.read(programCounter.getValue());
         this.programCounter.increment();
@@ -991,6 +1075,8 @@ public class CPU {
         if (opcode == null) {
             throw new IllegalStateException("Unknown opcode: 0x%02X".formatted(rawOpcode.value()));
         }
+
+        this.consumeCycles(opcode.cycles());
 
         var address = opcode.addressResolver().apply(this);
 
@@ -1046,17 +1132,11 @@ public class CPU {
             case JSR -> JSR(address);
             case RTS -> RTS();
             case JMP -> JMP(address);
-            case NOP -> {
-                /* No operation */
-            }
-            case PHA -> push8(accumulator.getValue());
-            case PHP -> push8(statusRegister.toByte());
-            case PLA -> {
-                var pulledValue = pull8();
-                accumulator.updateValue(pulledValue);
-                statusRegister.updateNegativeAndZero(pulledValue);
-            }
-            case PLP -> statusRegister.update(StatusRegister.fromByte(pull8()));
+            case NOP -> NOP();
+            case PHA -> PHA();
+            case PHP -> PHP();
+            case PLA -> PLA();
+            case PLP -> PLP();
         }
     }
 }

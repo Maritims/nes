@@ -22,14 +22,14 @@ public abstract class Register<T extends UInt<T>> {
      * Increment the value by one.
      */
     public void increment() {
-        value.increment();
+        this.value = value.increment();
     }
 
     /**
      * Decrement the value by one.
      */
     public void decrement() {
-        value.decrement();
+        this.value = value.decrement();
     }
 
     public void updateValue(T newValue) {
