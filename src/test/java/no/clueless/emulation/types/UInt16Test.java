@@ -7,6 +7,119 @@ import static org.junit.jupiter.api.Assertions.*;
 class UInt16Test {
 
     @Test
+    void isGreaterThan_should_return_true_when_value_is_greater_than_other() {
+        // arrange
+        var value = new UInt16(300);
+        var other = new UInt8(200);
+
+        // act
+        var result = value.isGreaterThan(other);
+
+        // assert
+        assertTrue(result, "UInt16 value should be greater than UInt8 value");
+    }
+
+    @Test
+    void isGreaterThan_should_return_false_when_value_is_less_than_or_equal_to_other() {
+        // arrange
+        var value1 = new UInt16(100);
+        var other1 = new UInt8(200);
+        var value2 = new UInt16(200);
+        var other2 = new UInt8(200);
+
+        // act
+        var result1 = value1.isGreaterThan(other1);
+        var result2 = value2.isGreaterThan(other2);
+
+        // assert
+        assertFalse(result1, "UInt16 value should not be greater when less than UInt8 value");
+        assertFalse(result2, "UInt16 value should not be greater when equal to UInt8 value");
+    }
+
+    @Test
+    void isGreaterThan_should_throw_exception_on_null_argument() {
+        // arrange
+        var value = new UInt16(100);
+
+        // act and assert
+        //noinspection DataFlowIssue
+        assertThrows(NullPointerException.class, () -> value.isGreaterThan(null), "Should throw exception when argument is null");
+    }
+
+    @Test
+    void toUInt8_should_return_least_significant_byte() {
+        // arrange
+        var value    = new UInt16(0x12AB); // 0xAB is the least significant byte
+        var expected = new UInt8(0xAB);
+
+        // act
+        var actual = value.toUInt8();
+
+        // assert
+        assertEquals(expected, actual, "toUInt8 should return the correct least significant byte");
+    }
+
+    @Test
+    void toUInt8_should_return_zero_for_zero_value() {
+        // arrange
+        var value    = new UInt16(0x0000); // least significant byte is 0x00
+        var expected = new UInt8(0x00);
+
+        // act
+        var actual = value.toUInt8();
+
+        // assert
+        assertEquals(expected, actual, "toUInt8 should return 0x00 for a UInt16 value of 0x0000");
+    }
+
+    @Test
+    void toUInt8_should_return_max_byte_for_max_value() {
+        // arrange
+        var value    = new UInt16(0xFFFF); // least significant byte is 0xFF
+        var expected = new UInt8(0xFF);
+
+        // act
+        var actual = value.toUInt8();
+
+        // assert
+        assertEquals(expected, actual, "toUInt8 should return 0xFF for a UInt16 value of 0xFFFF");
+    }
+
+    @Test
+    void isBitSet_should_return_true_for_set_bit() {
+        // arrange
+        var value = new UInt16(0b1011); // Binary representation: 0b1011
+
+        // act and assert
+        assertTrue(value.isBitSet(0), "Bit 0 should be set (value = 0b1011)");
+        assertTrue(value.isBitSet(1), "Bit 1 should be set (value = 0b1011)");
+        assertFalse(value.isBitSet(2), "Bit 2 should not be set (value = 0b1011)");
+        assertTrue(value.isBitSet(3), "Bit 3 should be set (value = 0b1011)");
+    }
+
+    @Test
+    void isBitSet_should_return_false_for_unset_bit() {
+        // arrange
+        var value = new UInt16(0b0100); // Binary representation: 0b0100
+
+        // act and assert
+        assertFalse(value.isBitSet(0), "Bit 0 should not be set (value = 0b0100)");
+        assertFalse(value.isBitSet(1), "Bit 1 should not be set (value = 0b0100)");
+        assertTrue(value.isBitSet(2), "Bit 2 should be set (value = 0b0100)");
+        assertFalse(value.isBitSet(3), "Bit 3 should not be set (value = 0b0100)");
+    }
+
+    @Test
+    void isBitSet_should_throw_exception_for_bit_out_of_range() {
+        // arrange
+        var value = new UInt16(0);
+
+        // act and assert
+        assertThrows(IllegalArgumentException.class, () -> value.isBitSet(-1), "Should throw exception for negative bit index");
+        assertThrows(IllegalArgumentException.class, () -> value.isBitSet(16), "Should throw exception for bit index out of range");
+    }
+
+    @Test
     void constructor_should_throw_exception_on_overflow() {
         assertThrows(IllegalArgumentException.class, () -> new UInt16(0xFFFF + 1));
     }
@@ -130,5 +243,70 @@ class UInt16Test {
 
         // assert
         assertEquals(expected, actual, "Should wrap around to 0xFFFD");
+    }
+
+    @Test
+    void addSignedOffset_should_throw_on_null_parameter() {
+        assertThrows(IllegalArgumentException.class, () -> new UInt16(0x0000).addSignedOffset(null));
+    }
+
+    @Test
+    void add16_should_add_without_overflow() {
+        // arrange
+        var value1   = new UInt16(0x1234);
+        var value2   = new UInt16(0x4321);
+        var expected = new UInt16(0x5555);
+
+        // act
+        var result = value1.add16(value2);
+
+        // assert
+        assertEquals(expected, result, "Sum should be 0x5555 without overflow");
+    }
+
+    @Test
+    void add16_should_wrap_around_on_overflow() {
+        // arrange
+        var value1   = new UInt16(0xFFFF);
+        var value2   = new UInt16(0x0001);
+        var expected = new UInt16(0x0000);
+
+        // act
+        var result = value1.add16(value2);
+
+        // assert
+        assertEquals(expected, result, "Sum should wrap around to 0x0000 on overflow");
+    }
+
+    @Test
+    void add16_should_throw_exception_on_null_argument() {
+        // arrange
+        var value1 = new UInt16(0x1234);
+
+        // act and assert
+        assertThrows(IllegalArgumentException.class, () -> value1.add16(null), "Should throw exception when argument is null");
+    }
+
+    @Test
+    void factory_should_create_new_instance_with_valid_value() {
+        // arrange
+        var factory = new UInt16(0).factory();
+
+        // act
+        var result = factory.apply(300);
+
+        // assert
+        assertNotNull(result, "Factory should create a non-null UInt16 instance");
+        assertEquals(300, result.value(), "Factory should create a UInt16 with the correct value");
+    }
+
+    @Test
+    void factory_should_throw_exception_for_invalid_value() {
+        // arrange
+        var factory = new UInt16(0).factory();
+
+        // act and assert
+        assertThrows(IllegalArgumentException.class, () -> factory.apply(-1), "Factory should throw an exception for negative values");
+        assertThrows(IllegalArgumentException.class, () -> factory.apply(65536), "Factory should throw an exception for values exceeding 65535");
     }
 }

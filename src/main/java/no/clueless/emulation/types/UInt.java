@@ -23,6 +23,13 @@ public sealed interface UInt<T extends UInt<T>> permits UInt8, UInt16 {
 
     boolean isBitSet(int bit);
 
+    /**
+     * Bitwise AND operation.
+     *
+     * @param other The other value.
+     * @return The result.
+     * @throws IllegalArgumentException if other is null.
+     */
     default T and(T other) {
         if (other == null) {
             throw new IllegalArgumentException("other cannot be null");
@@ -30,6 +37,12 @@ public sealed interface UInt<T extends UInt<T>> permits UInt8, UInt16 {
         return factory().apply(value() & other.value());
     }
 
+    /**
+     * Bitwise OR operation.
+     *
+     * @param other The other value.
+     * @return The result.
+     */
     default T or(T other) {
         if (other == null) {
             throw new IllegalArgumentException("other cannot be null");
@@ -37,6 +50,12 @@ public sealed interface UInt<T extends UInt<T>> permits UInt8, UInt16 {
         return factory().apply(value() | other.value());
     }
 
+    /**
+     * Bitwise XOR operation.
+     *
+     * @param other The other value.
+     * @return The result.
+     */
     default T xor(T other) {
         if (other == null) {
             throw new IllegalArgumentException("other cannot be null");
