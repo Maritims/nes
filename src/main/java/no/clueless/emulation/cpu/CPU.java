@@ -34,6 +34,7 @@ public class CPU {
             throw new IllegalArgumentException("Bus cannot be null");
         }
 
+        // TODO: Ensure all registers are initialized with their power-on values.
         this.bus            = bus;
         this.stackPointer   = new StackPointer(new UInt8(0xFD));
         this.statusRegister = new StatusRegister(Set.of());
