@@ -1,6 +1,6 @@
 package no.clueless.emulation;
 
-import no.clueless.emulation.types.UInt16;
+import no.clueless.emulation.types.UnsignedWord;
 
 public class Mapper0 implements Mapper {
     private final int prgBanks;
@@ -12,7 +12,7 @@ public class Mapper0 implements Mapper {
     }
 
     @Override
-    public int mapCpuRead(UInt16 address) {
+    public int mapCpuRead(UnsignedWord address) {
         int addr = address.value();
 
         if (addr >= 0x8000 && addr <= 0xFFFF) {
@@ -32,7 +32,7 @@ public class Mapper0 implements Mapper {
     }
 
     @Override
-    public int mapPpuRead(UInt16 address) {
+    public int mapPpuRead(UnsignedWord address) {
         int addr = address.value();
 
         // PPU reads pattern tables directly from $0000 to $1FFF (8KB)

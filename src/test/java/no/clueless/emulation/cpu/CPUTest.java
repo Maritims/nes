@@ -1,8 +1,8 @@
 package no.clueless.emulation.cpu;
 
 import no.clueless.emulation.ram.RAM;
-import no.clueless.emulation.types.UInt16;
-import no.clueless.emulation.types.UInt8;
+import no.clueless.emulation.types.UnsignedWord;
+import no.clueless.emulation.types.UnsignedByte;
 import org.junit.jupiter.api.Test;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -104,44 +104,43 @@ class CPUTest {
     void AND_should_yield_1_when_both_operands_are_1() {
         // arrange
         var bus            = new RAM();
-        var address        = new UInt16(0x1234);
-        var accumulator    = new Accumulator(new UInt8(1));
+        var address        = new UnsignedWord(0x1234);
+        var accumulator    = new Accumulator(1);
         var statusRegister = new StatusRegister();
-        var cpu            = new CPU(bus, accumulator, new X(new UInt8(0)), new Y(new UInt8(0)), statusRegister);
+        var cpu            = new CPU(bus, accumulator, new UnsignedByte(0), new UnsignedByte(0), statusRegister);
 
-        bus.write(address, new UInt8(1));
+        bus.write(address, new UnsignedByte(1));
 
         // act
         cpu.AND(address);
 
         // assert
-        assertEquals(1, accumulator.getValue().value(), "Accumulator should be 1");
+        assertEquals(1, accumulator.intValue(), "Accumulator should be 1");
     }
 
     @Test
     void AND_should_yield_0_when_either_operand_is_0() {
         // arrange
         var bus            = new RAM();
-        var address        = new UInt16(0x1234);
-        var accumulator    = new Accumulator(new UInt8(1));
+        var address        = new UnsignedWord(0x1234);
         var statusRegister = new StatusRegister();
-        var cpu            = new CPU(bus, accumulator, new X(new UInt8(0)), new Y(new UInt8(0)), statusRegister);
+        var cpu            = new CPU(bus, new Accumulator(1), new UnsignedByte(0), new UnsignedByte(0), statusRegister);
 
-        bus.write(address, new UInt8(0));
+        bus.write(address, new UnsignedByte(0));
 
         // act
         cpu.AND(address);
 
         // assert
-        assertEquals(0, accumulator.getValue().value(), "Accumulator should be 0");
+        assertEquals(0, cpu.getAccumulator().intValue(), "Accumulator should be 0");
     }
 
     @Test
     void AND_should_throw_when_address_is_null() {
         var bus            = new RAM();
-        var accumulator    = new Accumulator(new UInt8(1));
+        var accumulator    = new Accumulator(1);
         var statusRegister = new StatusRegister();
-        var cpu            = new CPU(bus, accumulator, new X(new UInt8(0)), new Y(new UInt8(0)), statusRegister);
+        var cpu            = new CPU(bus, accumulator, new UnsignedByte(0), new UnsignedByte(0), statusRegister);
 
         assertThrows(IllegalArgumentException.class, () -> cpu.AND(null));
     }
@@ -151,14 +150,13 @@ class CPUTest {
         // arrange
         var bus            = new RAM();
         var statusRegister = new StatusRegister();
-        var accumulator    = new Accumulator(new UInt8(255));
-        var cpu            = new CPU(bus, accumulator, mock(), mock(), statusRegister);
+        var cpu            = new CPU(bus, new Accumulator(255), mock(), mock(), statusRegister);
 
         // act
         cpu.ASL(null);
 
         // assert
-        assertEquals(254, accumulator.getValue().value(), "Accumulator should be 254");
+        assertEquals(254, cpu.getAccumulator().intValue(), "Accumulator should be 254");
         assertTrue(statusRegister.hasFlag(Flag.Carry), "Carry flag should be set");
     }
 
@@ -167,9 +165,9 @@ class CPUTest {
         // arrange
         var bus     = spy(new RAM());
         var cpu     = new CPU(bus, mock(), mock(), mock(), mock());
-        var address = new UInt16(0x1234);
+        var address = new UnsignedWord(0x1234);
 
-        bus.write(address, new UInt8(255));
+        bus.write(address, new UnsignedByte(255));
 
         // act
         cpu.ASL(address);
@@ -182,7 +180,7 @@ class CPUTest {
     void ASL_should_read_from_accumulator_when_address_is_null() {
         // arrange
         var bus         = spy(new RAM());
-        var accumulator = spy(new Accumulator(new UInt8(255)));
+        var accumulator = spy(new Accumulator(255));
         var cpu         = new CPU(bus, accumulator, mock(), mock(), mock());
 
         // act
@@ -190,15 +188,14 @@ class CPUTest {
 
         // assert
         verify(bus, atMost(2).description("The bus should not be read more than two times, and only from within the CPU.reset() method")).read(any());
-        verify(accumulator).updateValue(any());
     }
 
     @Test
     void EOR_should_throw_when_address_is_null() {
         var bus            = new RAM();
-        var accumulator    = new Accumulator(new UInt8(1));
+        var accumulator    = new Accumulator(1);
         var statusRegister = new StatusRegister();
-        var cpu            = new CPU(bus, accumulator, new X(new UInt8(0)), new Y(new UInt8(0)), statusRegister);
+        var cpu            = new CPU(bus, accumulator, new UnsignedByte(0), new UnsignedByte(0), statusRegister);
 
         assertThrows(IllegalArgumentException.class, () -> cpu.EOR(null));
     }
@@ -207,55 +204,53 @@ class CPUTest {
     void EOR_should_return_0_when_both_operands_are_0() {
         // arrange
         var bus            = new RAM();
-        var address        = new UInt16(0x1234);
-        var accumulator    = new Accumulator(new UInt8(0));
+        var address        = new UnsignedWord(0x1234);
+        var accumulator    = new Accumulator(0);
         var statusRegister = new StatusRegister();
 
-        var cpu = new CPU(bus, accumulator, new X(new UInt8(0)), new Y(new UInt8(0)), statusRegister);
+        var cpu = new CPU(bus, accumulator, new UnsignedByte(0), new UnsignedByte(0), statusRegister);
 
-        bus.write(address, new UInt8(0));
+        bus.write(address, new UnsignedByte(0));
 
         // act
         cpu.EOR(address);
 
         // assert
-        assertEquals(0, accumulator.getValue().value(), "Accumulator should be 0");
+        assertEquals(0, accumulator.intValue(), "Accumulator should be 0");
     }
 
     @Test
     void EOR_should_return_1_when_one_operand_is_1() {
         // arrange
         var bus            = new RAM();
-        var address        = new UInt16(0x1234);
-        var accumulator    = new Accumulator(new UInt8(0));
+        var address        = new UnsignedWord(0x1234);
         var statusRegister = new StatusRegister();
-        var cpu            = new CPU(bus, accumulator, new X(new UInt8(0)), new Y(new UInt8(0)), statusRegister);
+        var cpu            = new CPU(bus, new Accumulator(0), new UnsignedByte(0), new UnsignedByte(0), statusRegister);
 
-        bus.write(address, new UInt8(1));
+        bus.write(address, new UnsignedByte(1));
 
         // act
         cpu.EOR(address);
 
         // assert
-        assertEquals(1, accumulator.getValue().value(), "Accumulator should be 1");
+        assertEquals(1, cpu.getAccumulator().intValue(), "Accumulator should be 1");
     }
 
     @Test
     void EOR_should_return_0_when_both_operands_are_1() {
         // arrange
         var bus            = new RAM();
-        var address        = new UInt16(0x1234);
-        var accumulator    = new Accumulator(new UInt8(1));
+        var address        = new UnsignedWord(0x1234);
         var statusRegister = new StatusRegister();
-        var cpu            = new CPU(bus, accumulator, new X(new UInt8(1)), new Y(new UInt8(1)), statusRegister);
+        var cpu            = new CPU(bus, new Accumulator(1), new UnsignedByte(1), new UnsignedByte(1), statusRegister);
 
-        bus.write(address, new UInt8(1));
+        bus.write(address, new UnsignedByte(1));
 
         // act
         cpu.EOR(address);
 
         // assert
-        assertEquals(0, accumulator.getValue().value(), "Accumulator should be 0");
+        assertEquals(0, cpu.getAccumulator().intValue(), "Accumulator should be 0");
     }
 
     @Test
@@ -263,14 +258,13 @@ class CPUTest {
         // arrange
         var bus            = new RAM();
         var statusRegister = new StatusRegister();
-        var accumulator    = new Accumulator(new UInt8(1));
-        var cpu            = new CPU(bus, accumulator, mock(), mock(), statusRegister);
+        var cpu            = new CPU(bus, new Accumulator(1), mock(), mock(), statusRegister);
 
         // act
         cpu.LSR(null);
 
         // assert
-        assertEquals(0, accumulator.getValue().value(), "Accumulator should be 0");
+        assertEquals(0, cpu.getAccumulator().intValue(), "Accumulator should be 0");
         assertTrue(statusRegister.hasFlag(Flag.Carry), "Carry flag should be set");
     }
 
@@ -279,7 +273,7 @@ class CPUTest {
         // arrange
         var bus     = spy(new RAM());
         var cpu     = new CPU(bus, mock(), mock(), mock(), mock());
-        var address = new UInt16(0x1234);
+        var address = new UnsignedWord(0x1234);
 
         // act
         cpu.LSR(address);
@@ -292,7 +286,7 @@ class CPUTest {
     void LSR_should_read_from_accumulator_when_address_is_null() {
         // arrange
         var bus         = spy(new RAM());
-        var accumulator = spy(new Accumulator(new UInt8(1)));
+        var accumulator = spy(new Accumulator(1));
         var cpu         = new CPU(bus, accumulator, mock(), mock(), mock());
 
         // act
@@ -300,15 +294,14 @@ class CPUTest {
 
         // assert
         verify(bus, atMost(2).description("The bus should not be read more than two times, and only from within the CPU.reset() method")).read(any());
-        verify(accumulator).updateValue(any());
     }
 
     @Test
     void ORA_should_throw_when_address_is_null() {
         var bus            = new RAM();
-        var accumulator    = new Accumulator(new UInt8(1));
+        var accumulator    = new Accumulator(1);
         var statusRegister = new StatusRegister();
-        var cpu            = new CPU(bus, accumulator, new X(new UInt8(0)), new Y(new UInt8(0)), statusRegister);
+        var cpu            = new CPU(bus, accumulator, new UnsignedByte(0), new UnsignedByte(0), statusRegister);
 
         assertThrows(IllegalArgumentException.class, () -> cpu.ORA(null));
     }
@@ -316,58 +309,56 @@ class CPUTest {
     @Test
     void ORA_should_return_1_when_both_operands_are_1() {
         var bus            = new RAM();
-        var address        = new UInt16(0x1234);
-        var accumulator    = new Accumulator(new UInt8(1));
+        var address        = new UnsignedWord(0x1234);
+        var accumulator    = new Accumulator(1);
         var statusRegister = new StatusRegister();
 
-        var cpu = new CPU(bus, accumulator, new X(new UInt8(0)), new Y(new UInt8(0)), statusRegister);
-        bus.write(address, new UInt8(1));
+        var cpu = new CPU(bus, accumulator, new UnsignedByte(0), new UnsignedByte(0), statusRegister);
+        bus.write(address, new UnsignedByte(1));
 
         cpu.ORA(address);
 
-        assertEquals(1, accumulator.getValue().value(), "Accumulator should be 1");
+        assertEquals(1, accumulator.intValue(), "Accumulator should be 1");
     }
 
     @Test
     void ORA_should_return_0_when_both_operands_are_0() {
         var bus            = new RAM();
-        var address        = new UInt16(0x1234);
-        var accumulator    = new Accumulator(new UInt8(0));
+        var address        = new UnsignedWord(0x1234);
+        var accumulator    = new Accumulator(0);
         var statusRegister = new StatusRegister();
 
-        var cpu = new CPU(bus, accumulator, new X(new UInt8(0)), new Y(new UInt8(0)), statusRegister);
-        bus.write(address, new UInt8(0));
+        var cpu = new CPU(bus, accumulator, new UnsignedByte(0), new UnsignedByte(0), statusRegister);
+        bus.write(address, new UnsignedByte(0));
 
         cpu.ORA(address);
 
-        assertEquals(0, accumulator.getValue().value(), "Accumulator should be 0");
+        assertEquals(0, accumulator.intValue(), "Accumulator should be 0");
     }
 
     @Test
     void ORA_should_return_1_when_one_operand_is_1() {
         var bus            = new RAM();
-        var address        = new UInt16(0x1234);
-        var accumulator    = new Accumulator(new UInt8(0));
+        var address        = new UnsignedWord(0x1234);
         var statusRegister = new StatusRegister();
 
-        var cpu = new CPU(bus, accumulator, new X(new UInt8(0)), new Y(new UInt8(0)), statusRegister);
-        bus.write(address, new UInt8(1));
+        var cpu = new CPU(bus, new Accumulator(0), new UnsignedByte(0), new UnsignedByte(0), statusRegister);
+        bus.write(address, new UnsignedByte(1));
 
         cpu.ORA(address);
 
-        assertEquals(1, accumulator.getValue().value(), "Accumulator should be 1");
+        assertEquals(1, cpu.getAccumulator().intValue(), "Accumulator should be 1");
     }
 
     @Test
     void ROL_should_rotate_bits_to_the_left_by_1() {
         var bus            = new RAM();
         var statusRegister = new StatusRegister();
-        var accumulator    = new Accumulator(new UInt8(255));
-        var cpu            = new CPU(bus, accumulator, mock(), mock(), statusRegister);
+        var cpu            = new CPU(bus, new Accumulator(255), mock(), mock(), statusRegister);
 
         cpu.ROL(null);
 
-        assertEquals(254, accumulator.getValue().value(), "Accumulator should be 254");
+        assertEquals(254, cpu.getAccumulator().intValue(), "Accumulator should be 254");
         assertTrue(statusRegister.hasFlag(Flag.Carry), "Carry flag should be set");
     }
 
@@ -375,9 +366,9 @@ class CPUTest {
     void ROL_should_read_from_bus_when_address_is_not_null() {
         var bus     = spy(new RAM());
         var cpu     = new CPU(bus, mock(), mock(), mock(), mock());
-        var address = new UInt16(0x1234);
+        var address = new UnsignedWord(0x1234);
 
-        bus.write(address, new UInt8(255));
+        bus.write(address, new UnsignedByte(255));
 
         cpu.ROL(address);
 
@@ -387,25 +378,23 @@ class CPUTest {
     @Test
     void ROL_should_read_from_accumulator_when_address_is_null() {
         var bus         = spy(new RAM());
-        var accumulator = spy(new Accumulator(new UInt8(255)));
+        var accumulator = spy(new Accumulator(255));
         var cpu         = new CPU(bus, accumulator, mock(), mock(), mock());
 
         cpu.ROL(null);
 
         verify(bus, atMost(2).description("The bus should not be read more than two times, and only from within the CPU.reset() method")).read(any());
-        verify(accumulator).updateValue(any());
     }
 
     @Test
     void ROR_should_rotate_bits_to_the_right_by_1() {
         var bus            = new RAM();
         var statusRegister = new StatusRegister();
-        var accumulator    = new Accumulator(new UInt8(255));
-        var cpu            = new CPU(bus, accumulator, mock(), mock(), statusRegister);
+        var cpu            = new CPU(bus, new Accumulator(255), mock(), mock(), statusRegister);
 
         cpu.ROR(null);
 
-        assertEquals(127, accumulator.getValue().value(), "Accumulator should be 2");
+        assertEquals(127, cpu.getAccumulator().intValue(), "Accumulator should be 2");
         assertTrue(statusRegister.hasFlag(Flag.Carry), "Carry flag should be set");
     }
 
@@ -413,9 +402,9 @@ class CPUTest {
     void ROR_should_read_from_bus_when_address_is_not_null() {
         var bus     = spy(new RAM());
         var cpu     = new CPU(bus, mock(), mock(), mock(), mock());
-        var address = new UInt16(0x1234);
+        var address = new UnsignedWord(0x1234);
 
-        bus.write(address, new UInt8(255));
+        bus.write(address, new UnsignedByte(255));
 
         cpu.ROR(address);
 
@@ -425,20 +414,19 @@ class CPUTest {
     @Test
     void ROR_should_read_from_accumulator_when_address_is_null() {
         var bus         = spy(new RAM());
-        var accumulator = spy(new Accumulator(new UInt8(255)));
+        var accumulator = spy(new Accumulator(255));
         var cpu         = new CPU(bus, accumulator, mock(), mock(), mock());
 
         cpu.ROR(null);
 
         verify(bus, atMost(2).description("The bus should not be read more than two times, and only from within the CPU.reset() method")).read(any());
-        verify(accumulator).updateValue(any());
     }
 
     @Test
     void DEX_should_decrement_the_X_register() {
         // arrange
         var bus = new RAM();
-        var x   = mock(X.class);
+        var x   = mock(UnsignedByte.class);
         var cpu = new CPU(bus, mock(), x, mock(), mock());
 
         // act
@@ -452,7 +440,7 @@ class CPUTest {
     void DEY_should_decrement_the_Y_register() {
         // arrange
         var bus = new RAM();
-        var y   = mock(Y.class);
+        var y   = mock(UnsignedByte.class);
         var cpu = new CPU(bus, mock(), mock(), y, mock());
 
         // act
@@ -466,7 +454,7 @@ class CPUTest {
     void INX_should_increment_the_X_register() {
         // arrange
         var bus = new RAM();
-        var x   = spy(new X(new UInt8(0)));
+        var x   = spy(new UnsignedByte(0));
         var cpu = new CPU(bus, mock(), x, mock(), mock());
 
         // act
@@ -480,7 +468,7 @@ class CPUTest {
     void INY_should_increment_the_Y_register() {
         // arrange
         var bus = new RAM();
-        var y   = mock(Y.class);
+        var y   = mock(UnsignedByte.class);
         var cpu = new CPU(bus, mock(), mock(), y, mock());
 
         // act
@@ -493,16 +481,15 @@ class CPUTest {
     @Test
     void ADC_should_return_300_when_adding_150_to_150() {
         var bus            = new RAM();
-        var address        = new UInt16(0x1234);
-        var accumulator    = new Accumulator(new UInt8(150));
+        var address        = new UnsignedWord(0x1234);
         var statusRegister = new StatusRegister();
-        var cpu            = new CPU(bus, accumulator, new X(new UInt8(0)), new Y(new UInt8(0)), statusRegister);
+        var cpu            = new CPU(bus, new Accumulator(150), new UnsignedByte(0), new UnsignedByte(0), statusRegister);
 
-        bus.write(address, new UInt8(150));
+        bus.write(address, new UnsignedByte(150));
 
         cpu.ADC(address);
 
-        assertEquals(44, accumulator.getValue().value(), "Accumulator should be 44");
+        assertEquals(44, cpu.getAccumulator().intValue(), "Accumulator should be 44");
         assertTrue(statusRegister.hasFlag(Flag.Carry), "Carry flag should be set");
     }
 }

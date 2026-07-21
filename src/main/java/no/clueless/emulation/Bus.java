@@ -1,7 +1,7 @@
 package no.clueless.emulation;
 
-import no.clueless.emulation.types.UInt16;
-import no.clueless.emulation.types.UInt8;
+import no.clueless.emulation.types.UnsignedWord;
+import no.clueless.emulation.types.UnsignedByte;
 
 /**
  * Represents the bus.
@@ -14,7 +14,7 @@ public interface Bus {
      * @return The byte read.
      * @throws IllegalArgumentException if the address is null.
      */
-    UInt8 read(UInt16 address);
+    UnsignedByte read(UnsignedWord address);
 
     /**
      * Write a byte to the bus.
@@ -23,5 +23,5 @@ public interface Bus {
      * @param value   The value to write.
      * @throws IllegalArgumentException if the address is null.
      */
-    void write(UInt16 address, UInt8 value);
+    void write(UnsignedWord address, UnsignedByte value);
 }

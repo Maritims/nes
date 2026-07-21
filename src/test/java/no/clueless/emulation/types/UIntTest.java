@@ -10,8 +10,8 @@ class UIntTest {
     @Test
     void shiftRight_should_shift_bits_right_by_one_position() {
         // arrange
-        var value    = new UInt8(0b00001110); // 14 in decimal
-        var expected = new UInt8(0b00000111); // 7 in decimal
+        var value    = new UnsignedByte(0b00001110); // 14 in decimal
+        var expected = new UnsignedByte(0b00000111); // 7 in decimal
 
         // act
         var result = value.shiftRight(1);
@@ -23,8 +23,8 @@ class UIntTest {
     @Test
     void shiftRight_should_shift_bits_right_by_several_positions() {
         // arrange
-        var value    = new UInt8(0b01000000); // 64 in decimal
-        var expected = new UInt8(0b00000010); // 2 in decimal
+        var value    = new UnsignedByte(0b01000000); // 64 in decimal
+        var expected = new UnsignedByte(0b00000010); // 2 in decimal
 
         // act
         var result = value.shiftRight(5);
@@ -36,19 +36,19 @@ class UIntTest {
     @Test
     void shiftRight_should_return_zero_when_shifting_zero() {
         // arrange
-        var value = UInt8.ZERO;
+        var value = UnsignedByte.ZERO;
 
         // act
         var result = value.shiftRight(3);
 
         // assert
-        assertEquals(UInt8.ZERO, result, "Shifting zero to the right should always return zero.");
+        assertEquals(UnsignedByte.ZERO, result, "Shifting zero to the right should always return zero.");
     }
 
     @Test
     void shiftRight_should_throw_with_negative_shift_value() {
         // arrange
-        var value = new UInt8(0b00001111); // 15 in decimal
+        var value = new UnsignedByte(0b00001111); // 15 in decimal
 
         // assert
         assertThrows(IllegalArgumentException.class,
@@ -59,9 +59,9 @@ class UIntTest {
     @Test
     void and_should_perform_bitwise_and_with_non_zero_values() {
         // arrange
-        var value1   = new UInt8(0b10101010); // 170 in decimal
-        var value2   = new UInt8(0b11001100); // 204 in decimal
-        var expected = new UInt8(0b10001000); // 136 in decimal
+        var value1   = new UnsignedByte(0b10101010); // 170 in decimal
+        var value2   = new UnsignedByte(0b11001100); // 204 in decimal
+        var expected = new UnsignedByte(0b10001000); // 136 in decimal
 
         // act
         var actual = value1.and(value2);
@@ -73,9 +73,9 @@ class UIntTest {
     @Test
     void and_should_perform_bitwise_and_with_zero_value() {
         // arrange
-        var value1   = new UInt8(0b10101010); // 170 in decimal
-        var value2   = UInt8.ZERO;           // 0 in decimal
-        var expected = UInt8.ZERO;
+        var value1   = new UnsignedByte(0b10101010); // 170 in decimal
+        var value2   = UnsignedByte.ZERO;           // 0 in decimal
+        var expected = UnsignedByte.ZERO;
 
         // act
         var actual = value1.and(value2);
@@ -91,16 +91,16 @@ class UIntTest {
      */
     @Test
     void and_should_perform_bitwise_and_with_max_value() {
-        UInt8 value1 = new UInt8(0b10101010); // 170 in decimal
-        UInt8 value2 = UInt8.MAX_VALUE;       // 255 in decimal
-        UInt8 result = value1.and(value2);
+        UnsignedByte value1 = new UnsignedByte(0b10101010); // 170 in decimal
+        UnsignedByte value2 = UnsignedByte.MAX_VALUE;       // 255 in decimal
+        UnsignedByte result = value1.and(value2);
 
-        assertEquals(value1.value(), result.value(), "Bitwise AND with UInt8.MAX_VALUE should return the original value.");
+        assertEquals(value1, result, "Bitwise AND with UInt8.MAX_VALUE should return the original value.");
     }
 
     @Test
     void and_should_throw_with_null_value() {
-        var value1 = new UInt8(0b10101010); // 170 in decimal
+        var value1 = new UnsignedByte(0b10101010); // 170 in decimal
 
         assertThrows(IllegalArgumentException.class,
                 () -> value1.and(null),
@@ -110,9 +110,9 @@ class UIntTest {
     @Test
     void and_should_perform_bitwise_and_with_only_zeroes() {
         // arrange
-        var value1   = UInt8.ZERO;
-        var value2   = UInt8.ZERO;
-        var expected = UInt8.ZERO;
+        var value1   = UnsignedByte.ZERO;
+        var value2   = UnsignedByte.ZERO;
+        var expected = UnsignedByte.ZERO;
 
         // act
         var result = value1.and(value2);
@@ -124,9 +124,9 @@ class UIntTest {
     @Test
     void and_should_perform_bitwise_and_with_only_single_bits() {
         // arrange
-        var value1   = new UInt8(0b00000001); // 1 in decimal
-        var value2   = new UInt8(0b00000001); // 1 in decimal
-        var expected = UInt8.ONE;
+        var value1   = new UnsignedByte(0b00000001); // 1 in decimal
+        var value2   = new UnsignedByte(0b00000001); // 1 in decimal
+        var expected = UnsignedByte.ONE;
 
         // act
         var result = value1.and(value2);
@@ -138,9 +138,9 @@ class UIntTest {
     @Test
     void or_should_perform_bitwise_or_with_non_zero_values() {
         // arrange
-        var value1   = new UInt8(0b10101010); // 170 in decimal
-        var value2   = new UInt8(0b11001100); // 204 in decimal
-        var expected = new UInt8(0b11101110); // 238 in decimal
+        var value1   = new UnsignedByte(0b10101010); // 170 in decimal
+        var value2   = new UnsignedByte(0b11001100); // 204 in decimal
+        var expected = new UnsignedByte(0b11101110); // 238 in decimal
 
         // act
         var actual = value1.or(value2);
@@ -152,8 +152,8 @@ class UIntTest {
     @Test
     void or_should_perform_bitwise_or_with_zero_value() {
         // arrange
-        var value1 = new UInt8(0b10101010); // 170 in decimal
-        var value2 = UInt8.ZERO;           // 0 in decimal
+        var value1 = new UnsignedByte(0b10101010); // 170 in decimal
+        var value2 = UnsignedByte.ZERO;           // 0 in decimal
 
         // act
         var actual = value1.or(value2);
@@ -165,9 +165,9 @@ class UIntTest {
     @Test
     void or_should_perform_bitwise_or_with_max_value() {
         // arrange
-        UInt8 value1   = new UInt8(0b10101010); // 170 in decimal
-        UInt8 value2   = UInt8.MAX_VALUE;       // 255 in decimal
-        UInt8 expected = UInt8.MAX_VALUE;
+        UnsignedByte value1   = new UnsignedByte(0b10101010); // 170 in decimal
+        UnsignedByte value2   = UnsignedByte.MAX_VALUE;       // 255 in decimal
+        UnsignedByte expected = UnsignedByte.MAX_VALUE;
 
         // act
         var actual = value1.or(value2);
@@ -179,9 +179,9 @@ class UIntTest {
     @Test
     void or_should_perform_bitwise_or_with_only_zeroes() {
         // arrange
-        var value1   = UInt8.ZERO;
-        var value2   = UInt8.ZERO;
-        var expected = UInt8.ZERO;
+        var value1   = UnsignedByte.ZERO;
+        var value2   = UnsignedByte.ZERO;
+        var expected = UnsignedByte.ZERO;
 
         // act
         var actual = value1.or(value2);
@@ -193,9 +193,9 @@ class UIntTest {
     @Test
     void or_should_perform_bitwise_or_with_only_single_bits() {
         // arrange
-        var value1   = new UInt8(0b00000001); // 1 in decimal
-        var value2   = new UInt8(0b00000001); // 1 in decimal
-        var expected = UInt8.ONE;
+        var value1   = new UnsignedByte(0b00000001); // 1 in decimal
+        var value2   = new UnsignedByte(0b00000001); // 1 in decimal
+        var expected = UnsignedByte.ONE;
 
         // act
         var actual = value1.or(value2);
@@ -206,7 +206,7 @@ class UIntTest {
 
     @Test
     void or_should_throw_with_null_value() {
-        var value1 = new UInt8(0b10101010); // 170 in decimal
+        var value1 = new UnsignedByte(0b10101010); // 170 in decimal
 
         assertThrows(IllegalArgumentException.class,
                 () -> value1.or(null),
@@ -216,9 +216,9 @@ class UIntTest {
     @Test
     void xor_should_perform_bitwise_xor_with_non_zero_values() {
         // arrange
-        var value1   = new UInt8(0b10101010); // 170 in decimal
-        var value2   = new UInt8(0b11001100); // 204 in decimal
-        var expected = new UInt8(0b01100110); // 102 in decimal
+        var value1   = new UnsignedByte(0b10101010); // 170 in decimal
+        var value2   = new UnsignedByte(0b11001100); // 204 in decimal
+        var expected = new UnsignedByte(0b01100110); // 102 in decimal
 
         // act
         var actual = value1.xor(value2);
@@ -230,8 +230,8 @@ class UIntTest {
     @Test
     void xor_should_perform_bitwise_xor_with_zero_value() {
         // arrange
-        var value1   = new UInt8(0b10101010); // 170 in decimal
-        var value2   = UInt8.ZERO;           // 0 in decimal
+        var value1   = new UnsignedByte(0b10101010); // 170 in decimal
+        var value2   = UnsignedByte.ZERO;           // 0 in decimal
 
         // act
         var actual = value1.xor(value2);
@@ -243,9 +243,9 @@ class UIntTest {
     @Test
     void xor_should_perform_bitwise_xor_with_max_value() {
         // arrange
-        UInt8 value1   = new UInt8(0b10101010); // 170 in decimal
-        UInt8 value2   = UInt8.MAX_VALUE;       // 255 in decimal
-        UInt8 expected = new UInt8(0b01010101); // 85 in decimal
+        UnsignedByte value1   = new UnsignedByte(0b10101010); // 170 in decimal
+        UnsignedByte value2   = UnsignedByte.MAX_VALUE;       // 255 in decimal
+        UnsignedByte expected = new UnsignedByte(0b01010101); // 85 in decimal
 
         // act
         var actual = value1.xor(value2);
@@ -257,9 +257,9 @@ class UIntTest {
     @Test
     void xor_should_perform_bitwise_xor_with_only_zeroes() {
         // arrange
-        var value1   = UInt8.ZERO;
-        var value2   = UInt8.ZERO;
-        var expected = UInt8.ZERO;
+        var value1   = UnsignedByte.ZERO;
+        var value2   = UnsignedByte.ZERO;
+        var expected = UnsignedByte.ZERO;
 
         // act
         var actual = value1.xor(value2);
@@ -271,9 +271,9 @@ class UIntTest {
     @Test
     void xor_should_perform_bitwise_xor_with_only_single_bits() {
         // arrange
-        var value1   = new UInt8(0b00000001); // 1 in decimal
-        var value2   = new UInt8(0b00000001); // 1 in decimal
-        var expected = UInt8.ZERO;
+        var value1   = new UnsignedByte(0b00000001); // 1 in decimal
+        var value2   = new UnsignedByte(0b00000001); // 1 in decimal
+        var expected = UnsignedByte.ZERO;
 
         // act
         var actual = value1.xor(value2);
@@ -284,7 +284,7 @@ class UIntTest {
 
     @Test
     void xor_should_throw_with_null_value() {
-        var value1 = new UInt8(0b10101010); // 170 in decimal
+        var value1 = new UnsignedByte(0b10101010); // 170 in decimal
 
         assertThrows(IllegalArgumentException.class,
                 () -> value1.xor(null),

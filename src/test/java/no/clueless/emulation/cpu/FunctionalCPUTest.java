@@ -1,8 +1,8 @@
 package no.clueless.emulation.cpu;
 
 import no.clueless.emulation.ram.RAM;
-import no.clueless.emulation.types.UInt16;
-import no.clueless.emulation.types.UInt8;
+import no.clueless.emulation.types.UnsignedWord;
+import no.clueless.emulation.types.UnsignedByte;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -23,20 +23,20 @@ public class FunctionalCPUTest {
 
         // Klaus Dormann's test binary is a 64KB image
         for (int i = 0; i < bytes.length && i < 65536; i++) {
-            ram.write(new UInt16(i), new UInt8(bytes[i] & 0xFF));
+            ram.write(new UnsignedWord(i), new UnsignedByte(bytes[i] & 0xFF));
         }
 
         CPU cpu = new CPU(ram);
         // The test binary starts at 0x0400
         cpu.reset();
-        cpu.JMP(new UInt16(0x0400));
+        cpu.JMP(new UnsignedWord(0x0400));
 
         int stuckCount = 0;
         long maxCycles = 100_000_000;
         long instructions = 0;
 
         while (cpu.getTotalCycles() < maxCycles) {
-            UInt16 pc = getPC(cpu);
+            UnsignedWord pc = getPC(cpu);
             cpu.step();
             instructions++;
 
@@ -55,7 +55,7 @@ public class FunctionalCPUTest {
         assertTrue(false, "Test timed out. Last PC: 0x%04X".formatted(getPC(cpu).value()));
     }
 
-    private UInt16 getPC(CPU cpu) {
+    private UnsignedWord getPC(CPU cpu) {
         try {
             var field = CPU.class.getDeclaredField("programCounter");
             field.setAccessible(true);

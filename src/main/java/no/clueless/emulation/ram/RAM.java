@@ -1,8 +1,8 @@
 package no.clueless.emulation.ram;
 
 import no.clueless.emulation.Bus;
-import no.clueless.emulation.types.UInt16;
-import no.clueless.emulation.types.UInt8;
+import no.clueless.emulation.types.UnsignedWord;
+import no.clueless.emulation.types.UnsignedByte;
 
 import java.util.Arrays;
 
@@ -13,17 +13,17 @@ public class RAM implements Bus {
     /**
      * 64K system memory.
      */
-    private final UInt8[] memory = new UInt8[65536];
+    private final UnsignedByte[] memory = new UnsignedByte[65536];
 
     /**
      * Constructor. Initializes the memory with all zeros.
      */
     public RAM() {
-        Arrays.fill(memory, new UInt8(0x00));
+        Arrays.fill(memory, new UnsignedByte(0x00));
     }
 
     @Override
-    public UInt8 read(UInt16 address) {
+    public UnsignedByte read(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -31,7 +31,7 @@ public class RAM implements Bus {
     }
 
     @Override
-    public void write(UInt16 address, UInt8 value) {
+    public void write(UnsignedWord address, UnsignedByte value) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }

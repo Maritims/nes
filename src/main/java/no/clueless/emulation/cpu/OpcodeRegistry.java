@@ -1,6 +1,6 @@
 package no.clueless.emulation.cpu;
 
-import no.clueless.emulation.types.UInt8;
+import no.clueless.emulation.types.UnsignedByte;
 
 import static no.clueless.emulation.cpu.Instruction.*;
 
@@ -20,7 +20,7 @@ public class OpcodeRegistry {
         if (opcode == null) {
             throw new IllegalArgumentException("opcode cannot be null");
         }
-        LOOKUP_TABLE[opcode.code().value()] = opcode;
+        LOOKUP_TABLE[opcode.code().intValue()] = opcode;
     }
 
     /**
@@ -30,11 +30,11 @@ public class OpcodeRegistry {
      * @return The opcode.
      * @throws IllegalArgumentException if opcode is null.
      */
-    public static Opcode get(UInt8 opcode) {
+    public static Opcode get(UnsignedByte opcode) {
         if (opcode == null) {
             throw new IllegalArgumentException("opcode cannot be null");
         }
-        return LOOKUP_TABLE[opcode.value()];
+        return LOOKUP_TABLE[opcode.intValue()];
     }
 
     static {

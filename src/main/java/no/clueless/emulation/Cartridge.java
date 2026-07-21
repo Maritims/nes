@@ -1,7 +1,7 @@
 package no.clueless.emulation;
 
-import no.clueless.emulation.types.UInt16;
-import no.clueless.emulation.types.UInt8;
+import no.clueless.emulation.types.UnsignedWord;
+import no.clueless.emulation.types.UnsignedByte;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -84,24 +84,24 @@ public class Cartridge {
         return cart;
     }
 
-    public UInt8 readCpu(UInt16 address) {
+    public UnsignedByte readCpu(UnsignedWord address) {
         int mappedTarget = mapper.mapCpuRead(address);
         if (mappedTarget != -1) {
-            return new UInt8(prgRom[mappedTarget]);
+            return new UnsignedByte(prgRom[mappedTarget]);
         }
-        return UInt8.ZERO;
+        return UnsignedByte.ZERO;
     }
 
-    public void writeCpu(UInt16 address, UInt8 data) {
+    public void writeCpu(UnsignedWord address, UnsignedByte data) {
         // NROM PRG-ROM is read-only; writes are ignored.
     }
 
     // Expose these for when we build out the PPU bus connection later!
-    public UInt8 readPpu(UInt16 address) {
+    public UnsignedByte readPpu(UnsignedWord address) {
         int mappedTarget = mapper.mapPpuRead(address);
         if (mappedTarget != -1) {
-            return new UInt8(chrRom[mappedTarget]);
+            return new UnsignedByte(chrRom[mappedTarget]);
         }
-        return UInt8.ZERO;
+        return UnsignedByte.ZERO;
     }
 }

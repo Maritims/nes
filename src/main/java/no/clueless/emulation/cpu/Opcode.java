@@ -1,7 +1,7 @@
 package no.clueless.emulation.cpu;
 
-import no.clueless.emulation.types.UInt16;
-import no.clueless.emulation.types.UInt8;
+import no.clueless.emulation.types.UnsignedWord;
+import no.clueless.emulation.types.UnsignedByte;
 
 import java.util.function.Function;
 
@@ -15,11 +15,11 @@ import java.util.function.Function;
  * @param addressResolver A function that resolves the addressing mode of the opcode.
  */
 public record Opcode(
-        UInt8 code,
+        UnsignedByte code,
         Instruction instruction,
         int bytes,
         int cycles,
-        Function<CPU, UInt16> addressResolver
+        Function<CPU, UnsignedWord> addressResolver
 ) {
     public Opcode {
         if (code == null) {
@@ -39,7 +39,7 @@ public record Opcode(
         }
     }
 
-    public Opcode(int code, Instruction instruction, int bytes, int cycles, Function<CPU, UInt16> addressResolver) {
-        this(new UInt8(code), instruction, bytes, cycles, addressResolver);
+    public Opcode(int code, Instruction instruction, int bytes, int cycles, Function<CPU, UnsignedWord> addressResolver) {
+        this(new UnsignedByte(code), instruction, bytes, cycles, addressResolver);
     }
 }

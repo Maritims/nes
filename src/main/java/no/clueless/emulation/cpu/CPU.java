@@ -1,8 +1,8 @@
 package no.clueless.emulation.cpu;
 
 import no.clueless.emulation.Bus;
-import no.clueless.emulation.types.UInt16;
-import no.clueless.emulation.types.UInt8;
+import no.clueless.emulation.types.UnsignedWord;
+import no.clueless.emulation.types.UnsignedByte;
 
 import java.util.EnumSet;
 import java.util.function.Consumer;
@@ -15,16 +15,16 @@ public class CPU {
     /**
      * The bus; the communication channel with the outside world.
      */
-    private final Bus  bus;
-    private       long totalCycles = 0;
+    private final Bus     bus;
+    private       long    totalCycles          = 0;
     private       boolean decimalModeSupported = true;
 
     private       StackPointer   stackPointer;
     private final ProgramCounter programCounter;
     private final StatusRegister statusRegister;
-    private final Accumulator    accumulator;
-    private final X              x;
-    private final Y              y;
+    private       UnsignedByte   accumulator;
+    private       UnsignedByte   x;
+    private       UnsignedByte   y;
 
     /**
      * Constructor.
@@ -36,7 +36,7 @@ public class CPU {
      * @param statusRegister The status register to use.
      * @throws IllegalArgumentException if bus, accumulator, x, y, or statusRegister is null.
      */
-    CPU(Bus bus, Accumulator accumulator, X x, Y y, StatusRegister statusRegister) {
+    CPU(Bus bus, Accumulator accumulator, UnsignedByte x, UnsignedByte y, StatusRegister statusRegister) {
         if (bus == null) {
             throw new IllegalArgumentException("bus cannot be null");
         }
@@ -70,7 +70,7 @@ public class CPU {
      * @throws IllegalArgumentException if bus is null.
      */
     public CPU(Bus bus) {
-        this(bus, new Accumulator(new UInt8(0x00)), new X(new UInt8(0x00)), new Y(new UInt8(0x00)), new StatusRegister());
+        this(bus, new Accumulator(0), new UnsignedByte(0x00), new UnsignedByte(0x00), new StatusRegister());
     }
 
     public long getTotalCycles() {
@@ -85,15 +85,15 @@ public class CPU {
         return programCounter;
     }
 
-    public Accumulator getAccumulator() {
+    public UnsignedByte getAccumulator() {
         return accumulator;
     }
 
-    public X getX() {
+    public UnsignedByte getX() {
         return x;
     }
 
-    public Y getY() {
+    public UnsignedByte getY() {
         return y;
     }
 
@@ -105,7 +105,7 @@ public class CPU {
         return stackPointer;
     }
 
-    public void setProgramCounter(UInt16 pc) {
+    public void setProgramCounter(UnsignedWord pc) {
         this.programCounter.updateValue(pc);
     }
 
@@ -117,12 +117,12 @@ public class CPU {
      * Reboots the system and resets the CPU to its power-on state.
      */
     public void reset() {
-        var lowByte     = bus.read(new UInt16(0xFFFC));
-        var highByte    = bus.read(new UInt16(0xFFFD));
-        var resetVector = UInt16.fromBytes(lowByte, highByte);
+        var lowByte     = bus.read(new UnsignedWord(0xFFFC));
+        var highByte    = bus.read(new UnsignedWord(0xFFFD));
+        var resetVector = UnsignedWord.fromBytes(lowByte, highByte);
 
         this.programCounter.updateValue(resetVector);
-        this.stackPointer = new StackPointer(new UInt8(0xFD), 0x0100);
+        this.stackPointer = new StackPointer(new UnsignedByte(0xFD), 0x0100);
 
         this.statusRegister.clearFlag(EnumSet.allOf(Flag.class));
         this.statusRegister.setFlag(Flag.InterruptDisable, Flag.Five);
@@ -135,14 +135,14 @@ public class CPU {
      * @return The 16-bit value read.
      * @throws IllegalArgumentException if address is null.
      */
-    private UInt16 read16(UInt16 address) {
+    private UnsignedWord read16(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
 
         var low  = bus.read(address);
         var high = bus.read(address.increment());
-        return UInt16.fromBytes(low, high);
+        return UnsignedWord.fromBytes(low, high);
     }
 
     /**
@@ -151,7 +151,7 @@ public class CPU {
      * @param value The value to push.
      * @throws IllegalArgumentException if value is null.
      */
-    private void push8(UInt8 value) {
+    private void push8(UnsignedByte value) {
         if (value == null) {
             throw new IllegalArgumentException("value cannot be null");
         }
@@ -165,7 +165,7 @@ public class CPU {
      *
      * @return The value pulled from the stack.
      */
-    private UInt8 pull8() {
+    private UnsignedByte pull8() {
         stackPointer.increment();
         return bus.read(stackPointer.toAddress());
     }
@@ -176,7 +176,7 @@ public class CPU {
      * @param value The value to push.
      * @throws IllegalArgumentException if value is null.
      */
-    private void push16(UInt16 value) {
+    private void push16(UnsignedWord value) {
         if (value == null) {
             throw new IllegalArgumentException("value cannot be null");
         }
@@ -190,10 +190,10 @@ public class CPU {
      *
      * @return The value pulled from the stack.
      */
-    private UInt16 pull16() {
+    private UnsignedWord pull16() {
         var lowByte  = pull8();
         var highByte = pull8();
-        return UInt16.fromBytes(lowByte, highByte);
+        return UnsignedWord.fromBytes(lowByte, highByte);
     }
 
     /**
@@ -203,7 +203,7 @@ public class CPU {
      * @param register A consumer that updates a register.
      * @throws IllegalArgumentException if address or register is null.
      */
-    private void loadRegisterFromMemory(UInt16 address, Consumer<UInt8> register) {
+    private void loadRegisterFromMemory(UnsignedWord address, Consumer<UnsignedByte> register) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -220,7 +220,7 @@ public class CPU {
      * @param register The register to read from.
      * @throws IllegalArgumentException if address or register is null.
      */
-    private void storeRegisterInMemory(UInt16 address, Supplier<UInt8> register) {
+    private void storeRegisterInMemory(UnsignedWord address, Supplier<UnsignedByte> register) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -236,7 +236,7 @@ public class CPU {
      * @param value    The new value.
      * @param register A consumer that updates a register.
      */
-    private void transfer(UInt8 value, Consumer<UInt8> register) {
+    private void transfer(UnsignedByte value, Consumer<UnsignedByte> register) {
         if (value == null) {
             throw new IllegalArgumentException("value cannot be null");
         }
@@ -255,7 +255,7 @@ public class CPU {
      * @param registerValue 8-bit register value to compare with.
      * @throws IllegalArgumentException if address or registerValue is null.
      */
-    private void compare(UInt16 address, UInt8 registerValue) {
+    private void compare(UnsignedWord address, UnsignedByte registerValue) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -263,12 +263,12 @@ public class CPU {
         compare(registerValue, memoryData);
     }
 
-    private void compare(UInt8 registerValue, UInt8 memoryValue) {
+    private void compare(UnsignedByte registerValue, UnsignedByte memoryValue) {
         if (registerValue == null || memoryValue == null) {
             throw new IllegalArgumentException("values cannot be null");
         }
-        var hasCarry = registerValue.isGreaterThanOrEqualTo(memoryValue);
-        var tmp = registerValue.subtract(memoryValue);
+        var hasCarry = registerValue.compareTo(memoryValue) >= 0;
+        var tmp      = registerValue.subtract(memoryValue);
 
         this.statusRegister.updateFlag(Flag.Carry, hasCarry);
         this.statusRegister.updateNegativeAndZero(tmp);
@@ -281,7 +281,7 @@ public class CPU {
      * @param condition true if the branch should be performed, false otherwise.
      * @throws IllegalArgumentException if address is null.
      */
-    private void branch(UInt16 address, boolean condition) {
+    private void branch(UnsignedWord address, boolean condition) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -303,7 +303,7 @@ public class CPU {
      *
      * @return The address.
      */
-    public UInt16 addressImmediate() {
+    public UnsignedWord addressImmediate() {
         var address = this.programCounter.getValue();
         this.programCounter.increment();
         return address;
@@ -314,14 +314,14 @@ public class CPU {
      *
      * @return The address.
      */
-    public UInt16 addressAbsolute() {
+    public UnsignedWord addressAbsolute() {
         var address = read16(this.programCounter.getValue());
         this.programCounter.increment();
         this.programCounter.increment();
         return address;
     }
 
-    private boolean isPageCrossed(UInt16 a, UInt16 b) {
+    private boolean isPageCrossed(UnsignedWord a, UnsignedWord b) {
         return (a.value() & 0xFF00) != (b.value() & 0xFF00);
     }
 
@@ -330,12 +330,12 @@ public class CPU {
      *
      * @return The address.
      */
-    public UInt16 addressAbsoluteX() {
+    public UnsignedWord addressAbsoluteX() {
         var base = read16(this.programCounter.getValue());
         this.programCounter.increment();
         this.programCounter.increment();
 
-        var address = base.add8(x.getValue());
+        var address = base.add8(x);
         if (isPageCrossed(base, address)) {
             this.consumeCycles(1);
         }
@@ -348,12 +348,12 @@ public class CPU {
      *
      * @return The address.
      */
-    public UInt16 addressAbsoluteY() {
+    public UnsignedWord addressAbsoluteY() {
         var base = read16(this.programCounter.getValue());
         this.programCounter.increment();
         this.programCounter.increment();
 
-        var address = base.add8(y.getValue());
+        var address = base.add8(y);
         if (isPageCrossed(base, address)) {
             this.consumeCycles(1);
         }
@@ -366,10 +366,10 @@ public class CPU {
      *
      * @return The address.
      */
-    public UInt16 addressZeroPage() {
+    public UnsignedWord addressZeroPage() {
         var offset = bus.read(this.programCounter.getValue());
         this.programCounter.increment();
-        return offset.toUInt16();
+        return offset.unsignedWordValue();
     }
 
     /**
@@ -377,10 +377,10 @@ public class CPU {
      *
      * @return The address.
      */
-    public UInt16 addressZeroPageX() {
+    public UnsignedWord addressZeroPageX() {
         var base = bus.read(this.programCounter.getValue());
         this.programCounter.increment();
-        return base.add(x.getValue()).toUInt16();
+        return base.add(x).unsignedWordValue();
     }
 
     /**
@@ -388,10 +388,10 @@ public class CPU {
      *
      * @return The address.
      */
-    public UInt16 addressZeroPageY() {
+    public UnsignedWord addressZeroPageY() {
         var base = bus.read(this.programCounter.getValue());
         this.programCounter.increment();
-        return base.add(y.getValue()).toUInt16();
+        return base.add(y).unsignedWordValue();
     }
 
     /**
@@ -400,7 +400,7 @@ public class CPU {
      *
      * @return The address.
      */
-    public UInt16 addressIndirect() {
+    public UnsignedWord addressIndirect() {
         var vector = read16(this.programCounter.getValue());
         this.programCounter.increment();
         this.programCounter.increment();
@@ -408,9 +408,9 @@ public class CPU {
         var low = bus.read(vector);
         // Emulate the hardware bug: force the high-byte vector lookup to stay on the same page
         var highAddress = (vector.value() & 0xFF00) | ((vector.value() + 1) & 0x00FF);
-        var high        = bus.read(new UInt16(highAddress));
+        var high        = bus.read(new UnsignedWord(highAddress));
 
-        return UInt16.fromBytes(low, high);
+        return UnsignedWord.fromBytes(low, high);
     }
 
     /**
@@ -418,17 +418,17 @@ public class CPU {
      *
      * @return The address.
      */
-    public UInt16 addressIndirectX() {
+    public UnsignedWord addressIndirectX() {
         var base = bus.read(this.programCounter.getValue());
         this.programCounter.increment();
 
-        var pointerLow  = base.add(x.getValue());
+        var pointerLow  = base.add(x);
         var pointerHigh = pointerLow.increment();
 
-        var low  = bus.read(pointerLow.toUInt16());
-        var high = bus.read(pointerHigh.toUInt16());
+        var low  = bus.read(pointerLow.unsignedWordValue());
+        var high = bus.read(pointerHigh.unsignedWordValue());
 
-        return UInt16.fromBytes(low, high);
+        return UnsignedWord.fromBytes(low, high);
     }
 
     /**
@@ -436,17 +436,17 @@ public class CPU {
      *
      * @return The address.
      */
-    public UInt16 addressIndirectY() {
+    public UnsignedWord addressIndirectY() {
         var pointerLow = bus.read(this.programCounter.getValue());
         this.programCounter.increment();
 
         var pointerHigh = pointerLow.increment();
 
-        var low  = bus.read(pointerLow.toUInt16());
-        var high = bus.read(pointerHigh.toUInt16());
-        var base = UInt16.fromBytes(low, high);
+        var low  = bus.read(pointerLow.unsignedWordValue());
+        var high = bus.read(pointerHigh.unsignedWordValue());
+        var base = UnsignedWord.fromBytes(low, high);
 
-        var address = base.add8(y.getValue());
+        var address = base.add8(y);
         if (isPageCrossed(base, address)) {
             this.consumeCycles(1);
         }
@@ -459,57 +459,56 @@ public class CPU {
      *
      * @return The address.
      */
-    public UInt16 addressRelative() {
+    public UnsignedWord addressRelative() {
         var offset = bus.read(this.programCounter.getValue());
         this.programCounter.increment();
         return this.programCounter.getValue().addSignedOffset(offset);
     }
 
-    private void performArithmeticAddition(UInt8 memoryData) {
+    private void performArithmeticAddition(UnsignedByte memoryData) {
         if (memoryData == null) {
             throw new IllegalArgumentException("memoryData cannot be null");
         }
 
-        var currentAccumulator = accumulator.getValue();
-        var carryIn            = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
+        var carryIn = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
 
         if (decimalModeSupported && statusRegister.hasFlag(Flag.Decimal)) {
             // Decimal mode addition
-            int low = (currentAccumulator.value() & 0x0F) + (memoryData.value() & 0x0F) + carryIn;
+            int low = accumulator.and(new UnsignedByte(0x0F)).intValue() + (memoryData.intValue() & 0x0F) + carryIn;
             if (low > 9) low += 6;
-            int high = (currentAccumulator.value() >> 4) + (memoryData.value() >> 4) + (low > 15 ? 1 : 0);
+            int high = (accumulator.intValue() >> 4) + (memoryData.intValue() >> 4) + (low > 15 ? 1 : 0);
 
-            var result8 = new UInt8(((high << 4) | (low & 0x0F)) & 0xFF);
+            var result8 = new UnsignedByte(((high << 4) | (low & 0x0F)) & 0xFF);
             this.statusRegister.updateNegativeAndZero(result8);
 
             // Overflow is still calculated based on binary rules for 6502 (but results are often ignored in decimal mode)
-            int binarySum = currentAccumulator.value() + memoryData.value() + carryIn;
-            var hasOverflow = ((currentAccumulator.value() ^ binarySum) & (memoryData.value() ^ binarySum) & 0x80) != 0;
+            int binarySum   = accumulator.intValue() + memoryData.intValue() + carryIn;
+            var hasOverflow = ((accumulator.intValue() ^ binarySum) & (memoryData.intValue() ^ binarySum) & 0x80) != 0;
             this.statusRegister.updateFlag(Flag.Overflow, hasOverflow);
 
             if (high > 9) high += 6;
             this.statusRegister.updateFlag(Flag.Carry, high > 15);
-            this.accumulator.updateValue(new UInt8((high << 4 | (low & 0x0F)) & 0xFF));
+            this.accumulator = new UnsignedByte((high << 4 | (low & 0x0F)) & 0xFF);
         } else {
             // Binary mode addition
-            var sum16 = currentAccumulator.toUInt16()
-                    .add16(memoryData.toUInt16())
-                    .add16(new UInt16(carryIn));
+            var sum16 = accumulator.unsignedWordValue()
+                    .add16(memoryData.unsignedWordValue())
+                    .add16(new UnsignedWord(carryIn));
 
             var result8 = sum16.toUInt8();
 
-            var accumulatorXorResult = currentAccumulator.xor(result8);
+            var accumulatorXorResult = accumulator.xor(result8);
             var memoryXorResult      = memoryData.xor(result8);
             var overflow             = accumulatorXorResult.and(memoryXorResult);
 
-            var hasCarry    = sum16.isGreaterThan(UInt8.MAX_VALUE);
-            var hasOverflow = overflow.isBitSet(7);
+            var hasCarry    = sum16.isGreaterThan(UnsignedByte.MAX_VALUE);
+            var hasOverflow = overflow.testBit(7);
 
             this.statusRegister.updateFlag(Flag.Carry, hasCarry);
             this.statusRegister.updateFlag(Flag.Overflow, hasOverflow);
             this.statusRegister.updateNegativeAndZero(result8);
 
-            this.accumulator.updateValue(result8);
+            this.accumulator = result8;
         }
     }
 
@@ -574,7 +573,7 @@ public class CPU {
      * @param address The address of the memory location to perform the operation on.
      * @throws IllegalArgumentException if address is null.
      */
-    public void AND(UInt16 address) {
+    public void AND(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -587,12 +586,12 @@ public class CPU {
      *
      * @param address The address of the memory location to perform the operation on, or null if the accumulator should be operated on.
      */
-    public void ASL(UInt16 address) {
+    public void ASL(UnsignedWord address) {
         if (address == null) {
-            accumulator.updateValue(shiftLeft(accumulator.getValue()));
+            accumulator = shiftLeft(accumulator);
         } else {
             var original = bus.read(address);
-            var shifted = shiftLeft(original);
+            var shifted  = shiftLeft(original);
             bus.write(address, original);
             bus.write(address, shifted);
         }
@@ -604,7 +603,7 @@ public class CPU {
      * @param address The address of the memory location to perform the operation on.
      * @throws IllegalArgumentException if address is null.
      */
-    public void EOR(UInt16 address) {
+    public void EOR(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -617,12 +616,12 @@ public class CPU {
      * @param address The address of the memory location to perform the operation on, or null if the accumulator should be operated on.
      * @throws IllegalArgumentException if address is null.
      */
-    public void LSR(UInt16 address) {
+    public void LSR(UnsignedWord address) {
         if (address == null) {
-            accumulator.updateValue(shiftRight(accumulator.getValue()));
+            accumulator = shiftRight(accumulator);
         } else {
             var original = bus.read(address);
-            var shifted = shiftRight(original);
+            var shifted  = shiftRight(original);
             bus.write(address, original);
             bus.write(address, shifted);
         }
@@ -634,7 +633,7 @@ public class CPU {
      * @param address The address of the memory location to perform the operation on.
      * @throws IllegalArgumentException if address is null.
      */
-    public void ORA(UInt16 address) {
+    public void ORA(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -646,12 +645,12 @@ public class CPU {
      *
      * @param address The address of the memory location to perform the operation on, or null if the accumulator should be operated on.
      */
-    public void ROL(UInt16 address) {
+    public void ROL(UnsignedWord address) {
         if (address == null) {
-            accumulator.updateValue(rotateLeft(accumulator.getValue()));
+            accumulator = rotateLeft(accumulator);
         } else {
             var original = bus.read(address);
-            var rotated = rotateLeft(original);
+            var rotated  = rotateLeft(original);
             bus.write(address, original);
             bus.write(address, rotated);
         }
@@ -662,12 +661,12 @@ public class CPU {
      *
      * @param address The address of the memory location to perform the operation on, or null if the accumulator should be operated on.
      */
-    public void ROR(UInt16 address) {
+    public void ROR(UnsignedWord address) {
         if (address == null) {
-            accumulator.updateValue(rotateRight(accumulator.getValue()));
+            accumulator = rotateRight(accumulator);
         } else {
             var original = bus.read(address);
-            var rotated = rotateRight(original);
+            var rotated  = rotateRight(original);
             bus.write(address, original);
             bus.write(address, rotated);
         }
@@ -680,32 +679,32 @@ public class CPU {
      * <code>X = X - 1</code>
      */
     public void DEX() {
-        x.decrement();
-        this.statusRegister.updateNegativeAndZero(x.getValue());
+        x = x.decrement();
+        this.statusRegister.updateNegativeAndZero(x);
     }
 
     /**
      * <code>Y = Y - 1</code>
      */
     public void DEY() {
-        y.decrement();
-        this.statusRegister.updateNegativeAndZero(y.getValue());
+        y = y.decrement();
+        this.statusRegister.updateNegativeAndZero(y);
     }
 
     /**
      * <code>X = X + 1</code>
      */
     public void INX() {
-        x.increment();
-        this.statusRegister.updateNegativeAndZero(x.getValue());
+        x = x.increment();
+        this.statusRegister.updateNegativeAndZero(x);
     }
 
     /**
      * <code>Y = Y + 1</code>
      */
     public void INY() {
-        y.increment();
-        this.statusRegister.updateNegativeAndZero(y.getValue());
+        y = y.increment();
+        this.statusRegister.updateNegativeAndZero(y);
     }
     // endregion
 
@@ -717,11 +716,11 @@ public class CPU {
      * @param address The address of the memory location to load the value from.
      * @throws IllegalArgumentException if address is null.
      */
-    public void LDA(UInt16 address) {
+    public void LDA(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        loadRegisterFromMemory(address, this.accumulator::updateValue);
+        loadRegisterFromMemory(address, (foo) -> this.accumulator = foo);
     }
 
     /**
@@ -730,11 +729,11 @@ public class CPU {
      * @param address The address of the memory location to load the value from.
      * @throws IllegalArgumentException if address is null.
      */
-    public void LDX(UInt16 address) {
+    public void LDX(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        loadRegisterFromMemory(address, this.x::updateValue);
+        loadRegisterFromMemory(address, (foo) -> this.x = foo);
     }
 
     /**
@@ -743,11 +742,11 @@ public class CPU {
      * @param address The address of the memory location to load the value from.
      * @throws IllegalArgumentException if address is null.
      */
-    public void LDY(UInt16 address) {
+    public void LDY(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        loadRegisterFromMemory(address, this.y::updateValue);
+        loadRegisterFromMemory(address, (foo) -> this.y = foo);
     }
 
     /**
@@ -756,11 +755,11 @@ public class CPU {
      * @param address The address of the memory location to store the value in.
      * @throws IllegalArgumentException if address is null.
      */
-    public void STA(UInt16 address) {
+    public void STA(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        storeRegisterInMemory(address, this.accumulator::getValue);
+        storeRegisterInMemory(address, () -> this.accumulator);
     }
 
     /**
@@ -769,11 +768,11 @@ public class CPU {
      * @param address The address of the memory location to store the value in.
      * @throws IllegalArgumentException if address is null.
      */
-    public void STX(UInt16 address) {
+    public void STX(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        storeRegisterInMemory(address, this.x::getValue);
+        storeRegisterInMemory(address, () -> x);
     }
 
     /**
@@ -782,53 +781,53 @@ public class CPU {
      * @param address The address of the memory location to store the value in.
      * @throws IllegalArgumentException if address is null.
      */
-    public void STY(UInt16 address) {
+    public void STY(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        storeRegisterInMemory(address, this.y::getValue);
+        storeRegisterInMemory(address, () -> this.y);
     }
 
     /**
      * <code>X = accumulator</code>
      */
     public void TAX() {
-        transfer(this.accumulator.getValue(), this.x::updateValue);
+        transfer(this.accumulator, (foo) -> this.x = foo);
     }
 
     /**
      * <code>Y = accumulator</code>
      */
     public void TAY() {
-        transfer(this.accumulator.getValue(), this.y::updateValue);
+        transfer(this.accumulator, (foo) -> this.y = foo);
     }
 
     /**
      * <code>X = stack pointer</code>
      */
     public void TSX() {
-        transfer(this.stackPointer.getValue(), this.x::updateValue);
+        transfer(this.stackPointer.getValue(), (foo) -> this.x = foo);
     }
 
     /**
      * <code>Accumulator = X</code>
      */
     public void TXA() {
-        transfer(this.x.getValue(), this.accumulator::updateValue);
+        transfer(this.x, (foo) -> this.accumulator = foo);
     }
 
     /**
      * <code>Stack pointer = X</code>
      */
     public void TXS() {
-        stackPointer.updateValue(x.getValue());
+        stackPointer.setValue(x);
     }
 
     /**
      * <code>Accumulator = Y</code>
      */
     public void TYA() {
-        transfer(this.y.getValue(), this.accumulator::updateValue);
+        transfer(this.y, (foo) -> this.accumulator = foo);
     }
     // endregion
 
@@ -840,11 +839,11 @@ public class CPU {
      * @param address The address of the memory location to compare the accumulator with.
      * @throws IllegalArgumentException if address is null.
      */
-    public void CMP(UInt16 address) {
+    public void CMP(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        compare(address, accumulator.getValue());
+        compare(address, accumulator);
     }
 
     /**
@@ -853,11 +852,11 @@ public class CPU {
      * @param address The address of the memory location to compare the X register with.
      * @throws IllegalArgumentException if address is null.
      */
-    public void CPX(UInt16 address) {
+    public void CPX(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        compare(address, x.getValue());
+        compare(address, x);
     }
 
     /**
@@ -866,11 +865,11 @@ public class CPU {
      * @param address The address of the memory location to compare the Y register with.
      * @throws IllegalArgumentException if address is null.
      */
-    public void CPY(UInt16 address) {
+    public void CPY(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        compare(address, y.getValue());
+        compare(address, y);
     }
 
     /**
@@ -879,18 +878,18 @@ public class CPU {
      * @param address The address of the memory location to perform the operation on.
      * @throws IllegalArgumentException if address is null.
      */
-    public void BIT(UInt16 address) {
+    public void BIT(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
 
         var memoryData = bus.read(address);
 
-        var andResult = accumulator.getValue().and(memoryData);
-        var isZero    = andResult.equals(UInt8.ZERO);
+        var andResult = accumulator.and(memoryData);
+        var isZero    = andResult.equals(UnsignedByte.ZERO);
 
-        var bit7 = memoryData.isBitSet(7);
-        var bit6 = memoryData.isBitSet(6);
+        var bit7 = memoryData.testBit(7);
+        var bit6 = memoryData.testBit(6);
 
         this.statusRegister.updateFlag(Flag.Zero, isZero);
         this.statusRegister.updateFlag(Flag.Negative, bit7);
@@ -904,7 +903,7 @@ public class CPU {
      * @param address The address of the memory location to decrement.
      * @throws IllegalArgumentException if address is null.
      */
-    public void DEC(UInt16 address) {
+    public void DEC(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -922,7 +921,7 @@ public class CPU {
      * @param address The address of the memory location to increment.
      * @throws IllegalArgumentException if address is null.
      */
-    public void INC(UInt16 address) {
+    public void INC(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -934,7 +933,7 @@ public class CPU {
         bus.write(address, incremented);
     }
 
-    public void ADC(UInt16 address) {
+    public void ADC(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -943,7 +942,7 @@ public class CPU {
         this.performArithmeticAddition(memoryData);
     }
 
-    public void SBC(UInt16 address) {
+    public void SBC(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -952,44 +951,42 @@ public class CPU {
 
         if (decimalModeSupported && statusRegister.hasFlag(Flag.Decimal)) {
             // Decimal mode subtraction
-            var currentAccumulator = accumulator.getValue();
-            var carryIn            = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
+            var carryIn = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
 
-            int low = (currentAccumulator.value() & 0x0F) - (memoryData.value() & 0x0F) - (1 - carryIn);
+            int low = (accumulator.intValue() & 0x0F) - (memoryData.intValue() & 0x0F) - (1 - carryIn);
             if (low < 0) low -= 6;
-            int high = (currentAccumulator.value() >> 4) - (memoryData.value() >> 4) - (low < 0 ? 1 : 0);
+            int high = (accumulator.intValue() >> 4) - (memoryData.intValue() >> 4) - (low < 0 ? 1 : 0);
             if (high < 0) high -= 6;
 
             // Flags are calculated based on the binary subtraction result on 6502
-            int binaryResult = currentAccumulator.value() - memoryData.value() - (1 - carryIn);
+            int binaryResult = accumulator.intValue() - memoryData.intValue() - (1 - carryIn);
             this.statusRegister.updateFlag(Flag.Carry, binaryResult >= 0);
-            this.statusRegister.updateFlag(Flag.Overflow, ((currentAccumulator.value() ^ memoryData.value()) & (currentAccumulator.value() ^ binaryResult) & 0x80) != 0);
-            this.statusRegister.updateNegativeAndZero(new UInt8(binaryResult & 0xFF));
+            this.statusRegister.updateFlag(Flag.Overflow, ((accumulator.intValue() ^ memoryData.intValue()) & (accumulator.intValue() ^ binaryResult) & 0x80) != 0);
+            this.statusRegister.updateNegativeAndZero(new UnsignedByte(binaryResult & 0xFF));
 
-            this.accumulator.updateValue(new UInt8((high << 4 | (low & 0x0F)) & 0xFF));
+            this.accumulator = new UnsignedByte((high << 4 | (low & 0x0F)) & 0xFF);
         } else {
             // Binary mode subtraction
             // Invert the bits of the memory operand (ones' complement)
             // This naturally transforms the subtraction problem into an addition problem
-            var invertedMemoryData = memoryData.xor(UInt8.MAX_VALUE);
+            var invertedMemoryData = memoryData.xor(UnsignedByte.MAX_VALUE);
             this.performArithmeticAddition(invertedMemoryData);
         }
     }
 
     public void BRK() {
-        var returnAddress = programCounter.getValue().add16(new UInt16(1));
+        var returnAddress = programCounter.getValue().add16(new UnsignedWord(1));
         push16(returnAddress);
 
-        var statusRegisterAsByte = statusRegister.toByte()
-                .or(new UInt8(Flag.Break.getMask()));
+        var statusRegisterAsByte = statusRegister.toByte().or(new UnsignedByte(Flag.Break.getMask()));
         push8(statusRegisterAsByte);
 
         statusRegister.updateFlag(Flag.InterruptDisable, true);
 
-        var lowByte  = bus.read(new UInt16(0xFFFE));
-        var highByte = bus.read(new UInt16(0xFFFF));
+        var lowByte  = bus.read(new UnsignedWord(0xFFFE));
+        var highByte = bus.read(new UnsignedWord(0xFFFF));
 
-        programCounter.updateValue(UInt16.fromBytes(lowByte, highByte));
+        programCounter.updateValue(UnsignedWord.fromBytes(lowByte, highByte));
     }
 
     public void RTI() {
@@ -999,23 +996,23 @@ public class CPU {
         programCounter.updateValue(returnAddress);
     }
 
-    public void JSR(UInt16 address) {
+    public void JSR(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
 
-        var addressToPush = programCounter.getValue().subtract16(UInt16.ONE);
+        var addressToPush = programCounter.getValue().subtract16(UnsignedWord.ONE);
         push16(addressToPush);
         programCounter.updateValue(address);
     }
 
     public void RTS() {
         var poppedAddress     = pull16();
-        var returnDestination = poppedAddress.add16(UInt16.ONE);
+        var returnDestination = poppedAddress.add16(UnsignedWord.ONE);
         programCounter.updateValue(returnDestination);
     }
 
-    public void JMP(UInt16 address) {
+    public void JMP(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
@@ -1023,131 +1020,124 @@ public class CPU {
     }
 
     public void PHA() {
-        push8(accumulator.getValue());
+        push8(accumulator);
     }
 
     public void PHP() {
         // PHP pushes the status register with bit 4 (Break) set to 1
-        var status = statusRegister.toByte().or(new UInt8(Flag.Break.getMask()));
+        var status = statusRegister.toByte().or(new UnsignedByte(Flag.Break.getMask()));
         push8(status);
     }
 
     public void PLA() {
-        var value = pull8();
-        accumulator.updateValue(value);
-        statusRegister.updateNegativeAndZero(value);
+        accumulator = pull8();
+        statusRegister.updateNegativeAndZero(accumulator);
     }
 
-    public void LAX(UInt16 address) {
+    public void LAX(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        var value = bus.read(address);
-        accumulator.updateValue(value);
-        x.updateValue(value);
-        statusRegister.updateNegativeAndZero(value);
+        accumulator = bus.read(address);
+        x           = accumulator;
+        statusRegister.updateNegativeAndZero(accumulator);
     }
 
-    public void SAX(UInt16 address) {
+    public void SAX(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        var value = accumulator.getValue().and(x.getValue());
-        bus.write(address, value);
+        bus.write(address, accumulator.and(x));
     }
 
-    public void DCP(UInt16 address) {
+    public void DCP(UnsignedWord address) {
         var value = bus.read(address).decrement();
         bus.write(address, value);
-        compare(accumulator.getValue(), value);
+        compare(accumulator, value);
     }
 
-    public void ISB(UInt16 address) {
+    public void ISB(UnsignedWord address) {
         var value = bus.read(address).increment();
         bus.write(address, value);
-        var invertedValue = value.xor(UInt8.MAX_VALUE);
+        var invertedValue = value.xor(UnsignedByte.MAX_VALUE);
         performArithmeticAddition(invertedValue);
     }
 
-    public void RLA(UInt16 address) {
+    public void RLA(UnsignedWord address) {
         var value = rotateLeft(bus.read(address));
         bus.write(address, value);
         AND(value);
     }
 
-    public void RRA(UInt16 address) {
+    public void RRA(UnsignedWord address) {
         var value = rotateRight(bus.read(address));
         bus.write(address, value);
         performArithmeticAddition(value);
     }
 
-    public void SLO(UInt16 address) {
+    public void SLO(UnsignedWord address) {
         var value = shiftLeft(bus.read(address));
         bus.write(address, value);
         ORA(value);
     }
 
-    public void SRE(UInt16 address) {
+    public void SRE(UnsignedWord address) {
         var value = shiftRight(bus.read(address));
         bus.write(address, value);
         EOR(value);
     }
 
-    private UInt8 rotateLeft(UInt8 value) {
-        var carryIn = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
-        var carryOut = value.isBitSet(7);
-        var result = new UInt8(((value.value() << 1) | carryIn) & 0xFF);
+    private UnsignedByte rotateLeft(UnsignedByte value) {
+        var carryIn  = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
+        var carryOut = value.testBit(7);
+        var result   = new UnsignedByte(((value.intValue() << 1) | carryIn) & 0xFF);
         statusRegister.updateFlag(Flag.Carry, carryOut);
         statusRegister.updateNegativeAndZero(result);
         return result;
     }
 
-    private UInt8 rotateRight(UInt8 value) {
-        var carryIn = statusRegister.hasFlag(Flag.Carry) ? 0x80 : 0;
-        var carryOut = value.isBitSet(0);
-        var result = new UInt8(((value.value() >> 1) | carryIn) & 0xFF);
+    private UnsignedByte rotateRight(UnsignedByte value) {
+        var carryIn  = statusRegister.hasFlag(Flag.Carry) ? 0x80 : 0;
+        var carryOut = value.testBit(0);
+        var result   = new UnsignedByte(((value.intValue() >> 1) | carryIn) & 0xFF);
         statusRegister.updateFlag(Flag.Carry, carryOut);
         statusRegister.updateNegativeAndZero(result);
         return result;
     }
 
-    private UInt8 shiftLeft(UInt8 value) {
-        var carryOut = value.isBitSet(7);
-        var result = new UInt8((value.value() << 1) & 0xFF);
+    private UnsignedByte shiftLeft(UnsignedByte value) {
+        var carryOut = value.testBit(7);
+        var result   = new UnsignedByte((value.intValue() << 1) & 0xFF);
         statusRegister.updateFlag(Flag.Carry, carryOut);
         statusRegister.updateNegativeAndZero(result);
         return result;
     }
 
-    private UInt8 shiftRight(UInt8 value) {
-        var carryOut = value.isBitSet(0);
-        var result = new UInt8((value.value() >> 1) & 0xFF);
+    private UnsignedByte shiftRight(UnsignedByte value) {
+        var carryOut = value.testBit(0);
+        var result   = new UnsignedByte((value.intValue() >> 1) & 0xFF);
         statusRegister.updateFlag(Flag.Carry, carryOut);
         statusRegister.updateNegativeAndZero(result);
         return result;
     }
 
-    private void AND(UInt8 value) {
-        var result = accumulator.getValue().and(value);
-        accumulator.updateValue(result);
-        statusRegister.updateNegativeAndZero(result);
+    private void AND(UnsignedByte value) {
+        accumulator = accumulator.and(value);
+        statusRegister.updateNegativeAndZero(accumulator);
     }
 
-    private void ORA(UInt8 value) {
-        var result = accumulator.getValue().or(value);
-        accumulator.updateValue(result);
-        statusRegister.updateNegativeAndZero(result);
+    private void ORA(UnsignedByte value) {
+        accumulator = accumulator.or(value);
+        statusRegister.updateNegativeAndZero(accumulator);
     }
 
-    private void EOR(UInt8 value) {
-        var result = accumulator.getValue().xor(value);
-        accumulator.updateValue(result);
-        statusRegister.updateNegativeAndZero(result);
+    private void EOR(UnsignedByte value) {
+        accumulator = accumulator.xor(value);
+        statusRegister.updateNegativeAndZero(accumulator);
     }
 
     public void PLP() {
-        var status = pull8();
-        statusRegister.update(StatusRegister.fromByte(status));
+        statusRegister.update(StatusRegister.fromByte(pull8()));
     }
 
     public void NOP() {
@@ -1160,7 +1150,7 @@ public class CPU {
 
         var opcode = OpcodeRegistry.get(rawOpcode);
         if (opcode == null) {
-            throw new IllegalStateException("Unknown opcode: 0x%02X".formatted(rawOpcode.value()));
+            throw new IllegalStateException("Unknown opcode: 0x%02X".formatted(rawOpcode.intValue()));
         }
 
         this.consumeCycles(opcode.cycles());

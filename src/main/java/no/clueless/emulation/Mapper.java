@@ -1,6 +1,6 @@
 package no.clueless.emulation;
 
-import no.clueless.emulation.types.UInt16;
+import no.clueless.emulation.types.UnsignedWord;
 
 public interface Mapper {
     /**
@@ -10,7 +10,7 @@ public interface Mapper {
      * @return A physical inside PRG-ROM, or -1 if the address doesn't map to PRG-ROM.
      * @throws IllegalArgumentException if address is null.
      */
-    int mapCpuRead(UInt16 address);
+    int mapCpuRead(UnsignedWord address);
 
     /**
      * Translate a PPU address into a physical index inside CHR-ROM.
@@ -19,5 +19,5 @@ public interface Mapper {
      * @return A physical inside CHR-ROM, or -1 if the address doesn't map to CHR-ROM.
      * @throws IllegalArgumentException if address is null.
      */
-    int mapPpuRead(UInt16 address);
+    int mapPpuRead(UnsignedWord address);
 }

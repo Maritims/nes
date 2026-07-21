@@ -1,22 +1,33 @@
 package no.clueless.emulation.cpu;
 
-import no.clueless.emulation.types.UInt16;
-import no.clueless.emulation.types.UInt8;
+import no.clueless.emulation.types.UnsignedWord;
+import no.clueless.emulation.types.UnsignedByte;
 
 /**
  * Represents the stack pointer in the CPU.
  */
-public class StackPointer extends Register<UInt8> {
-    private final int offset;
+public class StackPointer {
+    private       UnsignedByte value;
+    private final int          offset;
 
-    public StackPointer(UInt8 value, int offset) {
-        super(value);
-
+    public StackPointer(UnsignedByte value, int offset) {
+        if (value == null) {
+            throw new IllegalArgumentException("value cannot be null");
+        }
         if (offset < 0) {
             throw new IllegalArgumentException("offset must be positive");
         }
 
+        this.value = value;
         this.offset = offset;
+    }
+
+    public UnsignedByte getValue() {
+        return value;
+    }
+
+    public void setValue(UnsignedByte value) {
+        this.value = value;
     }
 
     /**
@@ -24,7 +35,15 @@ public class StackPointer extends Register<UInt8> {
      *
      * @return The address.
      */
-    public UInt16 toAddress() {
-        return new UInt16(offset + getValue().value());
+    public UnsignedWord toAddress() {
+        return new UnsignedWord(offset + value.intValue());
+    }
+
+    public void decrement() {
+        value = value.decrement();
+    }
+
+    public void increment() {
+        value = value.increment();
     }
 }

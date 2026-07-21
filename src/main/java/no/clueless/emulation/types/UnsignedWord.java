@@ -7,22 +7,22 @@ import java.util.function.IntFunction;
  *
  * @param value The value of the integer.
  */
-public record UInt16(int value) implements UInt<UInt16> {
+public record UnsignedWord(int value) implements UInt<UnsignedWord> {
     /**
      * Constructor.
      *
      * @param value The value of the integer.
      * @throws IllegalArgumentException if the value is not between 0 and 65,535.
      */
-    public UInt16 {
+    public UnsignedWord {
         if (value < 0 || value > 65535) {
             throw new IllegalArgumentException("Value must be between 0 and 65535");
         }
     }
 
-    public static UInt16 ZERO      = new UInt16(0);
-    public static UInt16 ONE       = new UInt16(1);
-    public static UInt16 MAX_VALUE = new UInt16(0xFFFF);
+    public static UnsignedWord ZERO      = new UnsignedWord(0);
+    public static UnsignedWord ONE       = new UnsignedWord(1);
+    public static UnsignedWord MAX_VALUE = new UnsignedWord(0xFFFF);
 
     /**
      * Creates a UInt16 from a low and high byte with a Little-Endian layout.
@@ -32,14 +32,14 @@ public record UInt16(int value) implements UInt<UInt16> {
      * @return A UInt16 instance.
      * @throws IllegalArgumentException if low or high is null.
      */
-    public static UInt16 fromBytes(UInt8 low, UInt8 high) {
+    public static UnsignedWord fromBytes(UnsignedByte low, UnsignedByte high) {
         if (low == null) {
             throw new IllegalArgumentException("low cannot be null");
         }
         if (high == null) {
             throw new IllegalArgumentException("high cannot be null");
         }
-        return new UInt16((high.value() << 8) | low.value());
+        return new UnsignedWord((high.intValue() << 8) | low.intValue());
     }
 
     /**
@@ -47,8 +47,8 @@ public record UInt16(int value) implements UInt<UInt16> {
      *
      * @return The high byte.
      */
-    public UInt8 highByte() {
-        return new UInt8(value >> 8);
+    public UnsignedByte highByte() {
+        return new UnsignedByte(value >> 8);
     }
 
     /**
@@ -56,23 +56,23 @@ public record UInt16(int value) implements UInt<UInt16> {
      *
      * @return The low byte.
      */
-    public UInt8 lowByte() {
-        return new UInt8(value & 0xFF);
+    public UnsignedByte lowByte() {
+        return new UnsignedByte(value & 0xFF);
     }
 
     @Override
-    public IntFunction<UInt16> factory() {
-        return UInt16::new;
+    public IntFunction<UnsignedWord> factory() {
+        return UnsignedWord::new;
     }
 
     @Override
-    public UInt16 increment() {
-        return new UInt16((value + 1) & 0xFFFF);
+    public UnsignedWord increment() {
+        return new UnsignedWord((value + 1) & 0xFFFF);
     }
 
     @Override
-    public UInt16 decrement() {
-        return new UInt16((value - 1) & 0xFFFF);
+    public UnsignedWord decrement() {
+        return new UnsignedWord((value - 1) & 0xFFFF);
     }
 
     @Override
@@ -84,47 +84,47 @@ public record UInt16(int value) implements UInt<UInt16> {
     }
 
     @Override
-    public UInt16 shiftLeft(int bits) {
+    public UnsignedWord shiftLeft(int bits) {
         if (bits < 0) {
             throw new IllegalArgumentException("bits must be non-negative");
         }
-        return new UInt16((value << bits) & 0xFFFF);
+        return new UnsignedWord((value << bits) & 0xFFFF);
     }
 
     @Override
-    public UInt16 shiftRight(int bits) {
+    public UnsignedWord shiftRight(int bits) {
         if (bits < 0) {
             throw new IllegalArgumentException("bits must be non-negative");
         }
-        return new UInt16((value >> bits) & 0xFFFF);
+        return new UnsignedWord((value >> bits) & 0xFFFF);
     }
 
-    public UInt16 add8(UInt8 value) {
+    public UnsignedWord add8(UnsignedByte value) {
         if (value == null) {
             throw new IllegalArgumentException("value cannot be null");
         }
-        return new UInt16((this.value() + value.value()) & 0xFFFF);
+        return new UnsignedWord((this.value() + value.intValue()) & 0xFFFF);
     }
 
-    public UInt16 add16(UInt16 value) {
+    public UnsignedWord add16(UnsignedWord value) {
         if (value == null) {
             throw new IllegalArgumentException("value cannot be null");
         }
-        return new UInt16((this.value() + value.value()) & 0xFFFF);
+        return new UnsignedWord((this.value() + value.value()) & 0xFFFF);
     }
 
-    public UInt16 subtract8(UInt8 value) {
+    public UnsignedWord subtract8(UnsignedByte value) {
         if (value == null) {
             throw new IllegalArgumentException("value cannot be null");
         }
-        return new UInt16((this.value() - value.value()) & 0xFFFF);
+        return new UnsignedWord((this.value() - value.intValue()) & 0xFFFF);
     }
 
-    public UInt16 subtract16(UInt16 value) {
+    public UnsignedWord subtract16(UnsignedWord value) {
         if (value == null) {
             throw new IllegalArgumentException("value cannot be null");
         }
-        return new UInt16((this.value() - value.value()) & 0xFFFF);
+        return new UnsignedWord((this.value() - value.value()) & 0xFFFF);
     }
 
     /**
@@ -134,24 +134,24 @@ public record UInt16(int value) implements UInt<UInt16> {
      * @return The result of the addition.
      * @throws IllegalArgumentException if offset is null.
      */
-    public UInt16 addSignedOffset(UInt8 offset) {
+    public UnsignedWord addSignedOffset(UnsignedByte offset) {
         if (offset == null) {
             throw new IllegalArgumentException("offset cannot be null");
         }
-        var signedOffset = (byte) offset.value();
-        return new UInt16((this.value() + signedOffset) & 0xFFFF);
+        var signedOffset = offset.byteValue();
+        return new UnsignedWord((this.value() + signedOffset) & 0xFFFF);
     }
 
     /**
      * Truncates this 16-bit value down to its lower 8 bits.
      *
-     * @return A new {@link UInt8} instance containing the lower byte.
+     * @return A new {@link UnsignedByte} instance containing the lower byte.
      */
-    public UInt8 toUInt8() {
-        return new UInt8(value & 0xFF);
+    public UnsignedByte toUInt8() {
+        return new UnsignedByte(value & 0xFF);
     }
 
-    public boolean isGreaterThan(UInt8 other) {
-        return value > other.value();
+    public boolean isGreaterThan(UnsignedByte other) {
+        return value > other.intValue();
     }
 }

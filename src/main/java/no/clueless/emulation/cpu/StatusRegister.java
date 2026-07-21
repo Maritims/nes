@@ -1,6 +1,6 @@
 package no.clueless.emulation.cpu;
 
-import no.clueless.emulation.types.UInt8;
+import no.clueless.emulation.types.UnsignedByte;
 
 import java.util.*;
 
@@ -27,13 +27,13 @@ public class StatusRegister {
         this(EnumSet.noneOf(Flag.class));
     }
 
-    public static StatusRegister fromByte(UInt8 byteValue) {
+    public static StatusRegister fromByte(UnsignedByte byteValue) {
         if (byteValue == null) {
             throw new IllegalArgumentException("Byte value cannot be null");
         }
 
         var flags = new HashSet<Flag>();
-        var value = byteValue.value();
+        var value = byteValue.intValue();
 
         for(var flag : Flag.values()) {
             if ((value & flag.getMask()) != 0) {
@@ -140,12 +140,12 @@ public class StatusRegister {
      * @param value The value to check.
      * @throws IllegalArgumentException if value is null.
      */
-    public void updateNegativeAndZero(UInt8 value) {
+    public void updateNegativeAndZero(UnsignedByte value) {
         if (value == null) {
             throw new IllegalArgumentException("Value cannot be null");
         }
 
-        var raw        = value.value();
+        var raw        = value.intValue();
         var isZero     = raw == 0;
         var isNegative = (raw & 0x80) != 0;
 
@@ -191,7 +191,7 @@ public class StatusRegister {
      *
      * @return The byte representation of the status register.
      */
-    public UInt8 toByte() {
-        return new UInt8(flags.stream().mapToInt(Flag::getMask).sum() | 0x20);
+    public UnsignedByte toByte() {
+        return new UnsignedByte(flags.stream().mapToInt(Flag::getMask).sum() | 0x20);
     }
 }
