@@ -25,9 +25,9 @@ class UnsignedByteTest {
     }
 
     @Test
-    void add_should_return_correct_value() {
+    void add_Byte_should_return_correct_value() {
         var value       = new UnsignedByte(0x12);
-        var incremented = value.add(new UnsignedByte(0x34));
+        var incremented = value.addByte(new UnsignedByte(0x34));
         assertEquals(new UnsignedByte(0x46), incremented, "Incremented value should be 0x46");
     }
 
@@ -41,15 +41,15 @@ class UnsignedByteTest {
     }
 
     @Test
-    void add_should_wrap_around_on_overflow() {
+    void add_Byte_should_wrap_around_on_overflow() {
         var value       = new UnsignedByte(0xFF);
-        var incremented = value.add(new UnsignedByte(1));
+        var incremented = value.addByte(new UnsignedByte(1));
         assertEquals(UnsignedByte.ZERO, incremented, "Incremented value should be 0x00");
     }
 
     @Test
-    void add_should_throw_exception_on_null_argument() {
-        assertThrows(IllegalArgumentException.class, () -> new UnsignedByte(0x00).add(null));
+    void add_Byte_should_throw_exception_on_null_argument() {
+        assertThrows(IllegalArgumentException.class, () -> new UnsignedByte(0x00).addByte(null));
     }
 
     @Test

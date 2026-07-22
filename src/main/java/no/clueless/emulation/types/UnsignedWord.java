@@ -38,25 +38,7 @@ public class UnsignedWord extends Number implements Comparable<UnsignedWord> {
         return new UnsignedWord((high.intValue() << 8) | low.intValue());
     }
 
-    /**
-     * Get the high byte of the UInt16.
-     *
-     * @return The high byte.
-     */
-    public UnsignedByte highByte() {
-        return new UnsignedByte(value >> 8);
-    }
-
-    /**
-     * Get the low byte of the UInt16.
-     *
-     * @return The low byte.
-     */
-    public UnsignedByte lowByte() {
-        return new UnsignedByte(value & 0xFF);
-    }
-
-    public UnsignedWord add8(UnsignedByte val) {
+    public UnsignedWord addByte(UnsignedByte val) {
         if (val == null) {
             throw new IllegalArgumentException("val cannot be null");
         }
@@ -68,6 +50,13 @@ public class UnsignedWord extends Number implements Comparable<UnsignedWord> {
             throw new IllegalArgumentException("val cannot be null");
         }
         return new UnsignedWord((this.intValue() + val.intValue()) & 0xFFFF);
+    }
+
+    public UnsignedWord and(UnsignedWord val) {
+        if (val == null) {
+            throw new IllegalArgumentException("val cannot be null");
+        }
+        return new UnsignedWord(value & val.value);
     }
 
     /**
@@ -116,6 +105,15 @@ public class UnsignedWord extends Number implements Comparable<UnsignedWord> {
         return Objects.hashCode(value);
     }
 
+    /**
+     * Get the high byte of the UInt16.
+     *
+     * @return The high byte.
+     */
+    public UnsignedByte highByte() {
+        return new UnsignedByte(value >> 8);
+    }
+
     public UnsignedWord increment() {
         return new UnsignedWord((value + 1) & 0xFFFF);
     }
@@ -132,6 +130,15 @@ public class UnsignedWord extends Number implements Comparable<UnsignedWord> {
     @Override
     public long longValue() {
         return value;
+    }
+
+    /**
+     * Get the low byte of the UInt16.
+     *
+     * @return The low byte.
+     */
+    public UnsignedByte lowByte() {
+        return new UnsignedByte(value & 0xFF);
     }
 
     public UnsignedWord shiftLeft(int n) {
@@ -169,11 +176,23 @@ public class UnsignedWord extends Number implements Comparable<UnsignedWord> {
         return (value & (1 << bit)) != 0;
     }
 
+    /**
+     * Returns true if and only if the high byte of this is equal to the high byte of val.
+     */
+    public boolean testHighByte(UnsignedWord val) {
+        return (value & 0xFF00) == (val.value & 0xFF00);
+    }
+
+    /**
+     * Returns true if and only if the low byte of this is equal to the low byte of val.
+     */
+    public boolean testLowByte(UnsignedWord val) {
+        return (value & 0x00FF) == (val.value & 0x00FF);
+    }
+
     @Override
     public String toString() {
-        return "UnsignedWord{" +
-                "value=" + value +
-                '}';
+        return "0x%02X".formatted(value & 0xFFFF);
     }
 
     /**

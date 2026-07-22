@@ -23,7 +23,7 @@ public class UnsignedByte extends Number implements Comparable<UnsignedByte> {
     /**
      * Returns an UnsignedByte whose val is (this + val).
      */
-    public UnsignedByte add(UnsignedByte val) {
+    public UnsignedByte addByte(UnsignedByte val) {
         if (val == null) {
             throw new IllegalArgumentException("val cannot be null");
         }
@@ -70,7 +70,7 @@ public class UnsignedByte extends Number implements Comparable<UnsignedByte> {
      * Returns an UnsignedByte whose value is (this + 1).
      */
     public UnsignedByte increment() {
-        return add(ONE);
+        return addByte(ONE);
     }
 
     @Override
@@ -151,5 +151,10 @@ public class UnsignedByte extends Number implements Comparable<UnsignedByte> {
     @Override
     public int hashCode() {
         return Objects.hashCode(value);
+    }
+
+    @Override
+    public String toString() {
+        return String.format("%02X", value);
     }
 }

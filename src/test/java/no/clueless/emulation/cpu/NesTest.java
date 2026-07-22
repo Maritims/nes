@@ -32,7 +32,7 @@ public class NesTest {
                 lineNum++;
                 var expected = parseLogLine(line);
 
-                // Compare current state with expected state BEFORE executing instruction
+                // Compare current state with expected state BEFORE executing mnemonic
                 assertState(lineNum, expected, cpu);
 
                 cpu.step();

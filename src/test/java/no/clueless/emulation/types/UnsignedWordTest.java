@@ -23,21 +23,21 @@ class UnsignedWordTest {
     }
 
     @Test
-    void add8_should_wrap_around_on_overflow() {
+    void addByte_should_wrap_around_on_overflow() {
         // arrange
         var value    = new UnsignedWord(0xFFFF);
         var expected = new UnsignedWord(0x0000);
 
         // act
-        var actual = value.add8(new UnsignedByte(1));
+        var actual = value.addByte(new UnsignedByte(1));
 
         // assert
         assertEquals(expected, actual, "Incremented value should be 0x0000");
     }
 
     @Test
-    void add8_should_throw_exception_on_null_argument() {
-        assertThrows(IllegalArgumentException.class, () -> new UnsignedWord(0x0000).add8(null));
+    void addByte_should_throw_exception_on_null_argument() {
+        assertThrows(IllegalArgumentException.class, () -> new UnsignedWord(0x0000).addByte(null));
     }
 
     @Test
@@ -47,7 +47,7 @@ class UnsignedWordTest {
         var expected = new UnsignedWord(0x1020);
 
         // act
-        var actual = value.add8(new UnsignedByte(0x20));
+        var actual = value.addByte(new UnsignedByte(0x20));
 
         // assert
         assertEquals(expected, actual, "Incremented value should be 0x1020");
