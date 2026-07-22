@@ -22,12 +22,16 @@ public class StackPointer {
         this.offset = offset;
     }
 
+    public void decrement() {
+        value = value.decrement();
+    }
+
     public UnsignedByte getValue() {
         return value;
     }
 
-    public void setValue(UnsignedByte value) {
-        this.value = value;
+    public void increment() {
+        value = value.increment();
     }
 
     /**
@@ -39,11 +43,7 @@ public class StackPointer {
         return new UnsignedWord(offset + value.intValue());
     }
 
-    public void decrement() {
-        value = value.decrement();
-    }
-
-    public void increment() {
-        value = value.increment();
+    public void updateValue(UnsignedByte value) {
+        this.value = value;
     }
 }

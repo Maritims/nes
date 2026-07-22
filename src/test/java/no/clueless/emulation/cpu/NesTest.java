@@ -42,11 +42,11 @@ public class NesTest {
 
     private void assertState(int lineNum, ExpectedState expected, CPU cpu) {
         var actualState = String.format("PC:%04X A:%02X X:%02X Y:%02X P:%02X SP:%02X",
-                cpu.getProgramCounter().getValue().value(),
+                cpu.getProgramCounter().intValue(),
                 cpu.getAccumulator().intValue(),
                 cpu.getX().intValue(),
                 cpu.getY().intValue(),
-                cpu.getStatusRegister().toByte().intValue(),
+                cpu.getStatusRegister().unsignedByteValue().intValue(),
                 cpu.getStackPointer().getValue().intValue());
         var expectedState = String.format("PC:%04X A:%02X X:%02X Y:%02X P:%02X SP:%02X",
                 expected.pc, expected.a, expected.x, expected.y, expected.p, expected.sp);

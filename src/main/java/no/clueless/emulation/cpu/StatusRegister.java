@@ -45,42 +45,16 @@ public class StatusRegister {
     }
 
     /**
-     * Returns a copy of the flags.
-     *
-     * @return An unmodifiable copy of the current flags.
-     */
-    public EnumSet<Flag> getFlags() {
-        return EnumSet.copyOf(flags);
-    }
-
-    /**
      * Sets flags.
      *
      * @param flags 1 or more flags to set.
-     * @return This instance for fluent chaining.
      * @throws IllegalArgumentException if flags is null or empty.
      */
-    public StatusRegister setFlag(Flag... flags) {
+    public void setFlag(Flag... flags) {
         if (flags == null || flags.length == 0) {
             throw new IllegalArgumentException("flags cannot be null or empty");
         }
         this.flags.addAll(Arrays.asList(flags));
-        return this;
-    }
-
-    /**
-     * Sets flags.
-     *
-     * @param flags 1 or more flags to set.
-     * @return This instance for fluent chaining.
-     * @throws IllegalArgumentException if flags is null or empty.
-     */
-    public StatusRegister setFlag(Collection<Flag> flags) {
-        if (flags == null || flags.isEmpty()) {
-            throw new IllegalArgumentException("flags cannot be null or empty");
-        }
-        this.flags.addAll(flags);
-        return this;
     }
 
     /**
@@ -90,20 +64,16 @@ public class StatusRegister {
      * @throws IllegalArgumentException if flags is null or empty.
      */
     public void clearFlag(Flag... flags) {
-        clearFlag(Arrays.asList(flags));
-    }
-
-    /**
-     * Clears flags.
-     *
-     * @param flags The flags to clear.
-     * @throws IllegalArgumentException if flags is null or empty.
-     */
-    public void clearFlag(Collection<Flag> flags) {
-        if (flags == null || flags.isEmpty()) {
+        if (flags == null || flags.length == 0) {
             throw new IllegalArgumentException("flags cannot be null or empty");
         }
-        flags.forEach(this.flags::remove);
+        for (var flag : flags) {
+            this.flags.remove(flag);
+        }
+    }
+
+    public void clearAllFlags() {
+        flags.clear();
     }
 
     /**
@@ -191,7 +161,7 @@ public class StatusRegister {
      *
      * @return The byte representation of the status register.
      */
-    public UnsignedByte toByte() {
+    public UnsignedByte unsignedByteValue() {
         return new UnsignedByte(flags.stream().mapToInt(Flag::getMask).sum() | 0x20);
     }
 }

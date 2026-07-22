@@ -1,7 +1,6 @@
 package no.clueless.emulation.types;
 
 import java.util.Objects;
-import java.util.function.IntFunction;
 
 public class UnsignedByte extends Number implements Comparable<UnsignedByte> {
     private final int value;
@@ -20,11 +19,6 @@ public class UnsignedByte extends Number implements Comparable<UnsignedByte> {
     public static final UnsignedByte ZERO      = new UnsignedByte(0);
     public static final UnsignedByte ONE       = new UnsignedByte(1);
     public static final UnsignedByte MAX_VALUE = new UnsignedByte(0xFF);
-
-    //@Override
-    public IntFunction<UnsignedByte> factory() {
-        return UnsignedByte::new;
-    }
 
     /**
      * Returns an UnsignedByte whose val is (this + val).

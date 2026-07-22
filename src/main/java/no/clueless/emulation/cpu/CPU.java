@@ -4,7 +4,6 @@ import no.clueless.emulation.Bus;
 import no.clueless.emulation.types.UnsignedWord;
 import no.clueless.emulation.types.UnsignedByte;
 
-import java.util.EnumSet;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 
@@ -20,7 +19,7 @@ public class CPU {
     private       boolean decimalModeSupported = true;
 
     private       StackPointer   stackPointer;
-    private final ProgramCounter programCounter;
+    private       UnsignedWord   programCounter;
     private final StatusRegister statusRegister;
     private       UnsignedByte   accumulator;
     private       UnsignedByte   x;
@@ -36,7 +35,7 @@ public class CPU {
      * @param statusRegister The status register to use.
      * @throws IllegalArgumentException if bus, accumulator, x, y, or statusRegister is null.
      */
-    CPU(Bus bus, Accumulator accumulator, UnsignedByte x, UnsignedByte y, StatusRegister statusRegister) {
+    CPU(Bus bus, UnsignedByte accumulator, UnsignedByte x, UnsignedByte y, StatusRegister statusRegister) {
         if (bus == null) {
             throw new IllegalArgumentException("bus cannot be null");
         }
@@ -54,7 +53,7 @@ public class CPU {
         }
 
         this.bus            = bus;
-        this.programCounter = new ProgramCounter();
+        this.programCounter = new UnsignedWord(0x0000);
         this.accumulator    = accumulator;
         this.x              = x;
         this.y              = y;
@@ -70,7 +69,7 @@ public class CPU {
      * @throws IllegalArgumentException if bus is null.
      */
     public CPU(Bus bus) {
-        this(bus, new Accumulator(0), new UnsignedByte(0x00), new UnsignedByte(0x00), new StatusRegister());
+        this(bus, UnsignedByte.ZERO, UnsignedByte.ZERO, UnsignedByte.ZERO, new StatusRegister());
     }
 
     public long getTotalCycles() {
@@ -81,7 +80,7 @@ public class CPU {
         this.totalCycles += cycles;
     }
 
-    public ProgramCounter getProgramCounter() {
+    public UnsignedWord getProgramCounter() {
         return programCounter;
     }
 
@@ -106,7 +105,7 @@ public class CPU {
     }
 
     public void setProgramCounter(UnsignedWord pc) {
-        this.programCounter.updateValue(pc);
+        this.programCounter = pc;
     }
 
     public void setDecimalModeSupported(boolean supported) {
@@ -117,14 +116,13 @@ public class CPU {
      * Reboots the system and resets the CPU to its power-on state.
      */
     public void reset() {
-        var lowByte     = bus.read(new UnsignedWord(0xFFFC));
-        var highByte    = bus.read(new UnsignedWord(0xFFFD));
-        var resetVector = UnsignedWord.fromBytes(lowByte, highByte);
+        var lowByte  = bus.read(new UnsignedWord(0xFFFC));
+        var highByte = bus.read(new UnsignedWord(0xFFFD));
 
-        this.programCounter.updateValue(resetVector);
-        this.stackPointer = new StackPointer(new UnsignedByte(0xFD), 0x0100);
+        this.programCounter = UnsignedWord.fromBytes(lowByte, highByte);
+        this.stackPointer   = new StackPointer(new UnsignedByte(0xFD), 0x0100);
 
-        this.statusRegister.clearFlag(EnumSet.allOf(Flag.class));
+        this.statusRegister.clearAllFlags();
         this.statusRegister.setFlag(Flag.InterruptDisable, Flag.Five);
     }
 
@@ -197,7 +195,7 @@ public class CPU {
     }
 
     /**
-     * Reads a 8-bit value from the bus and updates the status register.
+     * Reads an 8-bit value from the bus and updates the status register.
      *
      * @param address  The address to read from.
      * @param register A consumer that updates a register.
@@ -291,11 +289,11 @@ public class CPU {
 
         this.consumeCycles(1);
 
-        if (isPageCrossed(programCounter.getValue(), address)) {
+        if (isPageCrossed(programCounter, address)) {
             this.consumeCycles(1);
         }
 
-        this.programCounter.updateValue(address);
+        this.programCounter = address;
     }
 
     /**
@@ -304,8 +302,8 @@ public class CPU {
      * @return The address.
      */
     public UnsignedWord addressImmediate() {
-        var address = this.programCounter.getValue();
-        this.programCounter.increment();
+        var address = programCounter;
+        programCounter = programCounter.increment();
         return address;
     }
 
@@ -315,14 +313,13 @@ public class CPU {
      * @return The address.
      */
     public UnsignedWord addressAbsolute() {
-        var address = read16(this.programCounter.getValue());
-        this.programCounter.increment();
-        this.programCounter.increment();
+        var address = read16(programCounter);
+        programCounter = programCounter.increment().increment();
         return address;
     }
 
     private boolean isPageCrossed(UnsignedWord a, UnsignedWord b) {
-        return (a.value() & 0xFF00) != (b.value() & 0xFF00);
+        return (a.intValue() & 0xFF00) != (b.intValue() & 0xFF00);
     }
 
     /**
@@ -331,9 +328,8 @@ public class CPU {
      * @return The address.
      */
     public UnsignedWord addressAbsoluteX() {
-        var base = read16(this.programCounter.getValue());
-        this.programCounter.increment();
-        this.programCounter.increment();
+        var base = read16(programCounter);
+        programCounter = programCounter.increment().increment();
 
         var address = base.add8(x);
         if (isPageCrossed(base, address)) {
@@ -349,9 +345,8 @@ public class CPU {
      * @return The address.
      */
     public UnsignedWord addressAbsoluteY() {
-        var base = read16(this.programCounter.getValue());
-        this.programCounter.increment();
-        this.programCounter.increment();
+        var base = read16(programCounter);
+        programCounter = programCounter.increment().increment();
 
         var address = base.add8(y);
         if (isPageCrossed(base, address)) {
@@ -367,8 +362,8 @@ public class CPU {
      * @return The address.
      */
     public UnsignedWord addressZeroPage() {
-        var offset = bus.read(this.programCounter.getValue());
-        this.programCounter.increment();
+        var offset = bus.read(programCounter);
+        programCounter = programCounter.increment();
         return offset.unsignedWordValue();
     }
 
@@ -378,8 +373,8 @@ public class CPU {
      * @return The address.
      */
     public UnsignedWord addressZeroPageX() {
-        var base = bus.read(this.programCounter.getValue());
-        this.programCounter.increment();
+        var base = bus.read(programCounter);
+        programCounter = programCounter.increment();
         return base.add(x).unsignedWordValue();
     }
 
@@ -389,8 +384,8 @@ public class CPU {
      * @return The address.
      */
     public UnsignedWord addressZeroPageY() {
-        var base = bus.read(this.programCounter.getValue());
-        this.programCounter.increment();
+        var base = bus.read(programCounter);
+        programCounter = programCounter.increment();
         return base.add(y).unsignedWordValue();
     }
 
@@ -401,13 +396,12 @@ public class CPU {
      * @return The address.
      */
     public UnsignedWord addressIndirect() {
-        var vector = read16(this.programCounter.getValue());
-        this.programCounter.increment();
-        this.programCounter.increment();
+        var vector = read16(programCounter);
+        programCounter = programCounter.increment().increment();
 
         var low = bus.read(vector);
         // Emulate the hardware bug: force the high-byte vector lookup to stay on the same page
-        var highAddress = (vector.value() & 0xFF00) | ((vector.value() + 1) & 0x00FF);
+        var highAddress = (vector.intValue() & 0xFF00) | ((vector.intValue() + 1) & 0x00FF);
         var high        = bus.read(new UnsignedWord(highAddress));
 
         return UnsignedWord.fromBytes(low, high);
@@ -419,8 +413,8 @@ public class CPU {
      * @return The address.
      */
     public UnsignedWord addressIndirectX() {
-        var base = bus.read(this.programCounter.getValue());
-        this.programCounter.increment();
+        var base = bus.read(programCounter);
+        programCounter = programCounter.increment();
 
         var pointerLow  = base.add(x);
         var pointerHigh = pointerLow.increment();
@@ -432,13 +426,13 @@ public class CPU {
     }
 
     /**
-     * Reads an 8-bit address from memory to use a pointer to the location to read, and adds the Y register value to construct the final address.
+     * Reads an 8-bit address from memory to use a pointer to the location to read and adds the Y register value to construct the final address.
      *
      * @return The address.
      */
     public UnsignedWord addressIndirectY() {
-        var pointerLow = bus.read(this.programCounter.getValue());
-        this.programCounter.increment();
+        var pointerLow = bus.read(programCounter);
+        programCounter = programCounter.increment();
 
         var pointerHigh = pointerLow.increment();
 
@@ -460,9 +454,9 @@ public class CPU {
      * @return The address.
      */
     public UnsignedWord addressRelative() {
-        var offset = bus.read(this.programCounter.getValue());
-        this.programCounter.increment();
-        return this.programCounter.getValue().addSignedOffset(offset);
+        var offset = bus.read(programCounter);
+        programCounter = programCounter.increment();
+        return programCounter.addSignedOffset(offset);
     }
 
     private void performArithmeticAddition(UnsignedByte memoryData) {
@@ -495,7 +489,7 @@ public class CPU {
                     .add16(memoryData.unsignedWordValue())
                     .add16(new UnsignedWord(carryIn));
 
-            var result8 = sum16.toUInt8();
+            var result8 = sum16.unsignedByteValue();
 
             var accumulatorXorResult = accumulator.xor(result8);
             var memoryXorResult      = memoryData.xor(result8);
@@ -568,7 +562,7 @@ public class CPU {
 
     /**
      * <code>A = A & memory</code>
-     * <p>This ANDs a memory value and the accumulator, bit by bit. If both input bits are 1, the resulting bit is 1. Otherwise it is 0.</p>
+     * <p>This ANDs a memory value and the accumulator, bit by bit. If both input bits are 1, the resulting bit is 1. Otherwise, it is 0.</p>
      *
      * @param address The address of the memory location to perform the operation on.
      * @throws IllegalArgumentException if address is null.
@@ -820,7 +814,7 @@ public class CPU {
      * <code>Stack pointer = X</code>
      */
     public void TXS() {
-        stackPointer.setValue(x);
+        stackPointer.updateValue(x);
     }
 
     /**
@@ -975,10 +969,10 @@ public class CPU {
     }
 
     public void BRK() {
-        var returnAddress = programCounter.getValue().add16(new UnsignedWord(1));
+        var returnAddress = programCounter.add16(new UnsignedWord(1));
         push16(returnAddress);
 
-        var statusRegisterAsByte = statusRegister.toByte().or(new UnsignedByte(Flag.Break.getMask()));
+        var statusRegisterAsByte = statusRegister.unsignedByteValue().or(new UnsignedByte(Flag.Break.getMask()));
         push8(statusRegisterAsByte);
 
         statusRegister.updateFlag(Flag.InterruptDisable, true);
@@ -986,14 +980,13 @@ public class CPU {
         var lowByte  = bus.read(new UnsignedWord(0xFFFE));
         var highByte = bus.read(new UnsignedWord(0xFFFF));
 
-        programCounter.updateValue(UnsignedWord.fromBytes(lowByte, highByte));
+        programCounter = UnsignedWord.fromBytes(lowByte, highByte);
     }
 
     public void RTI() {
         var status = pull8();
         this.statusRegister.update(StatusRegister.fromByte(status));
-        var returnAddress = pull16();
-        programCounter.updateValue(returnAddress);
+        programCounter = pull16();
     }
 
     public void JSR(UnsignedWord address) {
@@ -1001,22 +994,21 @@ public class CPU {
             throw new IllegalArgumentException("address cannot be null");
         }
 
-        var addressToPush = programCounter.getValue().subtract16(UnsignedWord.ONE);
+        var addressToPush = programCounter.subtract16(UnsignedWord.ONE);
         push16(addressToPush);
-        programCounter.updateValue(address);
+        programCounter = address;
     }
 
     public void RTS() {
         var poppedAddress     = pull16();
-        var returnDestination = poppedAddress.add16(UnsignedWord.ONE);
-        programCounter.updateValue(returnDestination);
+        programCounter = poppedAddress.add16(UnsignedWord.ONE);
     }
 
     public void JMP(UnsignedWord address) {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        programCounter.updateValue(address);
+        programCounter = address;
     }
 
     public void PHA() {
@@ -1025,7 +1017,7 @@ public class CPU {
 
     public void PHP() {
         // PHP pushes the status register with bit 4 (Break) set to 1
-        var status = statusRegister.toByte().or(new UnsignedByte(Flag.Break.getMask()));
+        var status = statusRegister.unsignedByteValue().or(new UnsignedByte(Flag.Break.getMask()));
         push8(status);
     }
 
@@ -1145,8 +1137,8 @@ public class CPU {
     }
 
     public void step() {
-        var rawOpcode = bus.read(programCounter.getValue());
-        this.programCounter.increment();
+        var rawOpcode = bus.read(programCounter);
+        programCounter = programCounter.increment();
 
         var opcode = OpcodeRegistry.get(rawOpcode);
         if (opcode == null) {

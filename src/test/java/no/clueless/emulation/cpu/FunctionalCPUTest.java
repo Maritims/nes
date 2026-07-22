@@ -10,15 +10,14 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FunctionalCPUTest {
 
     @Test
     public void runFunctionalTest() throws IOException {
-        RAM ram = new RAM();
-        Path path = Paths.get("src/test/resources/6502_functional_test.bin");
+        RAM    ram   = new RAM();
+        Path   path  = Paths.get("src/test/resources/6502_functional_test.bin");
         byte[] bytes = Files.readAllBytes(path);
 
         // Klaus Dormann's test binary is a 64KB image
@@ -31,8 +30,8 @@ public class FunctionalCPUTest {
         cpu.reset();
         cpu.JMP(new UnsignedWord(0x0400));
 
-        int stuckCount = 0;
-        long maxCycles = 100_000_000;
+        int  stuckCount   = 0;
+        long maxCycles    = 100_000_000;
         long instructions = 0;
 
         while (cpu.getTotalCycles() < maxCycles) {
@@ -44,7 +43,7 @@ public class FunctionalCPUTest {
                 stuckCount++;
                 if (stuckCount > 10) {
                     // Success trap for Klaus Dormann's test is 0x3469
-                    assertEquals(0x3469, pc.value(), "CPU trapped at unexpected location (failure)");
+                    assertEquals(0x3469, pc.intValue(), "CPU trapped at unexpected location (failure)");
                     return;
                 }
             } else {
@@ -52,15 +51,14 @@ public class FunctionalCPUTest {
             }
         }
 
-        assertTrue(false, "Test timed out. Last PC: 0x%04X".formatted(getPC(cpu).value()));
+        fail("Test timed out. Last PC: 0x%04X".formatted(getPC(cpu).intValue()));
     }
 
     private UnsignedWord getPC(CPU cpu) {
         try {
             var field = CPU.class.getDeclaredField("programCounter");
             field.setAccessible(true);
-            ProgramCounter pc = (ProgramCounter) field.get(cpu);
-            return pc.getValue();
+            return (UnsignedWord) field.get(cpu);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }

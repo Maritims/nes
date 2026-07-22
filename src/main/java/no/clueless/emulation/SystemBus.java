@@ -18,7 +18,7 @@ public class SystemBus implements Bus {
 
     @Override
     public UnsignedByte read(UnsignedWord address) {
-        int addr = address.value();
+        int addr = address.intValue();
         // RAM: 0x0000 - 0x1FFF (mirrored every 0x0800)
         if (addr >= 0x0000 && addr <= 0x1FFF) {
             return ram.read(new UnsignedWord(addr % 0x0800));
@@ -45,7 +45,7 @@ public class SystemBus implements Bus {
 
     @Override
     public void write(UnsignedWord address, UnsignedByte value) {
-        int addr = address.value();
+        int addr = address.intValue();
         if (addr >= 0x0000 && addr <= 0x1FFF) {
             ram.write(new UnsignedWord(addr % 0x0800), value);
         }

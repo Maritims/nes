@@ -13,7 +13,7 @@ public class Mapper0 implements Mapper {
 
     @Override
     public int mapCpuRead(UnsignedWord address) {
-        int addr = address.value();
+        int addr = address.intValue();
 
         if (addr >= 0x8000 && addr <= 0xFFFF) {
             // Normalize address relative to window start ($8000)
@@ -33,7 +33,7 @@ public class Mapper0 implements Mapper {
 
     @Override
     public int mapPpuRead(UnsignedWord address) {
-        int addr = address.value();
+        var addr = address.intValue();
 
         // PPU reads pattern tables directly from $0000 to $1FFF (8KB)
         if (addr >= 0x0000 && addr <= 0x1FFF) {

@@ -1,28 +1,24 @@
 package no.clueless.emulation.types;
 
-import java.util.function.IntFunction;
+import java.util.Objects;
 
-/**
- * Represents an unsigned 16-bit integer.
- *
- * @param value The value of the integer.
- */
-public record UnsignedWord(int value) implements UInt<UnsignedWord> {
+public class UnsignedWord extends Number implements Comparable<UnsignedWord> {
+    private final int value;
+
     /**
      * Constructor.
      *
      * @param value The value of the integer.
      * @throws IllegalArgumentException if the value is not between 0 and 65,535.
      */
-    public UnsignedWord {
+    public UnsignedWord(int value) {
         if (value < 0 || value > 65535) {
-            throw new IllegalArgumentException("Value must be between 0 and 65535");
+            throw new IllegalArgumentException("value must be between 0 and 65535");
         }
+        this.value = value;
     }
 
-    public static UnsignedWord ZERO      = new UnsignedWord(0);
-    public static UnsignedWord ONE       = new UnsignedWord(1);
-    public static UnsignedWord MAX_VALUE = new UnsignedWord(0xFFFF);
+    public static UnsignedWord ONE = new UnsignedWord(1);
 
     /**
      * Creates a UInt16 from a low and high byte with a Little-Endian layout.
@@ -60,71 +56,18 @@ public record UnsignedWord(int value) implements UInt<UnsignedWord> {
         return new UnsignedByte(value & 0xFF);
     }
 
-    @Override
-    public IntFunction<UnsignedWord> factory() {
-        return UnsignedWord::new;
-    }
-
-    @Override
-    public UnsignedWord increment() {
-        return new UnsignedWord((value + 1) & 0xFFFF);
-    }
-
-    @Override
-    public UnsignedWord decrement() {
-        return new UnsignedWord((value - 1) & 0xFFFF);
-    }
-
-    @Override
-    public boolean isBitSet(int bit) {
-        if (bit < 0 || bit > 15) {
-            throw new IllegalArgumentException("Bit must be between 0 and 15");
+    public UnsignedWord add8(UnsignedByte val) {
+        if (val == null) {
+            throw new IllegalArgumentException("val cannot be null");
         }
-        return (value & (1 << bit)) != 0;
+        return new UnsignedWord((this.intValue() + val.intValue()) & 0xFFFF);
     }
 
-    @Override
-    public UnsignedWord shiftLeft(int bits) {
-        if (bits < 0) {
-            throw new IllegalArgumentException("bits must be non-negative");
+    public UnsignedWord add16(UnsignedWord val) {
+        if (val == null) {
+            throw new IllegalArgumentException("val cannot be null");
         }
-        return new UnsignedWord((value << bits) & 0xFFFF);
-    }
-
-    @Override
-    public UnsignedWord shiftRight(int bits) {
-        if (bits < 0) {
-            throw new IllegalArgumentException("bits must be non-negative");
-        }
-        return new UnsignedWord((value >> bits) & 0xFFFF);
-    }
-
-    public UnsignedWord add8(UnsignedByte value) {
-        if (value == null) {
-            throw new IllegalArgumentException("value cannot be null");
-        }
-        return new UnsignedWord((this.value() + value.intValue()) & 0xFFFF);
-    }
-
-    public UnsignedWord add16(UnsignedWord value) {
-        if (value == null) {
-            throw new IllegalArgumentException("value cannot be null");
-        }
-        return new UnsignedWord((this.value() + value.value()) & 0xFFFF);
-    }
-
-    public UnsignedWord subtract8(UnsignedByte value) {
-        if (value == null) {
-            throw new IllegalArgumentException("value cannot be null");
-        }
-        return new UnsignedWord((this.value() - value.intValue()) & 0xFFFF);
-    }
-
-    public UnsignedWord subtract16(UnsignedWord value) {
-        if (value == null) {
-            throw new IllegalArgumentException("value cannot be null");
-        }
-        return new UnsignedWord((this.value() - value.value()) & 0xFFFF);
+        return new UnsignedWord((this.intValue() + val.intValue()) & 0xFFFF);
     }
 
     /**
@@ -139,7 +82,98 @@ public record UnsignedWord(int value) implements UInt<UnsignedWord> {
             throw new IllegalArgumentException("offset cannot be null");
         }
         var signedOffset = offset.byteValue();
-        return new UnsignedWord((this.value() + signedOffset) & 0xFFFF);
+        return new UnsignedWord((this.intValue() + signedOffset) & 0xFFFF);
+    }
+
+    @Override
+    public int compareTo(UnsignedWord o) {
+        return Integer.compare(value, o.value);
+    }
+
+    public UnsignedWord decrement() {
+        return new UnsignedWord((value - 1) & 0xFFFF);
+    }
+
+    @Override
+    public double doubleValue() {
+        return value;
+    }
+
+    @Override
+    public boolean equals(Object object) {
+        if (object == null || getClass() != object.getClass()) return false;
+        UnsignedWord that = (UnsignedWord) object;
+        return value == that.value;
+    }
+
+    @Override
+    public float floatValue() {
+        return value;
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(value);
+    }
+
+    public UnsignedWord increment() {
+        return new UnsignedWord((value + 1) & 0xFFFF);
+    }
+
+    @Override
+    public int intValue() {
+        return value;
+    }
+
+    public boolean isGreaterThan(UnsignedByte other) {
+        return value > other.intValue();
+    }
+
+    @Override
+    public long longValue() {
+        return value;
+    }
+
+    public UnsignedWord shiftLeft(int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("n must be non-negative");
+        }
+        return new UnsignedWord((value << n) & 0xFFFF);
+    }
+
+    public UnsignedWord shiftRight(int n) {
+        if (n < 0) {
+            throw new IllegalArgumentException("n must be non-negative");
+        }
+        return new UnsignedWord((value >> n) & 0xFFFF);
+    }
+
+    public UnsignedWord subtract8(UnsignedByte value) {
+        if (value == null) {
+            throw new IllegalArgumentException("value cannot be null");
+        }
+        return new UnsignedWord((this.intValue() - value.intValue()) & 0xFFFF);
+    }
+
+    public UnsignedWord subtract16(UnsignedWord value) {
+        if (value == null) {
+            throw new IllegalArgumentException("value cannot be null");
+        }
+        return new UnsignedWord((this.intValue() - value.intValue()) & 0xFFFF);
+    }
+
+    public boolean testBit(int bit) {
+        if (bit < 0 || bit > 15) {
+            throw new IllegalArgumentException("Bit must be between 0 and 15");
+        }
+        return (value & (1 << bit)) != 0;
+    }
+
+    @Override
+    public String toString() {
+        return "UnsignedWord{" +
+                "value=" + value +
+                '}';
     }
 
     /**
@@ -147,11 +181,7 @@ public record UnsignedWord(int value) implements UInt<UnsignedWord> {
      *
      * @return A new {@link UnsignedByte} instance containing the lower byte.
      */
-    public UnsignedByte toUInt8() {
+    public UnsignedByte unsignedByteValue() {
         return new UnsignedByte(value & 0xFF);
-    }
-
-    public boolean isGreaterThan(UnsignedByte other) {
-        return value > other.intValue();
     }
 }

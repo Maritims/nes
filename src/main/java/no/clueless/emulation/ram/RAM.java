@@ -27,7 +27,7 @@ public class RAM implements Bus {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        return memory[address.value()];
+        return memory[address.intValue()];
     }
 
     @Override
@@ -38,6 +38,6 @@ public class RAM implements Bus {
         if (value == null) {
             throw new IllegalArgumentException("value cannot be null");
         }
-        memory[address.value()] = value;
+        memory[address.intValue()] = value;
     }
 }
