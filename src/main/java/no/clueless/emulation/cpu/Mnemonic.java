@@ -16,6 +16,8 @@ public enum Mnemonic {
     CPY("compare with Y", AluOperations::cpy),
     DCP("decrement and compare", AluOperations::dcp),
     ISB("increment and subtract", AluOperations::isb),
+    SLO("shift left and or", AluOperations::slo),
+    SRE("shift right and eor", AluOperations::sre),
     // endregion
     // region Jump operations
     BRK("break / interrupt", JumpOperations::brk),
@@ -59,6 +61,8 @@ public enum Mnemonic {
     LSR("logical shift right", ShiftOperations::lsr),
     ROL("rotate left", ShiftOperations::rol),
     ROR("rotate right", ShiftOperations::ror),
+    RLA("rotate left and and", ShiftOperations::rla),
+    RRA("rotate right and add", ShiftOperations::rra),
     // endregion
     // region Stack operations
     PHA("push accumulator", StackOperations::pha),
@@ -76,13 +80,8 @@ public enum Mnemonic {
     BMI("branch on minus (negative set)", BranchOperations::bmi),
     BPL("branch on plus (negative clear)", BranchOperations::bpl),
     BVC("branch on overflow clear", BranchOperations::bvc),
-    BVS("branch on overflow set", BranchOperations::bvs),
+    BVS("branch on overflow set", BranchOperations::bvs);
     // endregion
-    /*
-    RLA("rotate left and and", ),
-    RRA("rotate right and add", ),
-    SLO("shift left and or", ),
-    SRE("shift right and eor", )*/;
 
     private final String name;
     private final InstructionOperation instructionOperation;

@@ -19,7 +19,6 @@ public class NesTest {
         var ram       = new RAM();
         var bus       = new SystemBus(ram, cartridge);
         var cpu       = new CPU(bus);
-        cpu.setDecimalModeSupported(false);
 
         // nestest in automated mode starts at 0xC000
         cpu.setProgramCounter(new UnsignedWord(0xC000));

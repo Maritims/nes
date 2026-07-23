@@ -5,35 +5,21 @@ import no.clueless.emulation.cpu.Flag;
 import no.clueless.emulation.types.UnsignedByte;
 import no.clueless.emulation.types.UnsignedWord;
 
+import static no.clueless.emulation.cpu.operations.ALU.*;
+
 /**
  * Arithmetic logic unit (ALU) operations. Handles all math and bitwise comparisons against the accumulator and memory.
  */
 public class AluOperations {
-    static void executeArithmeticCalculation(CPU cpu, UnsignedWord address, boolean isSubtraction) {
-        var accumulator     = cpu.getAccumulator().intValue();
-        var memoryData      = cpu.getBus().read(address).intValue();
-        var hasCarryAlready = cpu.getStatusRegister().hasFlag(Flag.Carry) ? 1 : 0;
-
-        if (isSubtraction) {
-            memoryData = memoryData ^ UnsignedByte.MAX_VALUE.intValue();
+    static void compare(CPU cpu, UnsignedByte registerValue, UnsignedByte memoryValue) {
+        if (registerValue == null || memoryValue == null) {
+            throw new IllegalArgumentException("values cannot be null");
         }
+        var hasCarry = registerValue.compareTo(memoryValue) >= 0;
+        var tmp      = registerValue.subtract(memoryValue);
 
-        var sum              = accumulator + memoryData + hasCarryAlready;
-        var hasCarryAfterSum = sum > UnsignedByte.MAX_VALUE.intValue();
-
-        // Calculate unmasked bitwise relationships.
-        //var carryInToBit7  = accumulator ^ memoryData ^ sum;
-        //var signDifference = memoryData ^ sum;
-
-        // Overflow occurs if the accumulator and the memory data had the same sign, but the accumulator and the sum have different signs.
-        //var hasOverflowAfterSum = ((carryInToBit7 & signDifference) & 0x80) != 0;
-        var hasOverflowAfterSum = (~(accumulator ^ memoryData) & (accumulator ^ sum) & 0x80) != 0;
-        var result              = new UnsignedByte(sum & 0xFF); // AND with 0xFF to truncate the result to 8 bits.
-
-        cpu.setAccumulator(result);
-        cpu.getStatusRegister().updateFlag(Flag.Carry, hasCarryAfterSum);
-        cpu.getStatusRegister().updateFlag(Flag.Overflow, hasOverflowAfterSum);
-        cpu.getStatusRegister().updateNegativeAndZero(result);
+        cpu.getStatusRegister().updateFlag(Flag.Carry, hasCarry);
+        cpu.getStatusRegister().updateNegativeAndZero(tmp);
     }
 
     /**
@@ -114,7 +100,7 @@ public class AluOperations {
             throw new IllegalArgumentException("address cannot be null");
         }
         var memoryData = cpu.getBus().read(address);
-        cpu.compare(registerValue, memoryData);
+        compare(cpu, registerValue, memoryData);
     }
 
     /**
@@ -158,10 +144,10 @@ public class AluOperations {
      */
     public static void dcp(CPU cpu, UnsignedWord address) {
         var memoryData = cpu.getBus().read(address);
-        var result = memoryData.decrement();
+        var result     = memoryData.decrement();
 
         cpu.getBus().write(address, result);
-        cpu.compare(cpu.getAccumulator(), result);
+        compare(cpu, cpu.getAccumulator(), result);
     }
 
     /**
@@ -169,9 +155,31 @@ public class AluOperations {
      */
     public static void isb(CPU cpu, UnsignedWord address) {
         var memoryData = cpu.getBus().read(address);
-        var result = memoryData.increment();
+        var result     = memoryData.increment();
 
         cpu.getBus().write(address, result);
         executeArithmeticCalculation(cpu, address, true);
+    }
+
+    /**
+     * UNOFFICIAL: Performs a logical shift left on the memory data at the given address and ORs it with the accumulator.
+     */
+    public static void slo(CPU cpu, UnsignedWord address) {
+        var memoryData = cpu.getBus().read(address);
+        var result     = shiftLeft(cpu, memoryData);
+
+        cpu.getBus().write(address, result);
+        ora(cpu, address);
+    }
+
+    /**
+     * UNOFFICIAL: Performs a logical shift right on the memory data at the given address and EORs it with the accumulator.
+     */
+    public static void sre(CPU cpu, UnsignedWord address) {
+        var memoryData = cpu.getBus().read(address);
+        var result     = shiftRight(cpu, memoryData);
+
+        cpu.getBus().write(address, result);
+        eor(cpu, address);
     }
 }

@@ -308,48 +308,48 @@ public class OpcodeRegistry {
         register(new Opcode(0xD3, DCP, 8, INDIRECT_Y));
 
         // ISB (Illegal)
-        /*register(new Opcode(0xE7, ISB, 5, ZERO_PAGE));
+        register(new Opcode(0xE7, ISB, 5, ZERO_PAGE));
         register(new Opcode(0xF7, ISB, 6, ZERO_PAGE_X));
         register(new Opcode(0xEF, ISB, 6, ABSOLUTE));
         register(new Opcode(0xFF, ISB, 7, ABSOLUTE_X));
         register(new Opcode(0xFB, ISB, 7, ABSOLUTE_Y));
         register(new Opcode(0xE3, ISB, 8, INDIRECT_X));
-        register(new Opcode(0xF3, ISB, 8, INDIRECT_Y));*/
+        register(new Opcode(0xF3, ISB, 8, INDIRECT_Y));
 
         // RLA (Illegal)
-        /*register(new Opcode(0x27, RLA, 5, ZERO_PAGE));
+        register(new Opcode(0x27, RLA, 5, ZERO_PAGE));
         register(new Opcode(0x37, RLA, 6, ZERO_PAGE_X));
         register(new Opcode(0x2F, RLA, 6, ABSOLUTE));
         register(new Opcode(0x3F, RLA, 7, ABSOLUTE_X));
         register(new Opcode(0x3B, RLA, 7, ABSOLUTE_Y));
         register(new Opcode(0x23, RLA, 8, INDIRECT_X));
-        register(new Opcode(0x33, RLA, 8, INDIRECT_Y));*/
+        register(new Opcode(0x33, RLA, 8, INDIRECT_Y));
 
         // RRA (Illegal)
-        /*register(new Opcode(0x67, RRA, 5, ZERO_PAGE));
+        register(new Opcode(0x67, RRA, 5, ZERO_PAGE));
         register(new Opcode(0x77, RRA, 6, ZERO_PAGE_X));
         register(new Opcode(0x6F, RRA, 6, ABSOLUTE));
         register(new Opcode(0x7F, RRA, 7, ABSOLUTE_X));
         register(new Opcode(0x7B, RRA, 7, ABSOLUTE_Y));
         register(new Opcode(0x63, RRA, 8, INDIRECT_X));
-        register(new Opcode(0x73, RRA, 8, INDIRECT_Y));*/
+        register(new Opcode(0x73, RRA, 8, INDIRECT_Y));
 
         // SLO (Illegal)
-        /*register(new Opcode(0x07, SLO, 5, ZERO_PAGE));
+        register(new Opcode(0x07, SLO, 5, ZERO_PAGE));
         register(new Opcode(0x17, SLO, 6, ZERO_PAGE_X));
         register(new Opcode(0x0F, SLO, 6, ABSOLUTE));
         register(new Opcode(0x1F, SLO, 7, ABSOLUTE_X));
         register(new Opcode(0x1B, SLO, 7, ABSOLUTE_Y));
         register(new Opcode(0x03, SLO, 8, INDIRECT_X));
-        register(new Opcode(0x13, SLO, 8, INDIRECT_Y));*/
+        register(new Opcode(0x13, SLO, 8, INDIRECT_Y));
 
         // SRE (Illegal)
-        /*register(new Opcode(0x47, SRE, 5, ZERO_PAGE));
+        register(new Opcode(0x47, SRE, 5, ZERO_PAGE));
         register(new Opcode(0x57, SRE, 6, ZERO_PAGE_X));
         register(new Opcode(0x4F, SRE, 6, ABSOLUTE));
         register(new Opcode(0x5F, SRE, 7, ABSOLUTE_X));
         register(new Opcode(0x5B, SRE, 7, ABSOLUTE_Y));
         register(new Opcode(0x43, SRE, 8, INDIRECT_X));
-        register(new Opcode(0x53, SRE, 8, INDIRECT_Y));*/
+        register(new Opcode(0x53, SRE, 8, INDIRECT_Y));
     }
 }

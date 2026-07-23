@@ -53,6 +53,6 @@ public class StackOperations {
      * Transfers the X register to the stack pointer.
      */
     public static void txs(CPU cpu, UnsignedWord ignored) {
-        cpu.getStackPointer().updateValue(cpu.getX());
+        cpu.getStackPointer().setValue(cpu.getX());
     }
 }

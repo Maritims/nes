@@ -15,7 +15,6 @@ public class CPU {
      */
     private final Bus     bus;
     private       long    totalCycles          = 0;
-    private       boolean decimalModeSupported = true;
 
     private       StackPointer   stackPointer;
     private       UnsignedWord   programCounter;
@@ -97,10 +96,6 @@ public class CPU {
         return pc;
     }
 
-    public void setProgramCounter(UnsignedWord pc) {
-        this.programCounter = pc;
-    }
-
     public StatusRegister getStatusRegister() {
         return statusRegister;
     }
@@ -109,28 +104,28 @@ public class CPU {
         return accumulator;
     }
 
-    public void setAccumulator(UnsignedByte accumulator) {
-        this.accumulator = accumulator;
-    }
-
     public UnsignedByte getX() {
         return x;
-    }
-
-    public void setX(UnsignedByte x) {
-        this.x = x;
     }
 
     public UnsignedByte getY() {
         return y;
     }
 
-    public void setY(UnsignedByte y) {
-        this.y = y;
+    public void setProgramCounter(UnsignedWord pc) {
+        this.programCounter = pc;
     }
 
-    public void setDecimalModeSupported(boolean supported) {
-        this.decimalModeSupported = supported;
+    public void setAccumulator(UnsignedByte accumulator) {
+        this.accumulator = accumulator;
+    }
+
+    public void setX(UnsignedByte x) {
+        this.x = x;
+    }
+
+    public void setY(UnsignedByte y) {
+        this.y = y;
     }
 
     /**
@@ -214,141 +209,6 @@ public class CPU {
 
         this.statusRegister.updateNegativeAndZero(value);
         register.accept(value);
-    }
-
-    public void compare(UnsignedByte registerValue, UnsignedByte memoryValue) {
-        if (registerValue == null || memoryValue == null) {
-            throw new IllegalArgumentException("values cannot be null");
-        }
-        var hasCarry = registerValue.compareTo(memoryValue) >= 0;
-        var tmp      = registerValue.subtract(memoryValue);
-
-        this.statusRegister.updateFlag(Flag.Carry, hasCarry);
-        this.statusRegister.updateNegativeAndZero(tmp);
-    }
-
-    private void performArithmeticAddition(UnsignedByte memoryData) {
-        if (memoryData == null) {
-            throw new IllegalArgumentException("memoryData cannot be null");
-        }
-
-        var carryIn = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
-
-        if (decimalModeSupported && statusRegister.hasFlag(Flag.Decimal)) {
-            // Decimal mode addition
-            int low = accumulator.and(new UnsignedByte(0x0F)).intValue() + (memoryData.intValue() & 0x0F) + carryIn;
-            if (low > 9) low += 6;
-            int high = (accumulator.intValue() >> 4) + (memoryData.intValue() >> 4) + (low > 15 ? 1 : 0);
-
-            var result8 = new UnsignedByte(((high << 4) | (low & 0x0F)) & 0xFF);
-            this.statusRegister.updateNegativeAndZero(result8);
-
-            // Overflow is still calculated based on binary rules for 6502 (but results are often ignored in decimal mode)
-            int binarySum   = accumulator.intValue() + memoryData.intValue() + carryIn;
-            var hasOverflow = ((accumulator.intValue() ^ binarySum) & (memoryData.intValue() ^ binarySum) & 0x80) != 0;
-            this.statusRegister.updateFlag(Flag.Overflow, hasOverflow);
-
-            if (high > 9) high += 6;
-            this.statusRegister.updateFlag(Flag.Carry, high > 15);
-            this.accumulator = new UnsignedByte((high << 4 | (low & 0x0F)) & 0xFF);
-        } else {
-            // Binary mode addition
-            var sum16 = accumulator.unsignedWordValue()
-                    .add16(memoryData.unsignedWordValue())
-                    .add16(new UnsignedWord(carryIn));
-
-            var result8 = sum16.unsignedByteValue();
-
-            var accumulatorXorResult = accumulator.xor(result8);
-            var memoryXorResult      = memoryData.xor(result8);
-            var overflow             = accumulatorXorResult.and(memoryXorResult);
-
-            var hasCarry    = sum16.isGreaterThan(UnsignedByte.MAX_VALUE);
-            var hasOverflow = overflow.testBit(7);
-
-            this.statusRegister.updateFlag(Flag.Carry, hasCarry);
-            this.statusRegister.updateFlag(Flag.Overflow, hasOverflow);
-            this.statusRegister.updateNegativeAndZero(result8);
-
-            this.accumulator = result8;
-        }
-    }
-
-    public void RLA(UnsignedWord address) {
-        var value = rotateLeft(bus.read(address));
-        bus.write(address, value);
-        AND(value);
-    }
-
-    public void RRA(UnsignedWord address) {
-        var value = rotateRight(bus.read(address));
-        bus.write(address, value);
-        performArithmeticAddition(value);
-    }
-
-    public void SLO(UnsignedWord address) {
-        var value = shiftLeft(bus.read(address));
-        bus.write(address, value);
-        ORA(value);
-    }
-
-    public void SRE(UnsignedWord address) {
-        var value = shiftRight(bus.read(address));
-        bus.write(address, value);
-        EOR(value);
-    }
-
-    public UnsignedByte rotateLeft(UnsignedByte value) {
-        var carryIn  = statusRegister.hasFlag(Flag.Carry) ? 1 : 0;
-        var carryOut = value.testBit(7);
-        var result   = new UnsignedByte(((value.intValue() << 1) | carryIn) & 0xFF);
-        statusRegister.updateFlag(Flag.Carry, carryOut);
-        statusRegister.updateNegativeAndZero(result);
-        return result;
-    }
-
-    public UnsignedByte rotateRight(UnsignedByte value) {
-        var carryIn  = statusRegister.hasFlag(Flag.Carry) ? 0x80 : 0;
-        var carryOut = value.testBit(0);
-        var result   = new UnsignedByte(((value.intValue() >> 1) | carryIn) & 0xFF);
-        statusRegister.updateFlag(Flag.Carry, carryOut);
-        statusRegister.updateNegativeAndZero(result);
-        return result;
-    }
-
-    public UnsignedByte shiftLeft(UnsignedByte value) {
-        var carryOut = value.testBit(7);
-        var result   = new UnsignedByte((value.intValue() << 1) & 0xFF);
-        statusRegister.updateFlag(Flag.Carry, carryOut);
-        statusRegister.updateNegativeAndZero(result);
-        return result;
-    }
-
-    public UnsignedByte shiftRight(UnsignedByte value) {
-        var carryOut = value.testBit(0);
-        var result   = new UnsignedByte((value.intValue() >> 1) & 0xFF);
-        statusRegister.updateFlag(Flag.Carry, carryOut);
-        statusRegister.updateNegativeAndZero(result);
-        return result;
-    }
-
-    private void AND(UnsignedByte value) {
-        accumulator = accumulator.and(value);
-        statusRegister.updateNegativeAndZero(accumulator);
-    }
-
-    private void ORA(UnsignedByte value) {
-        accumulator = accumulator.or(value);
-        statusRegister.updateNegativeAndZero(accumulator);
-    }
-
-    private void EOR(UnsignedByte value) {
-        accumulator = accumulator.xor(value);
-        statusRegister.updateNegativeAndZero(accumulator);
-    }
-
-    public void NOP() {
-        // Do nothing
     }
 
     public void step() {
