@@ -1,4 +1,4 @@
-package no.clueless.emulation;
+package no.clueless.emulation.gui;
 
 import java.awt.image.BufferedImage;
 

@@ -42,7 +42,7 @@ public class JumpOperations {
             throw new IllegalArgumentException("targetAddress cannot be null");
         }
 
-        var addressToPush = cpu.getProgramCounter().subtract16(UnsignedWord.ONE);
+        var addressToPush = cpu.getProgramCounter().subtractWord(UnsignedWord.ONE);
         cpu.push16(addressToPush);
         cpu.setProgramCounter(targetAddress);
     }

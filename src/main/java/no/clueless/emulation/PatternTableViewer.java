@@ -1,5 +1,7 @@
 package no.clueless.emulation;
 
+import no.clueless.emulation.gui.TileDecoder;
+
 import java.awt.image.BufferedImage;
 
 public class PatternTableViewer {

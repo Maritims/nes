@@ -94,6 +94,13 @@ public class UnsignedWord extends Number implements Comparable<UnsignedWord> {
         return new UnsignedWord((value - 1) & 0xFFFF);
     }
 
+    public UnsignedWord divide(UnsignedWord divisor) {
+        if (divisor == null) {
+            throw new IllegalArgumentException("divisor cannot be null");
+        }
+        return new UnsignedWord(value / divisor.intValue());
+    }
+
     @Override
     public double doubleValue() {
         return value;
@@ -180,7 +187,7 @@ public class UnsignedWord extends Number implements Comparable<UnsignedWord> {
         return new UnsignedWord((this.intValue() - value.intValue()) & 0xFFFF);
     }
 
-    public UnsignedWord subtract16(UnsignedWord value) {
+    public UnsignedWord subtractWord(UnsignedWord value) {
         if (value == null) {
             throw new IllegalArgumentException("value cannot be null");
         }

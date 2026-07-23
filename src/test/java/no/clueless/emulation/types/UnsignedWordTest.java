@@ -311,40 +311,40 @@ class UnsignedWordTest {
     }
 
     @Test
-    void subtract16_should_handle_regular_subtraction_without_wraparound() {
+    void subtractWord_should_handle_regular_subtraction_without_wraparound() {
         // arrange
         var value1   = new UnsignedWord(0x1234);
         var value2   = new UnsignedWord(0x0024);
         var expected = new UnsignedWord(0x1210);
 
         // act
-        var result = value1.subtract16(value2);
+        var result = value1.subtractWord(value2);
 
         // assert
         assertEquals(expected, result, "Subtracted result should correctly be 0x1210");
     }
 
     @Test
-    void subtract16_should_wrap_around_on_underflow() {
+    void subtractWord_should_wrap_around_on_underflow() {
         // arrange
         var value1   = new UnsignedWord(0x0000);
         var value2   = new UnsignedWord(0x0001);
         var expected = new UnsignedWord(0xFFFF);
 
         // act
-        var result = value1.subtract16(value2);
+        var result = value1.subtractWord(value2);
 
         // assert
         assertEquals(expected, result, "Subtracted result should wrap around to 0xFFFF on underflow");
     }
 
     @Test
-    void subtract16_should_throw_exception_for_null_argument() {
+    void subtractWord_should_throw_exception_for_null_argument() {
         // arrange
         var value1 = new UnsignedWord(0x1234);
 
         // act and assert
-        assertThrows(IllegalArgumentException.class, () -> value1.subtract16(null), "Should throw exception when argument is null");
+        assertThrows(IllegalArgumentException.class, () -> value1.subtractWord(null), "Should throw exception when argument is null");
     }
 
     @Test
