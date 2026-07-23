@@ -18,7 +18,8 @@ public class UnsignedWord extends Number implements Comparable<UnsignedWord> {
         this.value = value;
     }
 
-    public static UnsignedWord ONE = new UnsignedWord(1);
+    public static final UnsignedWord ZERO = new UnsignedWord(0);
+    public static final UnsignedWord ONE  = new UnsignedWord(1);
 
     /**
      * Creates a UInt16 from a low and high byte with a Little-Endian layout.
@@ -72,6 +73,16 @@ public class UnsignedWord extends Number implements Comparable<UnsignedWord> {
         }
         var signedOffset = offset.byteValue();
         return new UnsignedWord((this.intValue() + signedOffset) & 0xFFFF);
+    }
+
+    public boolean between(UnsignedWord lower, UnsignedWord upper) {
+        if (lower == null) {
+            throw new IllegalArgumentException("lower cannot be null");
+        }
+        if (upper == null) {
+            throw new IllegalArgumentException("upper cannot be null");
+        }
+        return lower.intValue() <= value && value <= upper.intValue();
     }
 
     @Override
@@ -139,6 +150,13 @@ public class UnsignedWord extends Number implements Comparable<UnsignedWord> {
      */
     public UnsignedByte lowByte() {
         return new UnsignedByte(value & 0xFF);
+    }
+
+    public UnsignedWord modulo(UnsignedWord divisor) {
+        if (divisor == null) {
+            throw new IllegalArgumentException("divisor cannot be null");
+        }
+        return new UnsignedWord(value % divisor.intValue());
     }
 
     public UnsignedWord shiftLeft(int n) {

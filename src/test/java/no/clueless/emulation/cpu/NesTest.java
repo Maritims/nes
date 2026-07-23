@@ -1,7 +1,7 @@
 package no.clueless.emulation.cpu;
 
-import no.clueless.emulation.Cartridge;
 import no.clueless.emulation.SystemBus;
+import no.clueless.emulation.cartridge.CartridgeLoader;
 import no.clueless.emulation.ram.RAM;
 import no.clueless.emulation.types.UnsignedWord;
 import org.junit.jupiter.api.Assertions;
@@ -15,7 +15,7 @@ public class NesTest {
     @Test
     public void runNesTest() throws Exception {
         var romPath   = Paths.get("src/test/resources/nestest/nestest.nes");
-        var cartridge = Cartridge.loadFromFile(romPath);
+        var cartridge = CartridgeLoader.load(romPath);
         var ram       = new RAM();
         var bus       = new SystemBus(ram, cartridge);
         var cpu       = new CPU(bus);

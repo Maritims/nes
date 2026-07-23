@@ -1,4 +1,4 @@
-package no.clueless.emulation;
+package no.clueless.emulation.cartridge;
 
 import no.clueless.emulation.types.UnsignedWord;
 
