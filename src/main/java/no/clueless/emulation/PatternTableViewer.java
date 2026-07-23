@@ -1,6 +1,6 @@
 package no.clueless.emulation;
 
-import no.clueless.emulation.gui.TileDecoder;
+import no.clueless.emulation.ppu.TileDecoder;
 
 import java.awt.image.BufferedImage;
 

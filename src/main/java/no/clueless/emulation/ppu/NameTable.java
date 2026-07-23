@@ -1,4 +1,4 @@
-package no.clueless.emulation.gui;
+package no.clueless.emulation.ppu;
 
 import no.clueless.emulation.types.UnsignedByte;
 
