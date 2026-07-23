@@ -2,6 +2,10 @@ package no.clueless.emulation.cpu;
 
 import no.clueless.emulation.SystemBus;
 import no.clueless.emulation.cartridge.CartridgeLoader;
+import no.clueless.emulation.ppu.NameTableBank;
+import no.clueless.emulation.ppu.PPU;
+import no.clueless.emulation.ppu.PPUBus;
+import no.clueless.emulation.ppu.PaletteRAM;
 import no.clueless.emulation.ram.RAM;
 import no.clueless.emulation.types.UnsignedWord;
 import org.junit.jupiter.api.Assertions;
@@ -14,11 +18,15 @@ public class NesTest {
 
     @Test
     public void runNesTest() throws Exception {
-        var romPath   = Paths.get("src/test/resources/nestest/nestest.nes");
-        var cartridge = CartridgeLoader.load(romPath);
-        var ram       = new RAM();
-        var bus       = new SystemBus(ram, cartridge);
-        var cpu       = new CPU(bus);
+        var romPath       = Paths.get("src/test/resources/nestest/nestest.nes");
+        var cartridge     = CartridgeLoader.load(romPath);
+        var ram           = new RAM();
+        var nameTableBank = new NameTableBank();
+        var paletteRam    = new PaletteRAM();
+        var ppuBus        = new PPUBus(nameTableBank, paletteRam);
+        var ppu           = new PPU(ppuBus);
+        var bus           = new SystemBus(ram, cartridge, ppu);
+        var cpu           = new CPU(bus);
 
         // nestest in automated mode starts at 0xC000
         cpu.setProgramCounter(new UnsignedWord(0xC000));

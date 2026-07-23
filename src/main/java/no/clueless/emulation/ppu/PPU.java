@@ -1,11 +1,11 @@
 package no.clueless.emulation.ppu;
 
 import no.clueless.emulation.types.UnsignedByte;
+import no.clueless.emulation.types.UnsignedWord;
 
 public class PPU {
-    private final byte[] vram       = new byte[2048];
-    private final byte[] paletteRam = new byte[32];
-    private final byte[] oam        = new byte[256];
+    private final PPUBus ppuBus;
+    private final byte[] oam = new byte[256];
 
     private UnsignedByte PPUCTRL;
     private UnsignedByte PPUMASK;
@@ -22,8 +22,10 @@ public class PPU {
     private int     x;
     private boolean addressLatch; // w
 
-    public byte[] getVram() {
-        return vram;
+    private UnsignedByte vramReadBuffer = UnsignedByte.ZERO;
+
+    public PPU(PPUBus ppuBus) {
+        this.ppuBus = ppuBus;
     }
 
     public void writePpuCtrl(UnsignedByte value) {
@@ -45,9 +47,9 @@ public class PPU {
     }
 
     public void writeOamData(UnsignedByte value) {
-        OAMDATA               = value;
-        oam[value.intValue()] = value.byteValue();
-        OAMADDR               = OAMADDR.increment();
+        OAMDATA                 = value;
+        oam[OAMADDR.intValue()] = value.byteValue();
+        OAMADDR                 = OAMADDR.increment();
     }
 
     public void writePpuScroll(UnsignedByte value) {
@@ -55,14 +57,14 @@ public class PPU {
 
         if (!addressLatch) {
             // First write: fine X (bits 0-2) and coarse X (bits 3-7 into 't' bits 0-4)
-            x = value.intValue() & 0x07;
+            x               = value.intValue() & 0x07;
             tempVramAddress = (tempVramAddress & 0xFFE0) | (value.intValue() >> 3);
-            addressLatch = true;
+            addressLatch    = true;
         } else {
             // Second write: fine Y (bits 0-2 into 't' bits 12-14) and coarse Y (bits 3-7 into 't' bits 5-9)
             tempVramAddress = (tempVramAddress & 0x8FFF) | ((value.intValue() & 0x07) << 12);
             tempVramAddress = (tempVramAddress & 0xFC1F) | ((value.intValue() >> 3) << 5);
-            addressLatch = false;
+            addressLatch    = false;
         }
     }
 
@@ -73,39 +75,59 @@ public class PPU {
         if (!addressLatch) {
             // First write: High byte of VRAM address (bits 8-13 into 't')
             tempVramAddress = (tempVramAddress & 0x00FF) | ((val & 0x3F) << 8);
-            addressLatch = true;
+            addressLatch    = true;
         } else {
             // Second write: Low byte of VRAM address (bits 0-7 into 't')
             tempVramAddress = (tempVramAddress & 0xFF00) | val;
             // Copy temporary address 't' to active VRAM address 'v'
             currentVramAddress = tempVramAddress;
-            addressLatch = false;
+            addressLatch       = false;
         }
     }
 
     public void writePpuData(UnsignedByte value) {
         PPUDATA = value;
 
-        int addr = currentVramAddress & 0x3FFF;
+        ppuBus.write(new UnsignedWord(currentVramAddress), value);
 
-        // 1. Route write to Nametable VRAM ($2000 - $3EFF)
-        if (addr >= 0x2000 && addr <= 0x3EFF) {
-            int vramIndex = (addr - 0x2000) & 0x07FF; // 2KB mirror mask
-            vram[vramIndex] = value.byteValue();
-        }
-        // 2. Route write to Palette RAM ($3F00 - $3FFF)
-        else if (addr >= 0x3F00 && addr <= 0x3FFF) {
-            int paletteAddr = addr & 0x001F;
-            if ((paletteAddr & 0x13) == 0x10) paletteAddr &= ~0x10; // Hardware mirror
-            paletteRam[paletteAddr] = value.byteValue();
-        }
-
-        // 3. Auto-increment VRAM address (+1 across or +32 down)
-        int step = (PPUCTRL.intValue() & 0x04) != 0 ? 32 : 1;
+        // Auto-increment VRAM address (+1 across or +32 down)
+        var step = (PPUCTRL.intValue() & 0x04) != 0 ? 32 : 1;
         currentVramAddress = (currentVramAddress + step) & 0x3FFF;
     }
 
     public void writeOamDma(UnsignedByte value) {
         OAMDMA = value;
+    }
+
+    public UnsignedByte readPpuStatus() {
+        var status = PPUSTATUS;
+        addressLatch = false;
+        PPUSTATUS    = PPUSTATUS.and(new UnsignedByte(0x7F));
+        return status;
+    }
+
+    public UnsignedByte readOamData() {
+        return new UnsignedByte(oam[OAMADDR.intValue()]);
+    }
+
+    public UnsignedByte readPpuData() {
+        UnsignedWord address = new UnsignedWord(currentVramAddress);
+        UnsignedByte data    = ppuBus.read(address);
+
+        // If address is in VRAM ($0000-$3EFF), return previous buffered byte and store new data in buffer
+        if ((currentVramAddress & 0x3FFF) < 0x3F00) {
+            UnsignedByte bufferedResult = vramReadBuffer;
+            vramReadBuffer = data;
+            data           = bufferedResult;
+        } else {
+            // Palette RAM ($3F00-$3FFF) reads return immediately, but update buffer with mirrored Nametable byte below
+            vramReadBuffer = ppuBus.read(new UnsignedWord(currentVramAddress - 0x1000));
+        }
+
+        // Auto-increment VRAM address
+        int step = (PPUCTRL.intValue() & 0x04) != 0 ? 32 : 1;
+        currentVramAddress = (currentVramAddress + step) & 0x7FFF;
+
+        return data;
     }
 }

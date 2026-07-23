@@ -1,6 +1,7 @@
 package no.clueless.emulation;
 
 import no.clueless.emulation.cartridge.Cartridge;
+import no.clueless.emulation.ppu.PPU;
 import no.clueless.emulation.ram.RAM;
 import no.clueless.emulation.types.UnsignedWord;
 import no.clueless.emulation.types.UnsignedByte;
@@ -27,10 +28,12 @@ public class SystemBus implements Bus {
 
     private final RAM       ram;
     private final Cartridge cartridge;
+    private final PPU       ppu;
 
-    public SystemBus(RAM ram, Cartridge cartridge) {
+    public SystemBus(RAM ram, Cartridge cartridge, PPU ppu) {
         this.ram       = ram;
         this.cartridge = cartridge;
+        this.ppu       = ppu;
     }
 
     @Override
@@ -38,7 +41,13 @@ public class SystemBus implements Bus {
         if (address.between(RAM_START, RAM_END)) {
             return ram.read(address.modulo(RAM_SIZE));
         } else if (address.between(PPU_REGISTERS_START, PPU_REGISTERS_END)) {
-            return UnsignedByte.ZERO;
+            var register = address.intValue() & 0x0007;
+            return switch (register) {
+                case 2 -> ppu.readPpuStatus();
+                case 4 -> ppu.readOamData();
+                case 7 -> ppu.readPpuData();
+                default -> UnsignedByte.ZERO;
+            };
         } else if (address.between(APU_IO_START, APU_IO_END)) {
             return UnsignedByte.ZERO;
         } else if (address.between(APU_TEST_START, APU_TEST_END)) {
@@ -53,11 +62,22 @@ public class SystemBus implements Bus {
         if (address.between(RAM_START, RAM_END)) {
             ram.write(address.modulo(RAM_SIZE), value);
         } else if (address.between(PPU_REGISTERS_START, PPU_REGISTERS_END)) {
-            // PPU - Not implemented
+            var register = address.intValue() & 0x0007;
+            switch (register) {
+                case 0 -> ppu.writePpuCtrl(value);
+                case 1 -> ppu.writePpuMask(value);
+                case 3 -> ppu.writeOamAddr(value);
+                case 4 -> ppu.writeOamData(value);
+                case 5 -> ppu.writePpuScroll(value);
+                case 6 -> ppu.writePpuAddr(value);
+                case 7 -> ppu.writePpuData(value);
+            }
         } else if (address.between(APU_IO_START, APU_IO_END)) {
             // APU/IO - Not implemented
         } else if (address.between(APU_TEST_START, APU_TEST_END)) {
             // APU/IO
+        } else if (address.intValue() == 0x4014) {
+            ppu.writeOamDma(value);
         } else {
             //cartridge.writeCpu(address, value);
         }
