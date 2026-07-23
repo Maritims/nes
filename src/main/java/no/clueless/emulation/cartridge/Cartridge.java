@@ -25,6 +25,11 @@ public class Cartridge {
         return characterReadOnlyMemory;
     }
 
+    public UnsignedByte readChrRom(UnsignedWord address) {
+        var targetAddress = mapper.mapPpuRead(address);
+        return targetAddress == -1 || targetAddress >= characterReadOnlyMemory.length ? UnsignedByte.ZERO : new UnsignedByte(characterReadOnlyMemory[targetAddress]);
+    }
+
     public UnsignedByte readCpu(UnsignedWord address) {
         int mappedTarget = mapper.mapCpuRead(address);
         if (mappedTarget != -1) {

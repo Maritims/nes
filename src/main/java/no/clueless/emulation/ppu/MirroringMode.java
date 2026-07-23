@@ -1,5 +1,8 @@
 package no.clueless.emulation.ppu;
 
+/**
+ * Represents the mirroring mode of the PPU.
+ */
 public enum MirroringMode {
     VERTICAL,
     HORIZONTAL,
