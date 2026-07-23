@@ -21,6 +21,10 @@ public class Cartridge {
         this.mirroredVertically      = mirroredVertically;
     }
 
+    public byte[] getCharacterReadOnlyMemory() {
+        return characterReadOnlyMemory;
+    }
+
     public UnsignedByte readCpu(UnsignedWord address) {
         int mappedTarget = mapper.mapCpuRead(address);
         if (mappedTarget != -1) {

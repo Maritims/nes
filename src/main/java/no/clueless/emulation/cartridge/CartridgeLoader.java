@@ -1,6 +1,7 @@
 package no.clueless.emulation.cartridge;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
@@ -82,5 +83,14 @@ public class CartridgeLoader {
             throw new RuntimeException("Failed to read file: " + path);
         }
         return load(bytes);
+    }
+
+    public static Cartridge load(InputStream inputStream) {
+        try {
+            var bytes = inputStream.readAllBytes();
+            return load(bytes);
+        } catch (IOException e) {
+            throw new RuntimeException("Failed to read file: " + inputStream);
+        }
     }
 }
