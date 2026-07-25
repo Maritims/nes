@@ -112,7 +112,7 @@ public class PPU {
 
     public UnsignedByte readPpuData() {
         UnsignedWord address = new UnsignedWord(currentVramAddress);
-        UnsignedByte data    = ppuBus.read(address);
+        UnsignedByte data    = ppuBus.readByte(address);
 
         // If address is in VRAM ($0000-$3EFF), return previous buffered byte and store new data in buffer
         if ((currentVramAddress & 0x3FFF) < 0x3F00) {
@@ -121,7 +121,7 @@ public class PPU {
             data           = bufferedResult;
         } else {
             // Palette RAM ($3F00-$3FFF) reads return immediately, but update buffer with mirrored Nametable byte below
-            vramReadBuffer = ppuBus.read(new UnsignedWord(currentVramAddress - 0x1000));
+            vramReadBuffer = ppuBus.readByte(new UnsignedWord(currentVramAddress - 0x1000));
         }
 
         // Auto-increment VRAM address

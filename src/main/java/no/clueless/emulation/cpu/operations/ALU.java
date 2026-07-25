@@ -8,7 +8,7 @@ import no.clueless.emulation.types.UnsignedWord;
 public class ALU {
     public static void executeArithmeticCalculation(CPU cpu, UnsignedWord address, boolean isSubtraction) {
         var accumulator     = cpu.getAccumulator().intValue();
-        var memoryData      = cpu.getBus().read(address).intValue();
+        var memoryData      = cpu.getBus().read(address.intValue());
         var hasCarryAlready = cpu.getStatusRegister().hasFlag(Flag.Carry) ? 1 : 0;
 
         if (isSubtraction) {

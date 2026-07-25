@@ -39,6 +39,10 @@ public class UnsignedWord extends Number implements Comparable<UnsignedWord> {
         return new UnsignedWord((high.intValue() << 8) | low.intValue());
     }
 
+    public static UnsignedWord fromInts(int low, int high) {
+        return new UnsignedWord((high << 8) | low);
+    }
+
     public UnsignedWord addByte(UnsignedByte val) {
         if (val == null) {
             throw new IllegalArgumentException("val cannot be null");

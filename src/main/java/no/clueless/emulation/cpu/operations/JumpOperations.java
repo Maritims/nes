@@ -21,10 +21,10 @@ public class JumpOperations {
 
         cpu.getStatusRegister().updateFlag(Flag.InterruptDisable, true);
 
-        var lowByte  = cpu.getBus().read(new UnsignedWord(0xFFFE));
-        var highByte = cpu.getBus().read(new UnsignedWord(0xFFFF));
+        var lowByte  = cpu.getBus().read(0xFFFE);
+        var highByte = cpu.getBus().read(0xFFFF);
 
-        cpu.setProgramCounter(UnsignedWord.fromBytes(lowByte, highByte));
+        cpu.setProgramCounter(UnsignedWord.fromInts(lowByte, highByte));
     }
 
     /**

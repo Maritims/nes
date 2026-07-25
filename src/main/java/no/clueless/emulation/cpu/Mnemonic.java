@@ -83,11 +83,11 @@ public enum Mnemonic {
     BVS("branch on overflow set", BranchOperations::bvs);
     // endregion
 
-    private final String name;
+    private final String               name;
     private final InstructionOperation instructionOperation;
 
     Mnemonic(String name, InstructionOperation instructionOperation) {
-        this.name = name;
+        this.name                 = name;
         this.instructionOperation = instructionOperation;
     }
 

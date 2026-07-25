@@ -1,8 +1,8 @@
 package no.clueless.emulation;
 
 import no.clueless.emulation.cartridge.CartridgeLoader;
-import no.clueless.emulation.cpu.CPU;
-import no.clueless.emulation.ram.RAM;
+import no.clueless.emulation.ppu.NametableRenderer;
+import no.clueless.emulation.ppu.NametableViewerFrame;
 import org.junit.jupiter.api.Test;
 
 import javax.swing.*;
@@ -20,7 +20,7 @@ class NametableViewerFrameTest {
         }
 
         SwingUtilities.invokeLater(() -> {
-            var image  = NametableRenderer.renderNametable0(vram, cartridge.getCharacterReadOnlyMemory(), null);
+            var image  = NametableRenderer.renderNametable0(vram, cartridge.getChrRom().getData(), null);
             var viewer = new NametableViewerFrame();
             viewer.updateBuffer(image);
             viewer.setVisible(true);

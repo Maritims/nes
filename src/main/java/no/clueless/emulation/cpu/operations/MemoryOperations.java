@@ -20,9 +20,9 @@ public class MemoryOperations {
             throw new IllegalArgumentException("address cannot be null");
         }
 
-        var data = cpu.getBus().read(address);
-        cpu.getStatusRegister().updateNegativeAndZero(data);
-        register.accept(data);
+        var data = cpu.getBus().read(address.intValue());
+        cpu.getStatusRegister().updateNegativeAndZero(new UnsignedByte(data));
+        register.accept(new UnsignedByte(data));
     }
 
     /**
@@ -50,10 +50,10 @@ public class MemoryOperations {
      * UNOFFICIAL: Loads the accumulator and X register with the value at the specified address and updates the status register.
      */
     public static void lax(CPU cpu, UnsignedWord address) {
-        var memoryData = cpu.getBus().read(address);
-        cpu.setAccumulator(memoryData);
-        cpu.setX(memoryData);
-        cpu.getStatusRegister().updateNegativeAndZero(memoryData);
+        var memoryData = cpu.getBus().read(address.intValue());
+        cpu.setAccumulator(new UnsignedByte(memoryData));
+        cpu.setX(new UnsignedByte(memoryData));
+        cpu.getStatusRegister().updateNegativeAndZero(new UnsignedByte(memoryData));
     }
 
     /**
@@ -64,7 +64,7 @@ public class MemoryOperations {
         var x           = cpu.getX();
         var result      = accumulator.and(x);
 
-        cpu.getBus().write(address, result);
+        cpu.getBus().write(address.intValue(), result.intValue());
     }
 
     /**
@@ -81,7 +81,7 @@ public class MemoryOperations {
         if (register == null) {
             throw new IllegalArgumentException("register cannot be null");
         }
-        cpu.getBus().write(address, register.get());
+        cpu.getBus().write(address.intValue(), register.get().intValue());
     }
 
     /**
@@ -137,24 +137,24 @@ public class MemoryOperations {
      * Increments the memory data at the specified address and updates the status register.
      */
     public static void inc(CPU cpu, UnsignedWord address) {
-        var memoryData = cpu.getBus().read(address);
-        var result     = memoryData.increment();
+        var memoryData = cpu.getBus().read(address.intValue());
+        var result     = memoryData + 1;
 
-        cpu.getStatusRegister().updateNegativeAndZero(result);
-        cpu.getBus().write(address, memoryData);
-        cpu.getBus().write(address, result);
+        cpu.getStatusRegister().updateNegativeAndZero(new UnsignedByte(result));
+        cpu.getBus().write(address.intValue(), memoryData);
+        cpu.getBus().write(address.intValue(), result);
     }
 
     /**
      * Decrements the memory data at the specified address and updates the status register.
      */
     public static void dec(CPU cpu, UnsignedWord address) {
-        var memoryData = cpu.getBus().read(address);
-        var result     = memoryData.decrement();
+        var memoryData = cpu.getBus().read(address.intValue());
+        var result     = memoryData - 1;
 
-        cpu.getStatusRegister().updateNegativeAndZero(result);
-        cpu.getBus().write(address, memoryData);
-        cpu.getBus().write(address, result);
+        cpu.getStatusRegister().updateNegativeAndZero(new UnsignedByte(result));
+        cpu.getBus().write(address.intValue(), memoryData);
+        cpu.getBus().write(address.intValue(), result);
     }
 
     /**

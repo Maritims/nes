@@ -5,21 +5,23 @@ import no.clueless.emulation.types.UnsignedByte;
 import no.clueless.emulation.types.UnsignedWord;
 
 public class PPUBus {
-    private final NameTableBank nameTableBank;
-    private final PaletteRAM    paletteRam;
+    private final PatternTableBank patternTableBank;
+    private final NameTableBank    nameTableBank;
+    private final PaletteRAM       paletteRam;
 
     private Cartridge cartridge;
 
-    public PPUBus(NameTableBank nameTableBank, PaletteRAM paletteRam) {
-        this.nameTableBank = nameTableBank;
-        this.paletteRam    = paletteRam;
+    public PPUBus(PatternTableBank patternTableBank, NameTableBank nameTableBank, PaletteRAM paletteRam) {
+        this.patternTableBank = patternTableBank;
+        this.nameTableBank    = nameTableBank;
+        this.paletteRam       = paletteRam;
     }
 
     public void loadCartridge(Cartridge cartridge) {
         this.cartridge = cartridge;
     }
 
-    public UnsignedByte read(UnsignedWord address) {
+    public UnsignedByte readByte(UnsignedWord address) {
         var addr = address.intValue() & 0x3FFF; // 14-bit PPU address space.
 
         if (addr < 0x2000) {

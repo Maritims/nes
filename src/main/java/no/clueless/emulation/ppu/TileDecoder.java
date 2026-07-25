@@ -1,5 +1,7 @@
 package no.clueless.emulation.ppu;
 
+import no.clueless.emulation.types.UnsignedByte;
+
 import java.awt.image.BufferedImage;
 
 public class TileDecoder {
@@ -11,10 +13,10 @@ public class TileDecoder {
             0xFFFFFFFF, // White
     };
 
-    public static void decodeTile(byte[] tileData, int tileOffset, BufferedImage image, int startX, int startY) {
+    public static void decodeTile(UnsignedByte[] tileData, int tileOffset, BufferedImage image, int startX, int startY) {
         for (var y = 0; y < TILE_SIZE; y++) {
-            var plane0 = tileData[tileOffset + y] & 0xFF;
-            var plane1 = tileData[tileOffset + y + TILE_SIZE] & 0xFF;
+            var plane0 = tileData[tileOffset + y].intValue() & 0xFF;
+            var plane1 = tileData[tileOffset + y + TILE_SIZE].intValue() & 0xFF;
 
             for (var x = 0; x < TILE_SIZE; x++) {
                 var bitShift   = 7 - x;

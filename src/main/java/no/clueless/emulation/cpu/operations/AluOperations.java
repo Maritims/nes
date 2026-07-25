@@ -40,9 +40,9 @@ public class AluOperations {
      * ANDs the accumulator with the memory data at the given address and updates the status register.
      */
     public static void and(CPU cpu, UnsignedWord address) {
-        var memoryData  = cpu.getBus().read(address);
+        var memoryData  = cpu.getBus().read(address.intValue());
         var accumulator = cpu.getAccumulator();
-        var result      = accumulator.and(memoryData);
+        var result      = accumulator.and(new UnsignedByte(memoryData));
 
         cpu.setAccumulator(result);
         cpu.getStatusRegister().updateNegativeAndZero(result);
@@ -52,9 +52,9 @@ public class AluOperations {
      * ORs the accumulator with the memory data at the given address and updates the status register.
      */
     public static void ora(CPU cpu, UnsignedWord address) {
-        var memoryData  = cpu.getBus().read(address);
+        var memoryData  = cpu.getBus().read(address.intValue());
         var accumulator = cpu.getAccumulator();
-        var result      = accumulator.or(memoryData);
+        var result      = accumulator.or(new UnsignedByte(memoryData));
 
         cpu.setAccumulator(result);
         cpu.getStatusRegister().updateNegativeAndZero(result);
@@ -64,9 +64,9 @@ public class AluOperations {
      * XORs the accumulator with the memory data at the given address and updates the status register.
      */
     public static void eor(CPU cpu, UnsignedWord address) {
-        var memoryData  = cpu.getBus().read(address);
+        var memoryData  = cpu.getBus().read(address.intValue());
         var accumulator = cpu.getAccumulator();
-        var result      = accumulator.xor(memoryData);
+        var result      = accumulator.xor(new UnsignedByte(memoryData));
 
         cpu.setAccumulator(result);
         cpu.getStatusRegister().updateNegativeAndZero(result);
@@ -76,12 +76,12 @@ public class AluOperations {
      * Sets the flags based on the accumulator and the memory data at the given address.
      */
     public static void bit(CPU cpu, UnsignedWord address) {
-        var memoryData  = cpu.getBus().read(address);
+        var memoryData  = cpu.getBus().read(address.intValue());
         var accumulator = cpu.getAccumulator();
-        var result      = accumulator.and(memoryData);
+        var result      = accumulator.and(new UnsignedByte(memoryData));
         var isZero      = result.equals(UnsignedByte.ZERO);
-        var bit7        = memoryData.testBit(7);
-        var bit6        = memoryData.testBit(6);
+        var bit7        = (memoryData & (1 << 7)) != 0;
+        var bit6        = (memoryData & (1 << 6)) != 0;
 
         cpu.getStatusRegister().updateFlag(Flag.Zero, isZero);
         cpu.getStatusRegister().updateFlag(Flag.Negative, bit7);
@@ -99,8 +99,8 @@ public class AluOperations {
         if (address == null) {
             throw new IllegalArgumentException("address cannot be null");
         }
-        var memoryData = cpu.getBus().read(address);
-        compare(cpu, registerValue, memoryData);
+        var memoryData = cpu.getBus().read(address.intValue());
+        compare(cpu, registerValue, new UnsignedByte(memoryData));
     }
 
     /**
@@ -143,21 +143,21 @@ public class AluOperations {
      * UNOFFICIAL: Decrements the memory data at the given address and compares it with the accumulator.
      */
     public static void dcp(CPU cpu, UnsignedWord address) {
-        var memoryData = cpu.getBus().read(address);
-        var result     = memoryData.decrement();
+        var memoryData = cpu.getBus().read(address.intValue());
+        var result     = memoryData - 1;
 
-        cpu.getBus().write(address, result);
-        compare(cpu, cpu.getAccumulator(), result);
+        cpu.getBus().write(address.intValue(), result);
+        compare(cpu, cpu.getAccumulator(), new UnsignedByte(result));
     }
 
     /**
      * UNOFFICIAL: Increments the memory data at the given address and performs an arithmetic calculation.
      */
     public static void isb(CPU cpu, UnsignedWord address) {
-        var memoryData = cpu.getBus().read(address);
-        var result     = memoryData.increment();
+        var memoryData = cpu.getBus().read(address.intValue());
+        var result     = memoryData + 1;
 
-        cpu.getBus().write(address, result);
+        cpu.getBus().write(address.intValue(), result);
         executeArithmeticCalculation(cpu, address, true);
     }
 
@@ -165,10 +165,10 @@ public class AluOperations {
      * UNOFFICIAL: Performs a logical shift left on the memory data at the given address and ORs it with the accumulator.
      */
     public static void slo(CPU cpu, UnsignedWord address) {
-        var memoryData = cpu.getBus().read(address);
-        var result     = shiftLeft(cpu, memoryData);
+        var memoryData = cpu.getBus().read(address.intValue());
+        var result     = shiftLeft(cpu, new UnsignedByte(memoryData));
 
-        cpu.getBus().write(address, result);
+        cpu.getBus().write(address.intValue(), result.intValue());
         ora(cpu, address);
     }
 
@@ -176,10 +176,10 @@ public class AluOperations {
      * UNOFFICIAL: Performs a logical shift right on the memory data at the given address and EORs it with the accumulator.
      */
     public static void sre(CPU cpu, UnsignedWord address) {
-        var memoryData = cpu.getBus().read(address);
-        var result     = shiftRight(cpu, memoryData);
+        var memoryData = cpu.getBus().read(address.intValue());
+        var result     = shiftRight(cpu, new UnsignedByte(memoryData));
 
-        cpu.getBus().write(address, result);
+        cpu.getBus().write(address.intValue(), result.intValue());
         eor(cpu, address);
     }
 }

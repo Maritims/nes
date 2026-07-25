@@ -5,13 +5,15 @@ import no.clueless.emulation.types.UnsignedByte;
 import java.util.Arrays;
 
 /**
- * Represents a name table in the PPU. A name table is a 1024-byte block that contains both tiles and attributes.
- * A name table defines a 32x30 grid of tiles. Each tile is 8x8 pixels and each attribute is 8 bits.
- * The grid is used by the PPU to render sprites and background tiles.
+ * A nametable is a 1024-byte area of memory used by the PPU to lay out backgrounds.
+ * Each byte in the nametable controls one 8x8 pixel character cell, and each nametable has 30 rows of 32 tiles each, for 960 ($3C0) bytes; the 64 ($40) remaining bytes are used by each nametable's attribute table.
+ * With each tile being 8x8 pixels, this makes a total of 256x240 pixels in one map, the same size as one full screen.
+ *
+ * @see <a href="https://www.nesdev.org/wiki/PPU_nametables">https://www.nesdev.org/wiki/PPU_nametables</a>
  */
 public class NameTable {
-    private static final int COLS            = 32;
     private static final int ROWS            = 30;
+    private static final int COLS            = 32;
     private static final int TILE_COUNT      = COLS * ROWS;
     private static final int ATTRIBUTE_COUNT = 64;
     private static final int TOTAL_SIZE      = TILE_COUNT + ATTRIBUTE_COUNT;

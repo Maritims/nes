@@ -32,11 +32,11 @@ class ShiftOperationsTest {
     @Test
     void asl_should_read_from_bus_when_address_is_not_null() {
         // arrange
-        var address = new UnsignedWord(0x1234);
-        bus.write(address, new UnsignedByte(255));
+        var address = 0x1234;
+        bus.write(address, 255);
 
         // act
-        ShiftOperations.asl(cpu, address);
+        ShiftOperations.asl(cpu, new UnsignedWord(address));
 
         // assert
         verify(bus).read(address);
@@ -64,10 +64,10 @@ class ShiftOperationsTest {
     @Test
     void lsr_should_read_from_bus_when_address_is_not_null() {
         // arrange
-        var address = new UnsignedWord(0x1234);
+        var address = 0x1234;
 
         // act
-        ShiftOperations.lsr(cpu, address);
+        ShiftOperations.lsr(cpu, new UnsignedWord(address));
 
         // assert
         verify(bus).read(address);
@@ -95,11 +95,11 @@ class ShiftOperationsTest {
     @Test
     void rol_should_read_from_bus_when_address_is_not_null() {
         // arrange
-        var address = new UnsignedWord(0x1234);
-        bus.write(address, new UnsignedByte(255));
+        var address = 0x1234;
+        bus.write(address, 255);
 
         // act
-        ShiftOperations.rol(cpu, address);
+        ShiftOperations.rol(cpu, new UnsignedWord(address));
 
         // assert
         verify(bus).read(address);
@@ -133,11 +133,11 @@ class ShiftOperationsTest {
     @Test
     void ror_should_read_from_bus_when_address_is_not_null() {
         // arrange
-        var address = new UnsignedWord(0x1234);
-        bus.write(address, new UnsignedByte(255));
+        var address = 0x1234;
+        bus.write(address, 255);
 
         // act
-        ShiftOperations.ror(cpu, address);
+        ShiftOperations.ror(cpu, new UnsignedWord(address));
 
         // assert
         verify(bus).read(address);

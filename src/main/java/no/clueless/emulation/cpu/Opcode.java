@@ -6,7 +6,7 @@ public record Opcode(
         UnsignedByte code,
         Mnemonic mnemonic,
         int cycles,
-        AddressingMode addressingMode) {
+        AddressingModes addressingMode) {
     public Opcode {
         if (code == null) {
             throw new IllegalArgumentException("code cannot be null");
@@ -19,7 +19,7 @@ public record Opcode(
         }
     }
 
-    public Opcode(int code, Mnemonic mnemonic, int cycles, AddressingMode addressingMode) {
+    public Opcode(int code, Mnemonic mnemonic, int cycles, AddressingModes addressingMode) {
         this(new UnsignedByte(code), mnemonic, cycles, addressingMode);
     }
 }

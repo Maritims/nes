@@ -10,11 +10,14 @@ import java.util.function.Consumer;
  * Represents the CPU.
  */
 public class CPU {
+    public static int PC_ADDRESS_AT_POWER_ON    = 0xFFFC;
+    public static int STACK_POINTER_AT_POWER_ON = 0xFD;
+
     /**
      * The bus; the communication channel with the outside world.
      */
-    private final Bus     bus;
-    private       long    totalCycles          = 0;
+    private final Bus  bus;
+    private       long totalCycles = 0;
 
     private       StackPointer   stackPointer;
     private       UnsignedWord   programCounter;
@@ -132,10 +135,10 @@ public class CPU {
      * Reboots the system and resets the CPU to its power-on state.
      */
     public void reset() {
-        var lowByte  = bus.read(new UnsignedWord(0xFFFC));
-        var highByte = bus.read(new UnsignedWord(0xFFFD));
+        var lowByte  = bus.read(0xFFFC);
+        var highByte = bus.read(0xFFFD);
 
-        this.programCounter = UnsignedWord.fromBytes(lowByte, highByte);
+        this.programCounter = UnsignedWord.fromInts(lowByte, highByte);
         this.stackPointer   = new StackPointer(new UnsignedByte(0xFD), 0x0100);
 
         this.statusRegister.clearAllFlags();
@@ -153,7 +156,7 @@ public class CPU {
             throw new IllegalArgumentException("value cannot be null");
         }
 
-        bus.write(stackPointer.toAddress(), value);
+        bus.write(stackPointer.toAddress().intValue(), value.intValue());
         stackPointer.decrement();
     }
 
@@ -164,7 +167,8 @@ public class CPU {
      */
     public UnsignedByte pull8() {
         stackPointer.increment();
-        return bus.read(stackPointer.toAddress());
+        var intValue = bus.read(stackPointer.toAddress().intValue());
+        return new UnsignedByte(intValue);
     }
 
     /**
@@ -212,17 +216,17 @@ public class CPU {
     }
 
     public void step() {
-        var rawOpcode = bus.read(programCounter);
+        var rawOpcode = bus.read(programCounter.intValue());
         programCounter = programCounter.increment();
 
         var opcode = OpcodeRegistry.get(rawOpcode);
         if (opcode == null) {
-            throw new IllegalStateException("Unknown opcode: 0x%02X".formatted(rawOpcode.intValue()));
+            throw new IllegalStateException("Unknown opcodeFunction: 0x%02X".formatted(rawOpcode));
         }
 
         this.consumeCycles(opcode.cycles());
 
         var address = opcode.addressingMode() == null ? null : opcode.addressingMode().resolve(this, bus).address();
-        opcode.mnemonic().execute(this, address);
+        opcode.mnemonic().execute(this, address == null ? null : new UnsignedWord(address));
     }
 }

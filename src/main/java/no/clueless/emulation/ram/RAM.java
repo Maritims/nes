@@ -1,6 +1,6 @@
 package no.clueless.emulation.ram;
 
-import no.clueless.emulation.Bus;
+import no.clueless.emulation.*;
 import no.clueless.emulation.types.UnsignedWord;
 import no.clueless.emulation.types.UnsignedByte;
 
@@ -23,21 +23,47 @@ public class RAM implements Bus {
     }
 
     @Override
-    public UnsignedByte read(UnsignedWord address) {
-        if (address == null) {
-            throw new IllegalArgumentException("address cannot be null");
-        }
-        return memory[address.intValue()];
+    public Cpu6502 getCpu() {
+        return null;
     }
 
     @Override
-    public void write(UnsignedWord address, UnsignedByte value) {
-        if (address == null) {
-            throw new IllegalArgumentException("address cannot be null");
-        }
-        if (value == null) {
-            throw new IllegalArgumentException("value cannot be null");
-        }
-        memory[address.intValue()] = value;
+    public Ppu2C02 getPpu() {
+        return null;
+    }
+
+    @Override
+    public APU getApu() {
+        return null;
+    }
+
+    @Override
+    public Cartridge getCartridge() {
+        return null;
+    }
+
+    @Override
+    public void insertCartridge(Cartridge cartridge) {
+
+    }
+
+    @Override
+    public void clock() {
+
+    }
+
+    @Override
+    public int read(int address) {
+        return memory[address].intValue();
+    }
+
+    @Override
+    public void write(int address, int value) {
+        memory[address] = new UnsignedByte(value);
+    }
+
+    @Override
+    public void reset() {
+
     }
 }

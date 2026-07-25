@@ -7,7 +7,7 @@ import no.clueless.emulation.types.UnsignedWord;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static no.clueless.emulation.cpu.AddressingMode.*;
+import static no.clueless.emulation.cpu.AddressingModes.*;
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -25,15 +25,15 @@ class AddressingModeTest {
     void immediate_fetches_PC_and_increments_PC_once() {
         // arrange
         var pc = cpu.getProgramCounter();
-        bus.write(pc, new UnsignedByte(0x56));
+        bus.write(pc.intValue(), 0x56);
 
         // act
         var actual = IMMEDIATE.resolve(cpu, bus).address();
 
         // assert
         verify(cpu, description("The program counter should be incremented once")).getAndIncrementProgramCounter();
-        assertEquals(pc, actual, "Unexpected address");
-        assertEquals(new UnsignedByte(0x56), bus.read(actual), "Unexpected value in memory");
+        assertEquals(pc.intValue(), actual, "Unexpected address");
+        assertEquals(0x56, bus.read(actual), "Unexpected value in memory");
         assertEquals(pc.increment(), cpu.getProgramCounter(), "The program counter should be incremented once");
     }
 
@@ -43,8 +43,8 @@ class AddressingModeTest {
         var pc       = cpu.getProgramCounter();
         var expected = new UnsignedWord(0x5678);
 
-        bus.write(pc, new UnsignedByte(0x78));
-        bus.write(pc.increment(), new UnsignedByte(0x56));
+        bus.write(pc.intValue(), 0x78);
+        bus.write(pc.increment().intValue(), 0x56);
 
         var actual = ABSOLUTE.resolve(cpu, bus).address();
 
@@ -59,11 +59,11 @@ class AddressingModeTest {
         // arrange
         var pc       = cpu.getProgramCounter();
 
-        bus.write(pc, new UnsignedByte(0x78));
-        bus.write(pc.increment(), new UnsignedByte(0x56));
+        bus.write(pc.intValue(), 0x78);
+        bus.write(pc.increment().intValue(), 0x56);
 
         // act
-        var result = AddressingMode.executeAbsoluteWithRegister(cpu, bus, new UnsignedByte(0x10));
+        var result = AddressingModes.executeAbsoluteWithRegister(cpu, bus, new UnsignedByte(0x10));
 
         // assert
         verify(cpu, times(2).description("The program counter should be incremented twice")).getAndIncrementProgramCounter();
@@ -77,8 +77,8 @@ class AddressingModeTest {
         // arrange
         var pc       = cpu.getProgramCounter();
 
-        bus.write(pc, new UnsignedByte(0x10));
-        bus.write(pc.increment(), new UnsignedByte(0x10));
+        bus.write(pc.intValue(), 0x10);
+        bus.write(pc.increment().intValue(), 0x10);
 
         // act
         var result = executeAbsoluteWithRegister(cpu, bus, new UnsignedByte(0xF0));
@@ -94,7 +94,7 @@ class AddressingModeTest {
     void zeroPage_fetches_address_from_bus_and_increments_PC_once() {
         // arrange
         var pc = cpu.getProgramCounter();
-        bus.write(pc, new UnsignedByte(0x56));
+        bus.write(pc.intValue(), 0x56);
 
         // act
         var result = ZERO_PAGE.resolve(cpu, bus).address();
@@ -108,7 +108,7 @@ class AddressingModeTest {
     void executeZeroPageWithRegister_calculates_effective_address_using_register_and_increments_PC_once() {
         // arrange
         var pc = cpu.getProgramCounter();
-        bus.write(pc, new UnsignedByte(0x56));
+        bus.write(pc.intValue(), 0x56);
 
         // act
         var result = executeZeroPageWithRegister(cpu, bus, new UnsignedByte(0x10));

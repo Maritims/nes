@@ -22,7 +22,7 @@ public class FunctionalCPUTest {
 
         // Klaus Dormann's test binary is a 64KB image
         for (var i = 0; i < bytes.length && i < 65536; i++) {
-            ram.write(new UnsignedWord(i), new UnsignedByte(bytes[i] & 0xFF));
+            ram.write(i, bytes[i] & 0xFF);
         }
 
         var cpu = new CPU(ram);

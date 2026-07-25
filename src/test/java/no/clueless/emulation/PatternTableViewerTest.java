@@ -1,6 +1,7 @@
 package no.clueless.emulation;
 
 import no.clueless.emulation.cartridge.CartridgeLoader;
+import no.clueless.emulation.ppu.PatternTableFrame;
 import org.junit.jupiter.api.Test;
 
 import javax.swing.*;
@@ -13,7 +14,7 @@ class PatternTableViewerTest {
         var cartridge = CartridgeLoader.load(romPath);
 
         SwingUtilities.invokeLater(() -> {
-            var frame = new PatternTableFrame(cartridge.getCharacterReadOnlyMemory());
+            var frame = new PatternTableFrame(cartridge.getChrRom().getData());
             frame.setVisible(true);
         });
 

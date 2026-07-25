@@ -1,6 +1,6 @@
 package no.clueless.emulation.cpu;
 
-import no.clueless.emulation.SystemBus;
+import no.clueless.emulation.BetaBus;
 import no.clueless.emulation.cartridge.CartridgeLoader;
 import no.clueless.emulation.ppu.NameTableBank;
 import no.clueless.emulation.ppu.PPU;
@@ -23,9 +23,9 @@ public class NesTest {
         var ram           = new RAM();
         var nameTableBank = new NameTableBank();
         var paletteRam    = new PaletteRAM();
-        var ppuBus        = new PPUBus(nameTableBank, paletteRam);
+        var ppuBus        = new PPUBus(null, nameTableBank, paletteRam);
         var ppu           = new PPU(ppuBus);
-        var bus           = new SystemBus(ram, cartridge, ppu);
+        var bus           = new BetaBus(ram, cartridge, ppu);
         var cpu           = new CPU(bus);
 
         // nestest in automated mode starts at 0xC000

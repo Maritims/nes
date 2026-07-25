@@ -9,6 +9,7 @@ import static no.clueless.emulation.cpu.operations.ALU.shiftLeft;
 import static no.clueless.emulation.cpu.operations.ALU.shiftRight;
 
 public class ShiftOperations {
+
     static UnsignedByte rotateLeft(CPU cpu, UnsignedByte value) {
         var carryIn  = cpu.getStatusRegister().hasFlag(Flag.Carry) ? 1 : 0;
         var carryOut = value.testBit(7);
@@ -38,11 +39,11 @@ public class ShiftOperations {
 
             cpu.setAccumulator(result);
         } else {
-            var original = cpu.getBus().read(address);
-            var result   = shiftLeft(cpu, original);
+            var original = cpu.getBus().read(address.intValue());
+            var result   = shiftLeft(cpu, new UnsignedByte(original));
 
-            cpu.getBus().write(address, original);
-            cpu.getBus().write(address, result);
+            cpu.getBus().write(address.intValue(), original);
+            cpu.getBus().write(address.intValue(), result.intValue());
         }
     }
 
@@ -53,11 +54,11 @@ public class ShiftOperations {
 
             cpu.setAccumulator(result);
         } else {
-            var original = cpu.getBus().read(address);
-            var shifted  = shiftRight(cpu, original);
+            var original = cpu.getBus().read(address.intValue());
+            var shifted  = shiftRight(cpu, new UnsignedByte(original));
 
-            cpu.getBus().write(address, original);
-            cpu.getBus().write(address, shifted);
+            cpu.getBus().write(address.intValue(), original);
+            cpu.getBus().write(address.intValue(), shifted.intValue());
         }
     }
 
@@ -68,11 +69,11 @@ public class ShiftOperations {
 
             cpu.setAccumulator(result);
         } else {
-            var original = cpu.getBus().read(address);
-            var rotated  = rotateLeft(cpu, original);
+            var original = cpu.getBus().read(address.intValue());
+            var rotated  = rotateLeft(cpu, new UnsignedByte(original));
 
-            cpu.getBus().write(address, original);
-            cpu.getBus().write(address, rotated);
+            cpu.getBus().write(address.intValue(), original);
+            cpu.getBus().write(address.intValue(), rotated.intValue());
         }
     }
 
@@ -83,29 +84,29 @@ public class ShiftOperations {
 
             cpu.setAccumulator(result);
         } else {
-            var original = cpu.getBus().read(address);
-            var rotated  = rotateRight(cpu, original);
+            var original = cpu.getBus().read(address.intValue());
+            var rotated  = rotateRight(cpu,  new UnsignedByte(original));
 
-            cpu.getBus().write(address, original);
-            cpu.getBus().write(address, rotated);
+            cpu.getBus().write(address.intValue(), original);
+            cpu.getBus().write(address.intValue(), rotated.intValue());
         }
     }
 
     public static void rla(CPU cpu, UnsignedWord address) {
         var accumulator = cpu.getAccumulator();
-        var memoryData  = cpu.getBus().read(address);
-        var result      = rotateLeft(cpu, memoryData);
+        var memoryData  = cpu.getBus().read(address.intValue());
+        var result      = rotateLeft(cpu, new UnsignedByte(memoryData));
 
         cpu.setAccumulator(accumulator.and(result));
-        cpu.getBus().write(address, result);
+        cpu.getBus().write(address.intValue(), result.intValue());
         cpu.getStatusRegister().updateNegativeAndZero(cpu.getAccumulator());
     }
 
     public static void rra(CPU cpu, UnsignedWord address) {
-        var memoryData = cpu.getBus().read(address);
-        var result     = rotateRight(cpu, memoryData);
+        var memoryData = cpu.getBus().read(address.intValue());
+        var result     = rotateRight(cpu, new UnsignedByte(memoryData));
 
-        cpu.getBus().write(address, result);
+        cpu.getBus().write(address.intValue(), result.intValue());
         ALU.executeArithmeticCalculation(cpu, address, false);
     }
 }

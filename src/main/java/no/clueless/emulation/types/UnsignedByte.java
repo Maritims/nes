@@ -1,6 +1,7 @@
 package no.clueless.emulation.types;
 
 import java.util.Objects;
+import java.util.stream.IntStream;
 
 public class UnsignedByte extends Number implements Comparable<UnsignedByte> {
     private final int value;
@@ -19,6 +20,15 @@ public class UnsignedByte extends Number implements Comparable<UnsignedByte> {
     public static final UnsignedByte ZERO      = new UnsignedByte(0);
     public static final UnsignedByte ONE       = new UnsignedByte(1);
     public static final UnsignedByte MAX_VALUE = new UnsignedByte(0xFF);
+
+    public static UnsignedByte[] arrayOf(byte[] data) {
+        if (data == null) {
+            throw new IllegalArgumentException("data cannot be null");
+        }
+        return IntStream.range(0, data.length)
+                .mapToObj(i -> new UnsignedByte(data[i]))
+                .toArray(UnsignedByte[]::new);
+    }
 
     /**
      * Returns an UnsignedByte whose val is (this + val).
@@ -128,6 +138,10 @@ public class UnsignedByte extends Number implements Comparable<UnsignedByte> {
             throw new IllegalArgumentException("Bit must be between 0 and 7");
         }
         return (value & (1 << bit)) != 0;
+    }
+
+    public boolean equalsInt(int val) {
+        return value == val;
     }
 
     public UnsignedWord unsignedWordValue() {

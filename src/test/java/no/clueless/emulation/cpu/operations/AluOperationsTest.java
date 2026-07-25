@@ -24,11 +24,11 @@ class AluOperationsTest {
 
     @Test
     void adc_should_yield_300_when_adding_150_to_150() {
-        var address = new UnsignedWord(0x1234);
+        var address = 0x1234;
         cpu.setAccumulator(new UnsignedByte(150));
-        bus.write(address, new UnsignedByte(150));
+        bus.write(0x1234, 150);
 
-        AluOperations.adc(cpu, address);
+        AluOperations.adc(cpu, new UnsignedWord(address));
 
         assertEquals(44, cpu.getAccumulator().intValue(), "Accumulator should be 44");
         assertTrue(cpu.getStatusRegister().hasFlag(Flag.Carry), "Carry flag should be set");
@@ -36,21 +36,21 @@ class AluOperationsTest {
 
     @Test
     void and_should_yield_1_when_both_operands_are_1() {
-        var address = new UnsignedWord(0x1234);
+        var address = 0x1234;
         cpu.setAccumulator(new UnsignedByte(1));
-        bus.write(address, new UnsignedByte(1));
+        bus.write(address, 1);
 
-        AluOperations.and(cpu, address);
+        AluOperations.and(cpu, new UnsignedWord(address));
 
         assertEquals(1, cpu.getAccumulator().intValue(), "Accumulator should be 1");
     }
 
     @Test
     void and_should_yield_0_when_either_operand_is_0() {
-        var address = new UnsignedWord(0x1234);
-        bus.write(address, new UnsignedByte(0));
+        var address = 0x1234;
+        bus.write(address, 0);
 
-        AluOperations.and(cpu, address);
+        AluOperations.and(cpu, new UnsignedWord(address));
 
         assertEquals(0, cpu.getAccumulator().intValue(), "Accumulator should be 0");
     }
@@ -63,12 +63,12 @@ class AluOperationsTest {
     @Test
     void ora_should_return_1_when_both_operands_are_1() {
         // arrange
-        var address = new UnsignedWord(0x1234);
+        var address = 0x1234;
         cpu.setAccumulator(UnsignedByte.ONE);
-        bus.write(address, UnsignedByte.ONE);
+        bus.write(address, 1);
 
         // act
-        AluOperations.ora(cpu, address);
+        AluOperations.ora(cpu, new UnsignedWord(address));
 
         // assert
         assertEquals(1, cpu.getAccumulator().intValue(), "Accumulator should be 1");
@@ -77,11 +77,11 @@ class AluOperationsTest {
     @Test
     void ora_should_return_0_when_both_operands_are_0() {
         // arrange
-        var address = new UnsignedWord(0x1234);
-        bus.write(address, UnsignedByte.ZERO);
+        var address = 0x1234;
+        bus.write(address, 0);
 
         // act
-        AluOperations.ora(cpu, address);
+        AluOperations.ora(cpu, new UnsignedWord(address));
 
         // assert
         assertEquals(0, cpu.getAccumulator().intValue(), "Accumulator should be 0");
@@ -90,11 +90,11 @@ class AluOperationsTest {
     @Test
     void ora_should_return_1_when_one_operand_is_1() {
         // arrange
-        var address = new UnsignedWord(0x1234);
-        bus.write(address, UnsignedByte.ONE);
+        var address = 0x1234;
+        bus.write(address, 1);
 
         // act
-        AluOperations.ora(cpu, address);
+        AluOperations.ora(cpu, new UnsignedWord(address));
 
         // assert
         assertEquals(1, cpu.getAccumulator().intValue(), "Accumulator should be 1");
@@ -108,11 +108,11 @@ class AluOperationsTest {
     @Test
     void eor_should_return_0_when_both_operands_are_0() {
         // arrange
-        var address        = new UnsignedWord(0x1234);
-        bus.write(address, new UnsignedByte(0));
+        var address        = 0x1234;
+        bus.write(address, 0);
 
         // act
-        AluOperations.eor(cpu, address);
+        AluOperations.eor(cpu, new UnsignedWord(address));
 
         // assert
         assertEquals(0, cpu.getAccumulator().intValue(), "Accumulator should be 0");
@@ -121,11 +121,11 @@ class AluOperationsTest {
     @Test
     void eor_should_return_1_when_one_operand_is_1() {
         // arrange
-        var address        = new UnsignedWord(0x1234);
-        bus.write(address, new UnsignedByte(1));
+        var address        = 0x1234;
+        bus.write(address, 1);
 
         // act
-        AluOperations.eor(cpu, address);
+        AluOperations.eor(cpu, new UnsignedWord(address));
 
         // assert
         assertEquals(1, cpu.getAccumulator().intValue(), "Accumulator should be 1");
@@ -134,12 +134,12 @@ class AluOperationsTest {
     @Test
     void eor_should_return_0_when_both_operands_are_1() {
         // arrange
-        var address        = new UnsignedWord(0x1234);
+        var address        = 0x1234;
         cpu.setAccumulator(UnsignedByte.ONE);
-        bus.write(address, UnsignedByte.ONE);
+        bus.write(address, 1);
 
         // act
-        AluOperations.eor(cpu, address);
+        AluOperations.eor(cpu, new UnsignedWord(address));
 
         // assert
         assertEquals(0, cpu.getAccumulator().intValue(), "Accumulator should be 0");

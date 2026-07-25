@@ -1,10 +1,12 @@
-package no.clueless.emulation;
+package no.clueless.emulation.ppu;
+
+import no.clueless.emulation.types.UnsignedByte;
 
 import javax.swing.*;
 import java.awt.*;
 
 public class PatternTableFrame extends JFrame {
-    public PatternTableFrame(byte[] chrRom) {
+    public PatternTableFrame(UnsignedByte[] chrRom) {
         setTitle("NES Pattern Table Viewer (CHR-ROM)");
         setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
         setResizable(false);

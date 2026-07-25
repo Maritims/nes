@@ -1,4 +1,6 @@
-package no.clueless.emulation;
+package no.clueless.emulation.ppu;
+
+import no.clueless.emulation.types.UnsignedByte;
 
 import java.awt.image.BufferedImage;
 
@@ -12,7 +14,7 @@ public class NametableRenderer {
     /**
      * Renders Nametable 0 ($2000-$23BF) from PPU VRAM onto a 256x240 image.
      */
-    public static BufferedImage renderNametable0(byte[] vram, byte[] chrData, int[] activePaletteRgb) {
+    public static BufferedImage renderNametable0(byte[] vram, UnsignedByte[] chrData, int[] activePaletteRgb) {
         BufferedImage frame = new BufferedImage(256, 240, BufferedImage.TYPE_INT_ARGB);
         int[] palette = (activePaletteRgb != null) ? activePaletteRgb : DEFAULT_PALETTE;
 
@@ -32,14 +34,14 @@ public class NametableRenderer {
         return frame;
     }
 
-    private static void decodeTileToCanvas(byte[] chr, int tileOffset, BufferedImage img, int startX, int startY, int[] palette) {
+    private static void decodeTileToCanvas(UnsignedByte[] chr, int tileOffset, BufferedImage img, int startX, int startY, int[] palette) {
         for (int y = 0; y < 8; y++) {
-            byte plane1 = chr[tileOffset + y];
-            byte plane2 = chr[tileOffset + y + 8];
+            var plane1 = chr[tileOffset + y];
+            var plane2 = chr[tileOffset + y + 8];
 
             for (int x = 0; x < 8; x++) {
-                int bit1 = (plane1 >> (7 - x)) & 1;
-                int bit2 = (plane2 >> (7 - x)) & 1;
+                int bit1 = (plane1.intValue() >> (7 - x)) & 1;
+                int bit2 = (plane2.intValue() >> (7 - x)) & 1;
                 int colorIndex = (bit2 << 1) | bit1;
 
                 img.setRGB(startX + x, startY + y, palette[colorIndex]);

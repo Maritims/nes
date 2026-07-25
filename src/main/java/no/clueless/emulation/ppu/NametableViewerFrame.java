@@ -1,4 +1,4 @@
-package no.clueless.emulation;
+package no.clueless.emulation.ppu;
 
 import javax.swing.*;
 import java.awt.*;

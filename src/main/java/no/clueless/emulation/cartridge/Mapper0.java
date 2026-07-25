@@ -12,7 +12,7 @@ public class Mapper0 implements Mapper {
     }
 
     @Override
-    public int mapCpuRead(UnsignedWord address) {
+    public UnsignedWord mapCpuRead(UnsignedWord address) {
         int addr = address.intValue();
 
         if (addr >= 0x8000 && addr <= 0xFFFF) {
@@ -22,24 +22,24 @@ public class Mapper0 implements Mapper {
             // If 16KB (1 bank), mirror the index by wrapping around at 16KB ($4000)
             // If 32KB (2 banks), this operation leaves the index unchanged
             if (prgBanks == 1) {
-                return relativeAddr % 0x4000;
+                return new UnsignedWord(relativeAddr % 0x4000);
             } else {
-                return relativeAddr;
+                return new UnsignedWord(relativeAddr);
             }
         }
 
-        return -1; // Address does not point to cartridge PRG memory
+        return null; // Address does not point to cartridge PRG memory
     }
 
     @Override
-    public int mapPpuRead(UnsignedWord address) {
+    public UnsignedWord mapPpuRead(UnsignedWord address) {
         var addr = address.intValue();
 
         // PPU reads pattern tables directly from $0000 to $1FFF (8KB)
         if (addr >= 0x0000 && addr <= 0x1FFF) {
-            return addr;
+            return address;
         }
 
-        return -1;
+        return null;
     }
 }
