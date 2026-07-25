@@ -26,6 +26,13 @@ public interface Cpu6502 {
     int getX();
 
     /**
+     * Sets the X register.
+     *
+     * @param value An 8-bit value.
+     */
+    void setX(int value);
+
+    /**
      * The Y register.
      *
      * @return An 8-bit value.
@@ -33,11 +40,25 @@ public interface Cpu6502 {
     int getY();
 
     /**
+     * Sets the Y register.
+     *
+     * @param value An 8-bit value.
+     */
+    void setY(int value);
+
+    /**
      * The Stack Pointer which points to a location on the bus.
      *
      * @return An 8-bit value.
      */
     int getStackPointer();
+
+    /**
+     * Sets the Stack Pointer.
+     *
+     * @param value An 8-bit value.
+     */
+    void setStackPointer(int value);
 
     /**
      * Pushes values onto the stack.
@@ -62,6 +83,7 @@ public interface Cpu6502 {
 
     /**
      * Sets the Program Counter.
+     *
      * @param value A 16-bit value.
      */
     void setProgramCounter(int value);

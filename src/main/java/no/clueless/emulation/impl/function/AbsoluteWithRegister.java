@@ -10,7 +10,7 @@ import java.util.function.Function;
 public abstract class AbsoluteWithRegister implements AddressingModeFunction<Cpu6502> {
     private final Function<Cpu6502, Integer> registerFunction;
 
-    protected AbsoluteWithRegister(Function<Cpu6502, Integer> registerFunction) {
+    public AbsoluteWithRegister(Function<Cpu6502, Integer> registerFunction) {
         this.registerFunction = registerFunction;
     }
 

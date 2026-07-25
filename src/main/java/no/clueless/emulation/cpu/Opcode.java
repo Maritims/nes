@@ -4,7 +4,7 @@ import no.clueless.emulation.types.UnsignedByte;
 
 public record Opcode(
         UnsignedByte code,
-        Mnemonic mnemonic,
+        no.clueless.emulation.impl.Opcode mnemonic,
         int cycles,
         AddressingModes addressingMode) {
     public Opcode {
@@ -19,7 +19,7 @@ public record Opcode(
         }
     }
 
-    public Opcode(int code, Mnemonic mnemonic, int cycles, AddressingModes addressingMode) {
+    public Opcode(int code, no.clueless.emulation.impl.Opcode mnemonic, int cycles, AddressingModes addressingMode) {
         this(new UnsignedByte(code), mnemonic, cycles, addressingMode);
     }
 }

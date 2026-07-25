@@ -227,6 +227,6 @@ public class CPU {
         this.consumeCycles(opcode.cycles());
 
         var address = opcode.addressingMode() == null ? null : opcode.addressingMode().resolve(this, bus).address();
-        opcode.mnemonic().execute(this, address == null ? null : new UnsignedWord(address));
+        //opcode.mnemonic().resolve(this, address == null ? null : new UnsignedWord(address));
     }
 }

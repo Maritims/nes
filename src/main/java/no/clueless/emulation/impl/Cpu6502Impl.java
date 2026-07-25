@@ -2,7 +2,6 @@ package no.clueless.emulation.impl;
 
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.cpu.Opcode;
 
 import static no.clueless.emulation.cpu.CPU.PC_ADDRESS_AT_POWER_ON;
 import static no.clueless.emulation.cpu.CPU.STACK_POINTER_AT_POWER_ON;
@@ -18,9 +17,8 @@ public class Cpu6502Impl implements Cpu6502 {
     private int pc     = 0x0000;
     private int status = 0x00;
 
-    private Bus    bus;
-    private int    cycles = 0;
-    private Opcode opcode;
+    private Bus bus;
+    private int cycles = 0;
 
     public void setFlag(Flag flag, boolean value) {
         if (value) {
@@ -50,13 +48,28 @@ public class Cpu6502Impl implements Cpu6502 {
     }
 
     @Override
+    public void setX(int value) {
+        x = value & MASK_8BIT;
+    }
+
+    @Override
     public int getY() {
         return y & MASK_8BIT;
     }
 
     @Override
+    public void setY(int value) {
+        y = value & MASK_8BIT;
+    }
+
+    @Override
     public int getStackPointer() {
         return sp & MASK_8BIT;
+    }
+
+    @Override
+    public void setStackPointer(int value) {
+        sp = value & MASK_8BIT;
     }
 
     @Override
@@ -105,8 +118,15 @@ public class Cpu6502Impl implements Cpu6502 {
         // Always set the unused flag.
         setFlag(Flag.UNUSED, true);
 
-        var instruction = InstructionTable.getInstruction(opcode);
+        var instruction = InstructionTable.INSTRUCTIONS[opcode];
         this.cycles = instruction.cycles();
+
+        var operandResult = instruction.addressingMode().resolve(this, bus);
+        var address       = operandResult.address();
+        this.cycles += operandResult.cyclesConsumed();
+
+        var extraCycleFromOpcode = instruction.opcode().resolve(this, address);
+        this.cycles += extraCycleFromOpcode;
 
         // Always set the unused flag.
         setFlag(Flag.UNUSED, true);

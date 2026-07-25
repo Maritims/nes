@@ -5,7 +5,11 @@ import no.clueless.emulation.impl.OpcodeFunction;
 
 public class PushProcessorStatus implements OpcodeFunction {
     @Override
-    public int execute(Cpu6502 cpu, int address) {
-        return 0;
+    public int execute(Cpu6502 cpu, int ignored) {
+        // The Break flag exists only in the flags pushed to the stack, not as a real state in the CPU.
+        // Source: https://www.nesdev.org/wiki/Instruction_reference#PHP
+        var result = cpu.getStatusRegister() | Cpu6502.Flag.BREAK.getValue();
+        cpu.pushToStack(result);
+        return result;
     }
 }

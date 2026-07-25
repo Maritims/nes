@@ -3,6 +3,7 @@ package no.clueless.emulation.impl.function;
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
 
+// TODO: Implement this illegal opcode.
 public class ShiftLeftAndOr implements OpcodeFunction {
     @Override
     public int execute(Cpu6502 cpu, int address) {

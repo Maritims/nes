@@ -6,6 +6,8 @@ import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.cpu.OperandResult;
 
 public class Immediate implements AddressingModeFunction<Cpu6502> {
+    public Immediate() {}
+
     @Override
     public OperandResult resolve(Cpu6502 cpu, Bus bus) {
         var address = cpu.getAndIncrementProgramCounter();

@@ -6,32 +6,28 @@ import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.cpu.OperandResult;
 import no.clueless.emulation.impl.function.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
 public enum AddressingModes implements AddressingModeFunction<Cpu6502> {
-    IMMEDIATE(Immediate.class),
-    ABSOLUTE(Absolute.class),
-    ABSOLUTE_X(AbsoluteX.class),
-    ABSOLUTE_Y(AbsoluteY.class),
-    ZERO_PAGE(ZeroPage.class),
-    ZERO_PAGE_X(ZeroPageX.class),
-    ZERO_PAGE_Y(ZeroPageY.class),
-    INDIRECT(Indirect.class),
-    INDIRECT_X(IndirectX.class),
-    INDIRECT_Y(IndirectY.class),
-    RELATIVE(Relative.class);
+    IMM(new Immediate()),
+    ABS(new Absolute()),
+    ABX(new AbsoluteX()),
+    ABY(new AbsoluteY()),
+    ZP0(new ZeroPage()),
+    ZPX(new ZeroPageX()),
+    ZPY(new ZeroPageY()),
+    IND(new Indirect()),
+    IZX(new IndirectX()),
+    IZY(new IndirectY()),
+    REL(new Relative()),
+    IMP(null);
 
-    private final Class<? extends AddressingModeFunction<Cpu6502>> mode;
+    private final AddressingModeFunction<Cpu6502> function;
 
-    AddressingModes(Class<? extends AddressingModeFunction<Cpu6502>> mode) {
-        this.mode = mode;
+    AddressingModes(AddressingModeFunction<Cpu6502> function) {
+        this.function = function;
     }
-
-    private static final Map<Class<? extends AddressingModeFunction<Cpu6502>>, AddressingModeFunction<Cpu6502>> modes = new HashMap<>();
 
     @Override
     public OperandResult resolve(Cpu6502 cpu, Bus bus) {
-        return null;
+        return function.resolve(cpu, bus);
     }
 }
