@@ -12,6 +12,13 @@ public interface Cpu6502 {
     int getAccumulator();
 
     /**
+     * Sets the Accumulator register.
+     *
+     * @param value An 8-bit value.
+     */
+    void setAccumulator(int value);
+
+    /**
      * The X register.
      *
      * @return An 8-bit value.
@@ -33,6 +40,13 @@ public interface Cpu6502 {
     int getStackPointer();
 
     /**
+     * Pushes values onto the stack.
+     *
+     * @param values 8-bit values to push onto the stack.
+     */
+    void pushToStack(int... values);
+
+    /**
      * Reads the Program Counter.
      *
      * @return A 16-bit value.
@@ -45,6 +59,12 @@ public interface Cpu6502 {
      * @return A 16-bit value.
      */
     int getAndIncrementProgramCounter();
+
+    /**
+     * Sets the Program Counter.
+     * @param value A 16-bit value.
+     */
+    void setProgramCounter(int value);
 
     /**
      * The Status register.
@@ -109,4 +129,8 @@ public interface Cpu6502 {
             return value;
         }
     }
+
+    void setFlag(Flag flag, boolean value);
+
+    boolean hasFlag(Flag flag);
 }

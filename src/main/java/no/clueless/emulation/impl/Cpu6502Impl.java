@@ -3,7 +3,6 @@ package no.clueless.emulation.impl;
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.cpu.Opcode;
-import no.clueless.emulation.cpu.OpcodeRegistry;
 
 import static no.clueless.emulation.cpu.CPU.PC_ADDRESS_AT_POWER_ON;
 import static no.clueless.emulation.cpu.CPU.STACK_POINTER_AT_POWER_ON;
@@ -23,7 +22,7 @@ public class Cpu6502Impl implements Cpu6502 {
     private int    cycles = 0;
     private Opcode opcode;
 
-    private void setFlag(Flag flag, boolean value) {
+    public void setFlag(Flag flag, boolean value) {
         if (value) {
             status |= flag.getValue();
         } else {
@@ -32,8 +31,17 @@ public class Cpu6502Impl implements Cpu6502 {
     }
 
     @Override
+    public boolean hasFlag(Flag flag) {
+        return (status & flag.getValue()) != 0;
+    }
+
+    @Override
     public int getAccumulator() {
         return a & MASK_8BIT;
+    }
+
+    public void setAccumulator(int value) {
+        a = value & MASK_8BIT;
     }
 
     @Override
@@ -52,6 +60,13 @@ public class Cpu6502Impl implements Cpu6502 {
     }
 
     @Override
+    public void pushToStack(int... values) {
+        for (var value : values) {
+            write(0x0100 + sp--, value);
+        }
+    }
+
+    @Override
     public int getProgramCounter() {
         return pc & MASK_16BIT;
     }
@@ -61,6 +76,11 @@ public class Cpu6502Impl implements Cpu6502 {
         var pc = this.pc & MASK_16BIT;
         this.pc = pc + 1;
         return pc;
+    }
+
+    @Override
+    public void setProgramCounter(int value) {
+        this.pc = value & MASK_16BIT;
     }
 
     @Override
