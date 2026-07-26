@@ -3,8 +3,6 @@ package no.clueless.emulation.impl.function;
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
 
-import static no.clueless.emulation.impl.Opcode.CMP;
-
 public class DecrementAndCompare implements OpcodeFunction {
     private final Decrement decrement = Decrement.DEC;
     private final Compare   compare   = Compare.CMP;

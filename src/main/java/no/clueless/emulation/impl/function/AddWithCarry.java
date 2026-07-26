@@ -1,7 +1,6 @@
 package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.cpu.Flag;
 import no.clueless.emulation.impl.OpcodeFunction;
 import no.clueless.emulation.types.UnsignedByte;
 
