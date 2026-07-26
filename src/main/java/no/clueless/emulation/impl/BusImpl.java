@@ -8,14 +8,14 @@ import org.slf4j.LoggerFactory;
 public class BusImpl implements Bus {
     private static final Logger  log = LoggerFactory.getLogger(BusImpl.class);
     private final        Cpu6502 cpu;
-    private final        Ppu2C02 ppu;
-    private final        APU     apu;
+    private final Ppu2C02 ppu;
+    private final Apu     apu;
 
     private final int[]     cpuRam          = new int[2048];
     private       Cartridge cartridge;
     private       int       totalClockCount = 0;
 
-    public BusImpl(Cpu6502 cpu, Ppu2C02 ppu, APU apu) {
+    public BusImpl(Cpu6502 cpu, Ppu2C02 ppu, Apu apu) {
         if (cpu == null) {
             throw new IllegalArgumentException("cpu cannot be null");
         }
@@ -43,7 +43,7 @@ public class BusImpl implements Bus {
     }
 
     @Override
-    public APU getApu() {
+    public Apu getApu() {
         return apu;
     }
 

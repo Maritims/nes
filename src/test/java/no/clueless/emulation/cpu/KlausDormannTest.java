@@ -32,7 +32,7 @@ public class KlausDormannTest {
         }
 
         @Override
-        public APU getApu() {
+        public Apu getApu() {
             throw new UnsupportedOperationException();
         }
 

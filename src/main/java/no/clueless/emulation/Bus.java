@@ -9,7 +9,7 @@ public interface Bus {
 
     Ppu2C02 getPpu();
 
-    APU getApu();
+    Apu getApu();
 
     Cartridge getCartridge();
     // endregion
