@@ -2,6 +2,7 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -16,12 +17,12 @@ public class DecrementRegister implements OpcodeFunction {
     }
 
     @Override
-    public int execute(Cpu6502 cpu, int address) {
+    public int execute(Cpu6502 cpu, ResolvedAddress ignored) {
         var registerValue = getRegisterFunction.apply(cpu);
         registerValue = (registerValue - 1) & 0xFF;
         setRegisterFunction.accept(cpu, registerValue);
         cpu.setFlag(Cpu6502.Flag.ZERO, registerValue == 0);
         cpu.setFlag(Cpu6502.Flag.NEGATIVE, (registerValue & 0x80) != 0);
-        return 2;
+        return 0;
     }
 }

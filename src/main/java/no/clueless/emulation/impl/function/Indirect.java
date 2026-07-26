@@ -3,7 +3,7 @@ package no.clueless.emulation.impl.function;
 import no.clueless.emulation.AddressingModeFunction;
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.cpu.ResolvedAddress;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class Indirect implements AddressingModeFunction<Cpu6502> {
     @Override
@@ -20,6 +20,6 @@ public class Indirect implements AddressingModeFunction<Cpu6502> {
 
         var targetAddress = (highByte << 8) | lowByte;
 
-        return new ResolvedAddress(targetAddress, 6, isPageCrossed(vector, targetAddress));
+        return new ResolvedAddress(targetAddress, isPageCrossed(vector, targetAddress));
     }
 }

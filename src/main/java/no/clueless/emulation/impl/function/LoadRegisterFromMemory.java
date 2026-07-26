@@ -2,6 +2,7 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 import java.util.function.BiConsumer;
 
@@ -13,12 +14,12 @@ public class LoadRegisterFromMemory implements OpcodeFunction {
     }
 
     @Override
-    public int execute(Cpu6502 cpu, int address) {
-        var memory = cpu.read(address) & 0xFF;
+    public int execute(Cpu6502 cpu, ResolvedAddress address) {
+        var memory = cpu.read(address.address()) & 0xFF;
         cpu.setFlag(Cpu6502.Flag.ZERO, memory == 0);
         cpu.setFlag(Cpu6502.Flag.NEGATIVE, (memory & 0x80) != 0);
         setRegisterFunction.accept(cpu, memory);
 
-        return 2;
+        return address.isPageCrossed() ? 1 : 0;
     }
 }

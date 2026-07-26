@@ -1,6 +1,6 @@
 package no.clueless.emulation;
 
-import no.clueless.emulation.cpu.ResolvedAddress;
+import no.clueless.emulation.util.ResolvedAddress;
 
 @FunctionalInterface
 public interface AddressingModeFunction<T> {

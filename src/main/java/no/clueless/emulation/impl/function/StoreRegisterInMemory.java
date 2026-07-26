@@ -2,6 +2,7 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 import java.util.function.Function;
 
@@ -13,9 +14,10 @@ public class StoreRegisterInMemory implements OpcodeFunction {
     }
 
     @Override
-    public int execute(Cpu6502 cpu, int address) {
+    public int execute(Cpu6502 cpu, ResolvedAddress address) {
         var registerValue = register.apply(cpu);
-        cpu.write(address, registerValue);
-        return registerValue;
+        cpu.write(address.address(), registerValue);
+
+        return 0;
     }
 }

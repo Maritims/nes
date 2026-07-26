@@ -3,7 +3,7 @@ package no.clueless.emulation.impl.function;
 import no.clueless.emulation.AddressingModeFunction;
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.cpu.ResolvedAddress;
+import no.clueless.emulation.util.ResolvedAddress;
 
 import java.util.function.Function;
 
@@ -23,6 +23,6 @@ public abstract class AbsoluteWithRegister implements AddressingModeFunction<Cpu
         var address       = base + register;
         var isPageCrossed = isPageCrossed(base, address);
 
-        return new ResolvedAddress(address, 4 + (isPageCrossed ? 1 : 0), isPageCrossed);
+        return new ResolvedAddress(address, isPageCrossed);
     }
 }

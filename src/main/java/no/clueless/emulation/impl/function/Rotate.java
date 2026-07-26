@@ -2,6 +2,7 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class Rotate implements OpcodeFunction {
     private final boolean isLeft;
@@ -36,18 +37,18 @@ public class Rotate implements OpcodeFunction {
     }
 
     @Override
-    public int execute(Cpu6502 cpu, int address) {
-        if (address == -1) {
+    public int execute(Cpu6502 cpu, ResolvedAddress address) {
+        if (address.address() == -1) {
             var accumulator = cpu.getAccumulator();
             var result      = rotate(cpu, accumulator);
             cpu.setAccumulator(result);
-            return 2;
         } else {
-            var original = cpu.read(address);
+            var original = cpu.read(address.address());
             var result   = rotate(cpu, original);
-            cpu.write(address, original);
-            cpu.write(address, result);
-            return 5;
+            cpu.write(address.address(), original);
+            cpu.write(address.address(), result);
         }
+
+        return 0;
     }
 }

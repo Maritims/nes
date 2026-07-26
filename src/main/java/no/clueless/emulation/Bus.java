@@ -3,7 +3,7 @@ package no.clueless.emulation;
 /**
  * Represents the bus.
  */
-public interface Bus extends Resettable {
+public interface Bus {
     // region Devices
     Cpu6502 getCpu();
 
@@ -41,4 +41,6 @@ public interface Bus extends Resettable {
      * @param data    An 8-bit value. AND with 0xFF to mask.
      */
     void write(int address, int data);
+
+    void reset();
 }

@@ -3,7 +3,7 @@ package no.clueless.emulation.impl.function;
 import no.clueless.emulation.AddressingModeFunction;
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.cpu.ResolvedAddress;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class Relative implements AddressingModeFunction<Cpu6502> {
     @Override
@@ -16,8 +16,8 @@ public class Relative implements AddressingModeFunction<Cpu6502> {
 
         // Get the next instruction byte which is the address to apply the offset to.
         var basePc        = cpu.getProgramCounter();
-        var targetAddress = basePc + offset;
+        var targetAddress = (basePc + offset) & 0xFFFF;
 
-        return new ResolvedAddress(targetAddress, 2, PageBoundaryChecker.hasCrossed(basePc, targetAddress));
+        return new ResolvedAddress(targetAddress, PageBoundaryChecker.hasCrossed(basePc, targetAddress));
     }
 }

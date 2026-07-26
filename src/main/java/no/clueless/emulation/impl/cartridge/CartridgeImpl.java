@@ -3,6 +3,10 @@ package no.clueless.emulation.impl.cartridge;
 import no.clueless.emulation.Cartridge;
 import no.clueless.emulation.Mapper;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+
 /**
  * Represents a cartridge for the Nintendo Entertainment System.
  */
@@ -48,6 +52,10 @@ public class CartridgeImpl implements Cartridge {
         System.arraycopy(data, offset, prgRom, 0, prgRom.length);
         offset += prgRom.length;
         System.arraycopy(data, offset, chrRom, 0, chrRom.length);
+    }
+
+    public CartridgeImpl(Path path) throws IOException {
+        this(Files.readAllBytes(path));
     }
 
     @Override

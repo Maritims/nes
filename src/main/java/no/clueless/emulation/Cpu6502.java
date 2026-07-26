@@ -4,10 +4,25 @@ package no.clueless.emulation;
  * An implementation of the 6502 CPU.
  */
 public interface Cpu6502 {
+    int PC_ADDRESS_AT_POWER_ON    = 0xFFFC;
+    int STACK_POINTER_AT_POWER_ON = 0xFD;
+
     boolean isDecimalModeEnabled();
 
     /**
-     * The number of additionalCyclesFromAddressingMode the CPU has been clocked.
+     * Check if the CPU is currently executing an instruction.
+     *
+     * @return True if the CPU is executing an instruction, false otherwise.
+     */
+    boolean isInstructionComplete();
+
+    /**
+     * The number of cycles until the CPU is ready to execute the next instruction.
+     */
+    int getCycles();
+
+    /**
+     * The number of cycles the CPU has been clocked.
      */
     int getClockCount();
 
@@ -127,8 +142,6 @@ public interface Cpu6502 {
      * Connects the CPU to the bus.
      */
     void connectToBus(Bus bus);
-
-    void addCycles(int cycles);
 
     /**
      * Clocks the CPU.

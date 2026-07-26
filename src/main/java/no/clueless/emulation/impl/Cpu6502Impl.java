@@ -2,13 +2,14 @@ package no.clueless.emulation.impl;
 
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
-
-import static no.clueless.emulation.cpu.CPU.PC_ADDRESS_AT_POWER_ON;
-import static no.clueless.emulation.cpu.CPU.STACK_POINTER_AT_POWER_ON;
+import no.clueless.emulation.util.Disassembler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Cpu6502Impl implements Cpu6502 {
-    private final int MASK_8BIT  = 0xFF;
-    private final int MASK_16BIT = 0xFFFF;
+    private static final Logger log        = LoggerFactory.getLogger(Cpu6502Impl.class);
+    private final        int    MASK_8BIT  = 0xFF;
+    private final        int    MASK_16BIT = 0xFFFF;
 
     private final boolean isDecimalModeEnabled;
     private       int     clockCount = 0;
@@ -42,6 +43,16 @@ public class Cpu6502Impl implements Cpu6502 {
     @Override
     public boolean isDecimalModeEnabled() {
         return isDecimalModeEnabled;
+    }
+
+    @Override
+    public boolean isInstructionComplete() {
+        return cycles == 0;
+    }
+
+    @Override
+    public int getCycles() {
+        return cycles;
     }
 
     @Override
@@ -138,37 +149,40 @@ public class Cpu6502Impl implements Cpu6502 {
     }
 
     @Override
-    public void addCycles(int cycles) {
-        this.cycles += cycles;
-    }
-
-    @Override
     public void clock() {
-        var originalPc = pc;
-        var opcode     = read(pc);
-        pc++;
+        // Is the CPU available for work?
+        if (isInstructionComplete()) {
+            var originalPc = pc;
+            var opcode     = read(pc);
+            pc++;
 
-        // Always set the unused flag.
-        setFlag(Flag.UNUSED, true);
+            // Always set the unused flag.
+            setFlag(Flag.UNUSED, true);
 
-        var instruction = InstructionTable.INSTRUCTIONS[opcode];
-        this.cycles = instruction.additionalCyclesFromAddressingMode();
+            var instruction = InstructionTable.INSTRUCTIONS[opcode];
+            if (instruction.cycles() == 0) {
+                throw new IllegalStateException("Instruction " + instruction.opcode() + " has no cycles defined when using addressing mode " + instruction.addressingMode());
+            }
 
-        var operandResult = instruction.addressingMode().resolve(this, bus);
-        var address       = operandResult.address();
+            this.cycles = instruction.cycles();
 
-        //log.info("{}", Disassembler.disassemble(originalPc, instruction.opcode(), instruction.addressingMode(), address));
+            var resolvedAddress = instruction.addressingMode().resolve(this, bus);
 
-        // Add any additional cycles from the addressing mode.
-        this.cycles += operandResult.cyclesConsumed();
+            //log.info("{}", Disassembler.disassemble(originalPc, instruction.opcode(), instruction.addressingMode(), resolvedAddress.address()));
 
-        // Add any additional cycles from the instruction itself.
-        this.cycles += instruction.opcode().resolve(this, address);
+            // Add any additional cycles from the instruction itself.
+            var opcodeCycles = instruction.opcode().resolve(this, resolvedAddress);
+            if (opcodeCycles > 0) {
+                //log.info("Opcode {} added {} extra cycles", instruction.opcode(), opcodeCycles);
+                this.cycles += opcodeCycles;
+            }
 
-        // Always set the unused flag.
-        setFlag(Flag.UNUSED, true);
+            // Always set the unused flag.
+            setFlag(Flag.UNUSED, true);
+        }
 
         clockCount++;
+        cycles--;
     }
 
     @Override
@@ -186,8 +200,8 @@ public class Cpu6502Impl implements Cpu6502 {
         // Always set the unused flag.
         status = Flag.INTERRUPT_DISABLE.getValue() | Flag.UNUSED.getValue();
 
-        // A reset consumes 8 clock additionalCyclesFromAddressingMode.
-        cycles = 8;
+        // A reset consumes 7 clock cycles.
+        clockCount = 7;
     }
 
     @Override

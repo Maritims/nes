@@ -2,6 +2,7 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class AddWithCarry implements OpcodeFunction {
     private final boolean isSubtraction;
@@ -17,9 +18,9 @@ public class AddWithCarry implements OpcodeFunction {
     }
 
     @Override
-    public int execute(Cpu6502 cpu, int address) {
+    public int execute(Cpu6502 cpu, ResolvedAddress address) {
         var accumulator = cpu.getAccumulator();
-        var rawMemory   = cpu.read(address);
+        var rawMemory   = cpu.read(address.address());
         var carryIn     = cpu.hasFlag(Cpu6502.Flag.CARRY) ? 1 : 0;
 
         // For SBC, the memory data is inverted.
@@ -72,6 +73,6 @@ public class AddWithCarry implements OpcodeFunction {
         cpu.setFlag(Cpu6502.Flag.ZERO, hasZero);
         cpu.setFlag(Cpu6502.Flag.NEGATIVE, hasNegative);
 
-        return 2;
+        return address.isPageCrossed() ? 1 : 0;
     }
 }

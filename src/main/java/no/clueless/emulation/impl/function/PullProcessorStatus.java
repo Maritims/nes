@@ -2,15 +2,16 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class PullProcessorStatus implements OpcodeFunction {
     @Override
-    public int execute(Cpu6502 cpu, int address) {
+    public int execute(Cpu6502 cpu, ResolvedAddress ignored) {
         var value = cpu.pullFromStack() & 0xFF;
 
         var newStatus = (value | Cpu6502.Flag.UNUSED.getValue()) & ~Cpu6502.Flag.BREAK.getValue();
         cpu.setStatusRegister(newStatus);
 
-        return 4;
+        return 0;
     }
 }

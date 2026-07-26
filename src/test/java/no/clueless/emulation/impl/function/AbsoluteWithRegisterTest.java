@@ -2,7 +2,7 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.cpu.ResolvedAddress;
+import no.clueless.emulation.util.ResolvedAddress;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 

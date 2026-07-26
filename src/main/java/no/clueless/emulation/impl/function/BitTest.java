@@ -2,11 +2,12 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class BitTest implements OpcodeFunction {
     @Override
-    public int execute(Cpu6502 cpu, int address) {
-        var memoryData  = cpu.read(address);
+    public int execute(Cpu6502 cpu, ResolvedAddress address) {
+        var memoryData  = cpu.read(address.address());
         var accumulator = cpu.getAccumulator();
         var result      = accumulator & memoryData;
         var isZero      = result == 0;
@@ -17,6 +18,6 @@ public class BitTest implements OpcodeFunction {
         cpu.setFlag(Cpu6502.Flag.NEGATIVE, bit7);
         cpu.setFlag(Cpu6502.Flag.OVERFLOW, bit6);
 
-        return 2;
+        return 0;
     }
 }

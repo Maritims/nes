@@ -2,6 +2,7 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 import java.util.function.Function;
 
@@ -15,9 +16,9 @@ public class Compare implements OpcodeFunction {
     public static Compare CMP = new Compare(Cpu6502::getAccumulator);
 
     @Override
-    public int execute(Cpu6502 cpu, int address) {
+    public int execute(Cpu6502 cpu, ResolvedAddress address) {
         var registerValue = sourceRegisterFunction.apply(cpu);
-        var memory        = cpu.read(address);
+        var memory        = cpu.read(address.address());
         var hasCarry      = registerValue >= memory;
         var tmp           = registerValue - memory;
 
@@ -25,6 +26,6 @@ public class Compare implements OpcodeFunction {
         cpu.setFlag(Cpu6502.Flag.ZERO, tmp == 0);
         cpu.setFlag(Cpu6502.Flag.NEGATIVE, (tmp & 0x80) != 0);
 
-        return 2;
+        return address.isPageCrossed() ? 1 : 0;
     }
 }

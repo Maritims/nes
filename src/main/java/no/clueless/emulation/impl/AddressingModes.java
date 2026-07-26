@@ -3,7 +3,7 @@ package no.clueless.emulation.impl;
 import no.clueless.emulation.AddressingModeFunction;
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.cpu.ResolvedAddress;
+import no.clueless.emulation.util.ResolvedAddress;
 import no.clueless.emulation.impl.function.*;
 
 public enum AddressingModes implements AddressingModeFunction<Cpu6502> {

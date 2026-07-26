@@ -2,6 +2,7 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class ArithmeticShiftLeft implements OpcodeFunction {
     public static final ArithmeticShiftLeft ASL = new ArithmeticShiftLeft();
@@ -23,19 +24,17 @@ public class ArithmeticShiftLeft implements OpcodeFunction {
     }
 
     @Override
-    public int execute(Cpu6502 cpu, int address) {
-        int result;
-
-        if (address == -1) {
-            result = shiftLeft(cpu, cpu.getAccumulator());
+    public int execute(Cpu6502 cpu, ResolvedAddress address) {
+        if (address.address() == -1) {
+            var result = shiftLeft(cpu, cpu.getAccumulator());
             cpu.setAccumulator(result);
         } else {
-            var original = cpu.read(address);
-            result = shiftLeft(cpu, original);
-            cpu.write(address, original);
-            cpu.write(address, result);
+            var original = cpu.read(address.address());
+            var result   = shiftLeft(cpu, original);
+            cpu.write(address.address(), original);
+            cpu.write(address.address(), result);
         }
 
-        return result;
+        return 0;
     }
 }

@@ -2,14 +2,13 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class RotateLeftAndBitwiseAND implements OpcodeFunction {
-    private final Rotate     rol = Rotate.ROL;
-    private final BitwiseAND and = BitwiseAND.AND;
-
     @Override
-    public int execute(Cpu6502 cpu, int address) {
-        rol.execute(cpu, address);
-        return and.execute(cpu, address);
+    public int execute(Cpu6502 cpu, ResolvedAddress address) {
+        Rotate.ROL.execute(cpu, address);
+        BitwiseOperation.AND.execute(cpu, address);
+        return 0;
     }
 }

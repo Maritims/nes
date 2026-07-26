@@ -2,14 +2,15 @@ package no.clueless.emulation.impl;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.function.*;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public enum Opcode {
     // region ALU operations
     ADC(AddWithCarry.ADC),
     SBC(SubtractWithCarry.SBC),
-    AND(BitwiseAND.AND),
-    ORA(BitwiseOR.ORA),
-    EOR(BitwiseExclusiveOR.EOR),
+    AND(BitwiseOperation.AND),
+    ORA(BitwiseOperation.ORA),
+    EOR(BitwiseOperation.EOR),
     BIT(new BitTest()),
     CMP(Compare.CMP),
     CPX(new Compare(Cpu6502::getX)),
@@ -119,7 +120,7 @@ public enum Opcode {
      * @param cpu     The CPU.
      * @param address A 16-bit address.
      */
-    public int resolve(Cpu6502 cpu, int address) {
+    public int resolve(Cpu6502 cpu, ResolvedAddress address) {
         return function.execute(cpu, address);
     }
 }

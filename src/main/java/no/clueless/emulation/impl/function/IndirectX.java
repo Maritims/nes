@@ -3,7 +3,7 @@ package no.clueless.emulation.impl.function;
 import no.clueless.emulation.AddressingModeFunction;
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.cpu.ResolvedAddress;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class IndirectX implements AddressingModeFunction<Cpu6502> {
     @Override
@@ -14,6 +14,6 @@ public class IndirectX implements AddressingModeFunction<Cpu6502> {
         var addressLowByte  = bus.read(pointerLowByte);
         var addressHighByte = bus.read(pointerHighByte);
         var address         = (addressHighByte << 8) | addressLowByte;
-        return new ResolvedAddress(address, 6, false);
+        return new ResolvedAddress(address, false);
     }
 }

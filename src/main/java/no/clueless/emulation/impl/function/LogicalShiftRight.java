@@ -2,6 +2,7 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class LogicalShiftRight implements OpcodeFunction {
     public static final LogicalShiftRight LSR = new LogicalShiftRight();
@@ -18,18 +19,18 @@ public class LogicalShiftRight implements OpcodeFunction {
     }
 
     @Override
-    public int execute(Cpu6502 cpu, int address) {
-        if (address == -1) {
+    public int execute(Cpu6502 cpu, ResolvedAddress address) {
+        if (address.address() == -1) {
             var accumulator = cpu.getAccumulator();
             var result = shiftRight(cpu, accumulator);
             cpu.setAccumulator(result);
-            return 2;
+            return 0;
         } else {
-            var original = cpu.read(address);
+            var original = cpu.read(address.address());
             var result = shiftRight(cpu, original);
-            cpu.write(address, original);
-            cpu.write(address, result);
-            return 5;
+            cpu.write(address.address(), original);
+            cpu.write(address.address(), result);
+            return 0;
         }
     }
 }

@@ -1,6 +1,7 @@
 package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
+import no.clueless.emulation.util.ResolvedAddress;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -38,14 +39,14 @@ class ArithmeticShiftLeftTest {
 
     @Test
     void stores_result_in_accumulator_when_address_is_not_provided() {
-        var result = asl.execute(cpu, -1);
+        var result = asl.execute(cpu, new ResolvedAddress(-1, false));
         verify(cpu).setAccumulator(result);
         verify(cpu, never()).write(anyInt(), anyByte());
     }
 
     @Test
     void stores_result_in_memory_when_address_is_provided() {
-        asl.execute(cpu, 0x1234);
+        asl.execute(cpu, new ResolvedAddress(0x1234, false));
         verify(cpu, never()).setAccumulator(anyInt());
         verify(cpu, times(2)).write(anyInt(), anyInt());
     }
@@ -57,7 +58,7 @@ class ArithmeticShiftLeftTest {
         var result   = 0x24;
         when(cpu.read(address)).thenReturn(original);
 
-        asl.execute(cpu, address);
+        asl.execute(cpu, new ResolvedAddress(address, false));
 
         verify(cpu).write(address, original);
         verify(cpu).write(address, result);

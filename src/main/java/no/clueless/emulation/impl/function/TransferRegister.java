@@ -2,6 +2,7 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 import java.util.function.BiConsumer;
 import java.util.function.Function;
@@ -16,13 +17,13 @@ public class TransferRegister implements OpcodeFunction {
     }
 
     @Override
-    public int execute(Cpu6502 cpu, int address) {
+    public int execute(Cpu6502 cpu, ResolvedAddress ignored) {
         var sourceValue = sourceRegisterFunction.apply(cpu) & 0xFF;
         destinationRegisterFunction.accept(cpu, sourceValue);
 
         cpu.setFlag(Cpu6502.Flag.ZERO, sourceValue == 0);
         cpu.setFlag(Cpu6502.Flag.NEGATIVE, (sourceValue & 0x80) != 0);
 
-        return 2;
+        return 0;
     }
 }

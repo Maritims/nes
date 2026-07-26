@@ -3,7 +3,7 @@ package no.clueless.emulation.impl.function;
 import no.clueless.emulation.AddressingModeFunction;
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.cpu.ResolvedAddress;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class Absolute implements AddressingModeFunction<Cpu6502> {
     @Override
@@ -11,6 +11,6 @@ public class Absolute implements AddressingModeFunction<Cpu6502> {
         var lowByte  = bus.read(cpu.getAndIncrementProgramCounter());
         var highByte = bus.read(cpu.getAndIncrementProgramCounter());
         var address  = ((highByte << 8) | lowByte) & 0xFFFF;
-        return new ResolvedAddress(address, 2, false);
+        return new ResolvedAddress(address, false);
     }
 }

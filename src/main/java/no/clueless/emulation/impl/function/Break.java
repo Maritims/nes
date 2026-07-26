@@ -2,10 +2,11 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class Break implements OpcodeFunction {
     @Override
-    public int execute(Cpu6502 cpu, int ignored) {
+    public int execute(Cpu6502 cpu, ResolvedAddress ignored) {
         var pc            = cpu.getProgramCounter();
         var returnAddress = (pc + 1) & 0xFFFF;
 
@@ -21,6 +22,6 @@ public class Break implements OpcodeFunction {
 
         cpu.setProgramCounter(newPc);
 
-        return 7;
+        return 0;
     }
 }

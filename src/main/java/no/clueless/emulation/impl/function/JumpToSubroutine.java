@@ -2,10 +2,11 @@ package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
+import no.clueless.emulation.util.ResolvedAddress;
 
 public class JumpToSubroutine implements OpcodeFunction {
     @Override
-    public int execute(Cpu6502 cpu, int address) {
+    public int execute(Cpu6502 cpu, ResolvedAddress address) {
         // PC should point to the last byte of the JSR instruction.
         var pc = cpu.getProgramCounter() - 1;
 
@@ -16,8 +17,8 @@ public class JumpToSubroutine implements OpcodeFunction {
         cpu.pushToStack(pc & 0xFF);
 
         // PC 0 memory.
-        cpu.setProgramCounter(address);
+        cpu.setProgramCounter(address.address());
 
-        return 6;
+        return 0;
     }
 }
