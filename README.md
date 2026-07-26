@@ -1,0 +1,1 @@
+This started out as an attempt at emulating the 6502 CPU, but has since evolved into something that might end up as a NES emulator.
