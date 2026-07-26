@@ -1,4 +1,11 @@
 package no.clueless.emulation;
 
-public interface Apu extends Clockable {
+/**
+ * Represents the audio processor unit.
+ */
+public interface Apu {
+    /**
+     * Clocks the APU.
+     */
+    void clock();
 }

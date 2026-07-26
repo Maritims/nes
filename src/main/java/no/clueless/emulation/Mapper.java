@@ -2,10 +2,10 @@ package no.clueless.emulation;
 
 import java.util.OptionalInt;
 
-/**
- * The mapper can be considered a train track switch. It breaks a ROM into 16 smaller 16 KB chunks known as "banks".
- */
 public interface Mapper {
+    /**
+     * The ID of the mapper.
+     */
     int getId();
 
     /**
