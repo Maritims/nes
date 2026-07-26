@@ -6,7 +6,7 @@ import no.clueless.emulation.impl.OpcodeFunction;
 public class TransferXToStackPointer implements OpcodeFunction {
     @Override
     public int execute(Cpu6502 cpu, int address) {
-        cpu.setStackPointer(cpu.getX());
-        return cpu.getStackPointer();
+        cpu.setStackPointer(cpu.getX() & 0xFF);
+        return 2;
     }
 }

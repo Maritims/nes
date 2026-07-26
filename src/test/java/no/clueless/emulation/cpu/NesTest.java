@@ -18,7 +18,7 @@ public class NesTest {
     public void runNesTest() throws Exception {
         var romPath   = Paths.get("src/test/resources/nestest/nestest.nes");
         var cartridge = CartridgeLoader.load(romPath);
-        var cpu       = new Cpu6502Impl();
+        var cpu       = new Cpu6502Impl(false);
         var bus       = new BusImpl(cpu, mock(), mock());
         bus.insertCartridge(cartridge);
         bus.reset();

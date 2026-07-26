@@ -4,6 +4,8 @@ package no.clueless.emulation;
  * An implementation of the 6502 CPU.
  */
 public interface Cpu6502 {
+    boolean isDecimalModeEnabled();
+
     /**
      * The number of additionalCyclesFromAddressingMode the CPU has been clocked.
      */
@@ -113,6 +115,13 @@ public interface Cpu6502 {
      * @return An 8-bit value.
      */
     int getStatusRegister();
+
+    /**
+     * Sets the Status register.
+     *
+     * @param value An 8-bit value.
+     */
+    void setStatusRegister(int value);
 
     /**
      * Connects the CPU to the bus.

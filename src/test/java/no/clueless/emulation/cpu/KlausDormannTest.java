@@ -1,5 +1,6 @@
 package no.clueless.emulation.cpu;
 
+import no.clueless.emulation.*;
 import no.clueless.emulation.impl.BusImpl;
 import no.clueless.emulation.impl.Cpu6502Impl;
 import org.junit.jupiter.api.Test;
@@ -13,10 +14,65 @@ import static org.mockito.Mockito.mock;
 
 public class KlausDormannTest {
 
+    static class TestBus implements Bus {
+        private final int[] ram = new int[65536];
+        private final Cpu6502 cpu;
+
+        TestBus(Cpu6502 cpu) {
+            this.cpu = cpu;
+            cpu.connectToBus(this);
+        }
+
+        @Override
+        public Cpu6502 getCpu() {
+            return cpu;
+        }
+
+        @Override
+        public Ppu2C02 getPpu() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public APU getApu() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public Cartridge getCartridge() {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void insertCartridge(Cartridge cartridge) {
+            throw new UnsupportedOperationException();
+        }
+
+        @Override
+        public void clock() {
+            /* No-op */
+        }
+
+        @Override
+        public int read(int address) {
+            return ram[address & 0xFFFF];
+        }
+
+        @Override
+        public void write(int address, int data) {
+            ram[address & 0xFFFF] = data & 0xFF;
+        }
+
+        @Override
+        public void reset() {
+            cpu.reset();
+        }
+    }
+
     @Test
     public void runFunctionalTest() throws IOException {
-        var cpu6502 = new Cpu6502Impl();
-        var bus     = new BusImpl(cpu6502, mock(), mock());
+        var cpu6502 = new Cpu6502Impl(true);
+        var bus     = new TestBus(cpu6502);
 
         // Klaus Dormann's test binary is a 64KB image
         var path  = Paths.get("src/test/resources/6502_functional_test.bin");

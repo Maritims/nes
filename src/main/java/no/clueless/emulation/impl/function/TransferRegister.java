@@ -17,10 +17,12 @@ public class TransferRegister implements OpcodeFunction {
 
     @Override
     public int execute(Cpu6502 cpu, int address) {
-        var sourceValue = sourceRegisterFunction.apply(cpu);
+        var sourceValue = sourceRegisterFunction.apply(cpu) & 0xFF;
         destinationRegisterFunction.accept(cpu, sourceValue);
+
         cpu.setFlag(Cpu6502.Flag.ZERO, sourceValue == 0);
         cpu.setFlag(Cpu6502.Flag.NEGATIVE, (sourceValue & 0x80) != 0);
-        return sourceValue;
+
+        return 2;
     }
 }

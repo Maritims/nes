@@ -15,16 +15,21 @@ public class Cpu6502Impl implements Cpu6502 {
     private final int MASK_8BIT  = 0xFF;
     private final int MASK_16BIT = 0xFFFF;
 
-    private int clockCount = 0;
-    private int a          = 0x00;
-    private int x          = 0x00;
-    private int y          = 0x00;
-    private int sp         = 0xFF;
-    private int pc         = 0x0000;
-    private int status     = 0x00;
+    private final boolean isDecimalModeEnabled;
+    private       int     clockCount = 0;
+    private       int     a          = 0x00;
+    private       int     x          = 0x00;
+    private       int     y          = 0x00;
+    private       int     sp         = 0xFF;
+    private       int     pc         = 0x0000;
+    private       int     status     = 0x00;
 
     private Bus bus;
     private int cycles = 0;
+
+    public Cpu6502Impl(boolean isDecimalModeEnabled) {
+        this.isDecimalModeEnabled = isDecimalModeEnabled;
+    }
 
     public void setFlag(Flag flag, boolean value) {
         if (value) {
@@ -37,6 +42,11 @@ public class Cpu6502Impl implements Cpu6502 {
     @Override
     public boolean hasFlag(Flag flag) {
         return (status & flag.getValue()) != 0;
+    }
+
+    @Override
+    public boolean isDecimalModeEnabled() {
+        return isDecimalModeEnabled;
     }
 
     @Override
@@ -119,7 +129,12 @@ public class Cpu6502Impl implements Cpu6502 {
 
     @Override
     public int getStatusRegister() {
-        return status & MASK_8BIT;
+        return (status | Cpu6502.Flag.UNUSED.getValue()) & MASK_8BIT;
+    }
+
+    @Override
+    public void setStatusRegister(int value) {
+        this.status = (value | Flag.UNUSED.getValue()) & ~Flag.BREAK.getValue() & MASK_8BIT;
     }
 
     @Override
@@ -147,7 +162,7 @@ public class Cpu6502Impl implements Cpu6502 {
         var operandResult = instruction.addressingMode().resolve(this, bus);
         var address       = operandResult.address();
 
-        log.info("{}", Disassembler.disassemble(originalPc, instruction.opcode(), instruction.addressingMode(), address));
+        //log.info("{}", Disassembler.disassemble(originalPc, instruction.opcode(), instruction.addressingMode(), address));
 
         // Add any additional cycles from the addressing mode.
         this.cycles += operandResult.cyclesConsumed();
