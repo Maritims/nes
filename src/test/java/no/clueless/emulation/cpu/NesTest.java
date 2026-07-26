@@ -1,38 +1,32 @@
 package no.clueless.emulation.cpu;
 
-import no.clueless.emulation.BetaBus;
-import no.clueless.emulation.cartridge.CartridgeLoader;
-import no.clueless.emulation.ppu.NameTableBank;
-import no.clueless.emulation.ppu.PPU;
-import no.clueless.emulation.ppu.PPUBus;
-import no.clueless.emulation.ppu.PaletteRAM;
-import no.clueless.emulation.ram.RAM;
-import no.clueless.emulation.types.UnsignedWord;
+import no.clueless.emulation.Cpu6502;
+import no.clueless.emulation.impl.cartridge.CartridgeLoader;
+import no.clueless.emulation.impl.BusImpl;
+import no.clueless.emulation.impl.Cpu6502Impl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
+import static org.mockito.Mockito.mock;
+
 public class NesTest {
 
     @Test
     public void runNesTest() throws Exception {
-        var romPath       = Paths.get("src/test/resources/nestest/nestest.nes");
-        var cartridge     = CartridgeLoader.load(romPath);
-        var ram           = new RAM();
-        var nameTableBank = new NameTableBank();
-        var paletteRam    = new PaletteRAM();
-        var ppuBus        = new PPUBus(null, nameTableBank, paletteRam);
-        var ppu           = new PPU(ppuBus);
-        var bus           = new BetaBus(ram, cartridge, ppu);
-        var cpu           = new CPU(bus);
+        var romPath   = Paths.get("src/test/resources/nestest/nestest.nes");
+        var cartridge = CartridgeLoader.load(romPath);
+        var cpu       = new Cpu6502Impl();
+        var bus       = new BusImpl(cpu, mock(), mock());
+        bus.insertCartridge(cartridge);
+        bus.reset();
 
         // nestest in automated mode starts at 0xC000
-        cpu.setProgramCounter(new UnsignedWord(0xC000));
+        cpu.setProgramCounter(0xC000);
 
         try (var reader = Files.newBufferedReader(Paths.get("src/test/resources/nestest/nestest.log"))) {
-
             String line;
             var    lineNum = 0;
             while ((line = reader.readLine()) != null) {
@@ -42,19 +36,19 @@ public class NesTest {
                 // Compare current state with expected state BEFORE executing mnemonic
                 assertState(lineNum, expected, cpu);
 
-                cpu.step();
+                cpu.clock();
             }
         }
     }
 
-    private void assertState(int lineNum, ExpectedState expected, CPU cpu) {
+    private void assertState(int lineNum, ExpectedState expected, Cpu6502 cpu) {
         var actualState = String.format("PC:%04X A:%02X X:%02X Y:%02X P:%02X SP:%02X",
-                cpu.getProgramCounter().intValue(),
-                cpu.getAccumulator().intValue(),
-                cpu.getX().intValue(),
-                cpu.getY().intValue(),
-                cpu.getStatusRegister().unsignedByteValue().intValue(),
-                cpu.getStackPointer().getValue().intValue());
+                cpu.getProgramCounter(),
+                cpu.getAccumulator(),
+                cpu.getX(),
+                cpu.getY(),
+                cpu.getStatusRegister(),
+                cpu.getStackPointer());
         var expectedState = String.format("PC:%04X A:%02X X:%02X Y:%02X P:%02X SP:%02X",
                 expected.pc, expected.a, expected.x, expected.y, expected.p, expected.sp);
 
@@ -85,16 +79,6 @@ public class NesTest {
         return new ExpectedState(pc, a, x, y, p, sp);
     }
 
-    private static class ExpectedState {
-        final int pc, a, x, y, p, sp;
-
-        ExpectedState(int pc, int a, int x, int y, int p, int sp) {
-            this.pc = pc;
-            this.a  = a;
-            this.x  = x;
-            this.y  = y;
-            this.p  = p;
-            this.sp = sp;
-        }
+    private record ExpectedState(int pc, int a, int x, int y, int p, int sp) {
     }
 }

@@ -3,7 +3,7 @@ package no.clueless.emulation.impl;
 import no.clueless.emulation.AddressingModeFunction;
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.cpu.OperandResult;
+import no.clueless.emulation.cpu.ResolvedAddress;
 import no.clueless.emulation.impl.function.*;
 
 public enum AddressingModes implements AddressingModeFunction<Cpu6502> {
@@ -27,7 +27,7 @@ public enum AddressingModes implements AddressingModeFunction<Cpu6502> {
     }
 
     @Override
-    public OperandResult resolve(Cpu6502 cpu, Bus bus) {
+    public ResolvedAddress resolve(Cpu6502 cpu, Bus bus) {
         return function.resolve(cpu, bus);
     }
 }

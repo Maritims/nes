@@ -1,10 +1,10 @@
 package no.clueless.emulation;
 
-import no.clueless.emulation.cpu.OperandResult;
+import no.clueless.emulation.cpu.ResolvedAddress;
 
 @FunctionalInterface
 public interface AddressingModeFunction<T> {
-    OperandResult resolve(T cpu, Bus bus);
+    ResolvedAddress resolve(T cpu, Bus bus);
 
     /**
      * Checks if the page crossed between the two addresses.

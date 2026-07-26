@@ -12,12 +12,14 @@ public class Compare implements OpcodeFunction {
         this.sourceRegisterFunction = sourceRegisterFunction;
     }
 
+    public static Compare CMP = new Compare(Cpu6502::getAccumulator);
+
     @Override
     public int execute(Cpu6502 cpu, int address) {
         var registerValue = sourceRegisterFunction.apply(cpu);
-        var memoryData    = cpu.read(address);
-        var hasCarry      = registerValue >= memoryData;
-        var tmp           = registerValue - memoryData;
+        var memory        = cpu.read(address);
+        var hasCarry      = registerValue >= memory;
+        var tmp           = registerValue - memory;
 
         cpu.setFlag(Cpu6502.Flag.CARRY, hasCarry);
         cpu.setFlag(Cpu6502.Flag.ZERO, tmp == 0);

@@ -14,7 +14,7 @@ class ArithmeticShiftLeftTest {
     @BeforeEach
     void setUp() {
         cpu = mock(Cpu6502.class);
-        asl = new ArithmeticShiftLeft();
+        asl = ArithmeticShiftLeft.ASL;
     }
 
     @Test

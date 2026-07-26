@@ -4,6 +4,11 @@ import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
 
 public class ArithmeticShiftLeft implements OpcodeFunction {
+    public static final ArithmeticShiftLeft ASL = new ArithmeticShiftLeft();
+
+    private ArithmeticShiftLeft() {
+    }
+
     protected int shiftLeft(Cpu6502 cpu, int value) {
         // Bit 7 is shifted into the carry flag.
         cpu.setFlag(Cpu6502.Flag.CARRY, (value & (1 << 7)) != 0);

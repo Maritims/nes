@@ -1,11 +1,11 @@
 package no.clueless.emulation.impl.function;
 
-import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
 
-public class SubtractWithCarry implements OpcodeFunction {
-    @Override
-    public int execute(Cpu6502 cpu, int address) {
-        return 0;
+public class SubtractWithCarry extends AddWithCarry implements OpcodeFunction {
+    public static final SubtractWithCarry SBC = new SubtractWithCarry();
+
+    private SubtractWithCarry() {
+        super(true);
     }
 }

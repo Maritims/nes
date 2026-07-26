@@ -46,7 +46,8 @@ class BreakTest {
         when(cpu.getAndIncrementProgramCounter()).thenReturn(0x1234);
         sut.execute(cpu, Integer.MAX_VALUE);
 
-        verify(cpu).pushToStack(0x12, 0x34);
+        verify(cpu).pushToStack(0x12);
+        verify(cpu).pushToStack(0x34);
     }
 
     @Test

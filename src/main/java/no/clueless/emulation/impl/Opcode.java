@@ -5,19 +5,19 @@ import no.clueless.emulation.impl.function.*;
 
 public enum Opcode {
     // region ALU operations
-    ADC(new AddWithCarry()),
-    SBC(new SubtractWithCarry()),
-    AND(new BitwiseAND()),
-    ORA(new BitwiseOR()),
-    EOR(new BitwiseExclusiveOR()),
+    ADC(AddWithCarry.ADC),
+    SBC(SubtractWithCarry.SBC),
+    AND(BitwiseAND.AND),
+    ORA(BitwiseOR.ORA),
+    EOR(BitwiseExclusiveOR.EOR),
     BIT(new BitTest()),
-    CMP(new Compare(Cpu6502::getAccumulator)),
+    CMP(Compare.CMP),
     CPX(new Compare(Cpu6502::getX)),
     CPY(new Compare(Cpu6502::getY)),
     DCP(new DecrementAndCompare()),
-    ISB(new IncrementAndSubtract()),
+    ISC(new IncrementAndSubtractWithCarry()),
     SLO(new ShiftLeftAndOr()),
-    SRE(new ShiftRightAndEor()),
+    SRE(ShiftRightAndEor.SRE),
     // endregion
     // region Jump operations
     BRK(new Break()),
@@ -39,10 +39,9 @@ public enum Opcode {
     LDA(new LoadRegisterFromMemory(Cpu6502::setAccumulator)),
     LDX(new LoadRegisterFromMemory(Cpu6502::setX)),
     LDY(new LoadRegisterFromMemory(Cpu6502::setY)),
-    LAX(new LoadRegisterFromMemory((cpu, address) -> {
-        var memoryData = cpu.read(address);
-        cpu.setAccumulator(memoryData);
-        cpu.setX(memoryData);
+    LAX(new LoadRegisterFromMemory((cpu, value) -> {
+        cpu.setAccumulator(value);
+        cpu.setX(value);
     })),
     SAX(new StoreRegisterInMemory(cpu -> (cpu.getAccumulator() & cpu.getX()) & 0xFF)),
     STA(new StoreRegisterInMemory(Cpu6502::getAccumulator)),
@@ -52,21 +51,21 @@ public enum Opcode {
     TAY(new TransferRegister(Cpu6502::getAccumulator, Cpu6502::setY)),
     TXA(new TransferRegister(Cpu6502::getX, Cpu6502::setAccumulator)),
     TYA(new TransferRegister(Cpu6502::getY, Cpu6502::setAccumulator)),
-    INC(new Increment()),
-    DEC(new Decrement()),
-    INX(new IncrementRegister(Cpu6502::setX)),
-    DEX(new DecrementRegister(Cpu6502::setX)),
-    INY(new IncrementRegister(Cpu6502::setY)),
-    DEY(new DecrementRegister(Cpu6502::setY)),
+    INC(Increment.INC),
+    DEC(Decrement.DEC),
+    INX(new IncrementRegister(Cpu6502::getX, Cpu6502::setX)),
+    DEX(new DecrementRegister(Cpu6502::getX, Cpu6502::setX)),
+    INY(new IncrementRegister(Cpu6502::getY, Cpu6502::setY)),
+    DEY(new DecrementRegister(Cpu6502::getY, Cpu6502::setY)),
     NOP(new NoOperation()),
     // endregion
     // region Shift operations
-    ASL(new ArithmeticShiftLeft()),
-    LSR(new LogicalShiftRight()),
-    ROL(new RotateLeft()),
-    ROR(new RotateRight()),
+    ASL(ArithmeticShiftLeft.ASL),
+    LSR(LogicalShiftRight.LSR),
+    ROL(Rotate.ROL),
+    ROR(Rotate.ROR),
     RLA(new RotateLeftAndBitwiseAND()),
-    RRA(new RotateRightAndBitwiseAND()),
+    RRA(new RotateRightAndAddWithCarry()),
     // endregion
     // region Stack operations
     PHA(new PushAccumulator()),
@@ -102,7 +101,6 @@ public enum Opcode {
     LXA(null),
     LAS(null),
     SBX(null),
-    ISC(null)
     ;
 
     private final OpcodeFunction function;

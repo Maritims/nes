@@ -6,5 +6,5 @@ package no.clueless.emulation.cpu;
  * @param cyclesConsumed The number of additionalCyclesFromAddressingMode consumed by the operation
  * @param isPageCrossed  Whether the operation crossed a page boundary
  */
-public record OperandResult(int address, int cyclesConsumed, boolean isPageCrossed) {
+public record ResolvedAddress(int address, int cyclesConsumed, boolean isPageCrossed) {
 }

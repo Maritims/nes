@@ -85,19 +85,19 @@ public class Cpu6502Impl implements Cpu6502 {
 
     @Override
     public int pullFromStack() {
-        return read(0x0100 + sp++);
+        sp = (sp + 1) & MASK_8BIT;
+        return read(0x0100 | sp);
+    }
+
+    @Override
+    public void pushToStack(int value) {
+        write(0x0100 | sp, value);
+        sp = (sp - 1) & MASK_8BIT;
     }
 
     @Override
     public void setStackPointer(int value) {
         sp = value & MASK_8BIT;
-    }
-
-    @Override
-    public void pushToStack(int... values) {
-        for (var value : values) {
-            write(0x0100 + sp--, value);
-        }
     }
 
     @Override
@@ -134,32 +134,26 @@ public class Cpu6502Impl implements Cpu6502 {
 
     @Override
     public void clock() {
-        var opcode      = read(pc++);
-        var instruction = InstructionTable.INSTRUCTIONS[opcode];
-
-        if (instruction.opcode().getFunction() == null) {
-            throw new IllegalStateException("Opcode has not been implemented yet: 0x%02X %s".formatted(opcode, instruction.opcode().name()));
-        }
+        var originalPc = pc;
+        var opcode     = read(pc);
+        pc++;
 
         // Always set the unused flag.
         setFlag(Flag.UNUSED, true);
 
+        var instruction = InstructionTable.INSTRUCTIONS[opcode];
         this.cycles = instruction.additionalCyclesFromAddressingMode();
-
-        //log.info("{}: {} {}", "0x%02X".formatted(opcode), instruction.opcode().name(), instruction.addressingMode().name());
 
         var operandResult = instruction.addressingMode().resolve(this, bus);
         var address       = operandResult.address();
+
+        log.info("{}", Disassembler.disassemble(originalPc, instruction.opcode(), instruction.addressingMode(), address));
+
+        // Add any additional cycles from the addressing mode.
         this.cycles += operandResult.cyclesConsumed();
 
-        log.info(Disassembler.disassemble(pc, instruction, address));
-
-        var extraCycleFromOpcode = instruction.opcode().resolve(this, address);
-        if (extraCycleFromOpcode == 0) {
-            throw new IllegalStateException("Extra cycle from opcode not implemented yet: 0x%02X %s".formatted(opcode, instruction.opcode().name()));
-        }
-
-        this.cycles += extraCycleFromOpcode;
+        // Add any additional cycles from the instruction itself.
+        this.cycles += instruction.opcode().resolve(this, address);
 
         // Always set the unused flag.
         setFlag(Flag.UNUSED, true);

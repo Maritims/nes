@@ -11,7 +11,8 @@ public class Break implements OpcodeFunction {
         cpu.setFlag(Cpu6502.Flag.INTERRUPT_DISABLE, true);
         var pcLowByte  = (pc >> 8) & 0x00FF;
         var pcHighByte = pc & 0x00FF;
-        cpu.pushToStack(pcLowByte, pcHighByte);
+        cpu.pushToStack(pcLowByte);
+        cpu.pushToStack(pcHighByte);
 
         cpu.setFlag(Cpu6502.Flag.BREAK, true);
         cpu.pushToStack(cpu.getStatusRegister());

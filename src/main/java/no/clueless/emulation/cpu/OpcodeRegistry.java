@@ -320,15 +320,6 @@ public class OpcodeRegistry {
         register(new no.clueless.emulation.cpu.Opcode(0xC3, DCP, 8, INDIRECT_X));
         register(new no.clueless.emulation.cpu.Opcode(0xD3, DCP, 8, INDIRECT_Y));
 
-        // ISB (Illegal)
-        register(new no.clueless.emulation.cpu.Opcode(0xE7, ISB, 5, ZERO_PAGE));
-        register(new no.clueless.emulation.cpu.Opcode(0xF7, ISB, 6, ZERO_PAGE_X));
-        register(new no.clueless.emulation.cpu.Opcode(0xEF, ISB, 6, ABSOLUTE));
-        register(new no.clueless.emulation.cpu.Opcode(0xFF, ISB, 7, ABSOLUTE_X));
-        register(new no.clueless.emulation.cpu.Opcode(0xFB, ISB, 7, ABSOLUTE_Y));
-        register(new no.clueless.emulation.cpu.Opcode(0xE3, ISB, 8, INDIRECT_X));
-        register(new no.clueless.emulation.cpu.Opcode(0xF3, ISB, 8, INDIRECT_Y));
-
         // RRA (Illegal)
         register(new no.clueless.emulation.cpu.Opcode(0x67, RRA, 5, ZERO_PAGE));
         register(new no.clueless.emulation.cpu.Opcode(0x77, RRA, 6, ZERO_PAGE_X));

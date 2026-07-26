@@ -4,6 +4,10 @@ import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.OpcodeFunction;
 
 public class BitwiseExclusiveOR implements OpcodeFunction {
+    public static final BitwiseExclusiveOR EOR = new BitwiseExclusiveOR();
+
+    private BitwiseExclusiveOR() {}
+
     @Override
     public int execute(Cpu6502 cpu, int address) {
         var memory      = cpu.read(address);

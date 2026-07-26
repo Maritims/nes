@@ -5,6 +5,10 @@ import no.clueless.emulation.Cpu6502.Flag;
 import no.clueless.emulation.impl.OpcodeFunction;
 
 public class BitwiseOR implements OpcodeFunction {
+    public static final BitwiseOR ORA = new BitwiseOR();
+
+    private BitwiseOR() {}
+
     @Override
     public int execute(Cpu6502 cpu, int address) {
         var memory      = cpu.read(address);

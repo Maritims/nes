@@ -12,6 +12,7 @@ public class ClearFlag implements OpcodeFunction {
 
     @Override
     public int execute(Cpu6502 cpu, int address) {
-        return 0;
+        cpu.setFlag(flag, false);
+        return 2;
     }
 }

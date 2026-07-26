@@ -13,7 +13,7 @@ class BitwiseORTest {
     @BeforeEach
     void setUp() {
         cpu       = mock(Cpu6502.class);
-        bitwiseOR = new BitwiseOR();
+        bitwiseOR = BitwiseOR.ORA;
     }
 
     @Test

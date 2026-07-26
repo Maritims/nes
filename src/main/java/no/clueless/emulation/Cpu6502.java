@@ -66,11 +66,18 @@ public interface Cpu6502 {
     int getAndIncrementStackPointer();
 
     /**
-     * Pops a value from the stack by incrementing the stack pointer and reading the value from the bus at address 0x0100 + stack pointer.
+     * Pulls a value from the stack.
      *
      * @return An 8-bit value.
      */
     int pullFromStack();
+
+    /**
+     * Pushes a value onto the stack.
+     *
+     * @param value An 8-bit value.
+     */
+    void pushToStack(int value);
 
     /**
      * Sets the Stack Pointer.
@@ -78,13 +85,6 @@ public interface Cpu6502 {
      * @param value An 8-bit value.
      */
     void setStackPointer(int value);
-
-    /**
-     * Pushes values onto the stack.
-     *
-     * @param values 8-bit values to push onto the stack.
-     */
-    void pushToStack(int... values);
 
     /**
      * Reads the Program Counter.

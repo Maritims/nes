@@ -1,14 +1,19 @@
 package no.clueless.emulation.impl;
 
 import no.clueless.emulation.*;
+import no.clueless.emulation.impl.cartridge.CartridgeImpl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class BusImpl implements Bus {
-    private final Cpu6502 cpu;
-    private final Ppu2C02 ppu;
-    private final APU     apu;
+    private static final Logger  log = LoggerFactory.getLogger(BusImpl.class);
+    private final        Cpu6502 cpu;
+    private final        Ppu2C02 ppu;
+    private final        APU     apu;
 
-    private final int[]     cpuRam = new int[2048];
+    private final int[]     cpuRam          = new int[2048];
     private       Cartridge cartridge;
+    private       int       totalClockCount = 0;
 
     public BusImpl(Cpu6502 cpu, Ppu2C02 ppu, APU apu) {
         if (cpu == null) {
@@ -43,7 +48,7 @@ public class BusImpl implements Bus {
     }
 
     @Override
-    public Cartridge getCartridge() {
+    public CartridgeImpl getCartridge() {
         return null;
     }
 
@@ -57,6 +62,12 @@ public class BusImpl implements Bus {
     public void clock() {
         apu.clock();
         ppu.clock();
+
+        if (totalClockCount > 0 && totalClockCount % 3 == 0) {
+            cpu.clock();
+        }
+
+        totalClockCount++;
     }
 
     @Override
@@ -65,9 +76,20 @@ public class BusImpl implements Bus {
 
         if (address >= 0x0000 && address <= 0x1FFF) {
             data = cpuRam[address % cpuRam.length];
+        } else if (address >= 0x2000 && address <= 0x3FFF) {
+            // PPU
+        } else if (address >= 0x4000 && address <= 0x04017) {
+            // APU and I/O
+        } else if (address >= 0x4018 && address <= 0x401F) {
+            // APU and I/O test
+        } else if (address >= 0x8000 && address <= 0xFFFF) {
+            // Cartridge
+            data = cartridge.read(address);
+        } else {
+            log.warn("Read from unknown address: {}", "$%04X".formatted(address));
         }
 
-        return data;
+        return data & 0xFF;
     }
 
     @Override
