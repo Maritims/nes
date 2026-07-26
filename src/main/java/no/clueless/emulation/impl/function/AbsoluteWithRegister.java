@@ -21,7 +21,7 @@ public abstract class AbsoluteWithRegister implements AddressingModeFunction<Cpu
         var base          = (highByte << 8) | lowByte;
         var register      = registerFunction.apply(cpu);
         var address       = base + register;
-        var isPageCrossed = isPageCrossed(base, address);
+        var isPageCrossed = PageBoundaryChecker.hasCrossed(base, address);
 
         return new ResolvedAddress(address, isPageCrossed);
     }

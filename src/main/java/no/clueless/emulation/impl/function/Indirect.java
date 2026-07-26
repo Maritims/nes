@@ -20,6 +20,6 @@ public class Indirect implements AddressingModeFunction<Cpu6502> {
 
         var targetAddress = (highByte << 8) | lowByte;
 
-        return new ResolvedAddress(targetAddress, isPageCrossed(vector, targetAddress));
+        return new ResolvedAddress(targetAddress, PageBoundaryChecker.hasCrossed(vector, targetAddress));
     }
 }

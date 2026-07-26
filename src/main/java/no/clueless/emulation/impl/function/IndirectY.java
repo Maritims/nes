@@ -16,7 +16,7 @@ public class IndirectY implements AddressingModeFunction<Cpu6502> {
         var base         = (baseHighByte << 8) | baseLowByte;
 
         var address       = (base + (cpu.getY() & 0xFF)) & 0xFFFF;
-        var isPageCrossed = isPageCrossed(base, address);
+        var isPageCrossed = PageBoundaryChecker.hasCrossed(base, address);
 
         return new ResolvedAddress(address, isPageCrossed);
     }
