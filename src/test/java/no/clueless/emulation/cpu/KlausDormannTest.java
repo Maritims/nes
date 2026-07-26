@@ -1,7 +1,6 @@
 package no.clueless.emulation.cpu;
 
 import no.clueless.emulation.*;
-import no.clueless.emulation.impl.BusImpl;
 import no.clueless.emulation.impl.Cpu6502Impl;
 import org.junit.jupiter.api.Test;
 
@@ -10,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.mock;
 
 public class KlausDormannTest {
 

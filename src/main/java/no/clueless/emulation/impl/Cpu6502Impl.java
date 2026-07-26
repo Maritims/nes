@@ -2,16 +2,11 @@ package no.clueless.emulation.impl;
 
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.util.Disassembler;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static no.clueless.emulation.cpu.CPU.PC_ADDRESS_AT_POWER_ON;
 import static no.clueless.emulation.cpu.CPU.STACK_POINTER_AT_POWER_ON;
 
 public class Cpu6502Impl implements Cpu6502 {
-    private static final Logger log = LoggerFactory.getLogger(Cpu6502Impl.class);
-
     private final int MASK_8BIT  = 0xFF;
     private final int MASK_16BIT = 0xFFFF;
 
