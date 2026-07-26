@@ -6,6 +6,7 @@ import no.clueless.emulation.impl.OpcodeFunction;
 public class PushAccumulator implements OpcodeFunction {
     @Override
     public int execute(Cpu6502 cpu, int address) {
-        return 0;
+        cpu.pushToStack(cpu.getAccumulator());
+        return 3;
     }
 }

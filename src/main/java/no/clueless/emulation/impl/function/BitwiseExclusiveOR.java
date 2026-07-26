@@ -6,6 +6,14 @@ import no.clueless.emulation.impl.OpcodeFunction;
 public class BitwiseExclusiveOR implements OpcodeFunction {
     @Override
     public int execute(Cpu6502 cpu, int address) {
-        return 0;
+        var memory      = cpu.read(address);
+        var accumulator = cpu.getAccumulator();
+        var result      = accumulator ^ memory;
+
+        cpu.setAccumulator(result);
+        cpu.setFlag(Cpu6502.Flag.ZERO, result == 0);
+        cpu.setFlag(Cpu6502.Flag.NEGATIVE, (result & 0x80) != 0);
+
+        return 2;
     }
 }

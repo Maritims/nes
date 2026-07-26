@@ -7,7 +7,8 @@ public class BusImpl implements Bus {
     private final Ppu2C02 ppu;
     private final APU     apu;
 
-    private Cartridge cartridge;
+    private final int[]     cpuRam = new int[2048];
+    private       Cartridge cartridge;
 
     public BusImpl(Cpu6502 cpu, Ppu2C02 ppu, APU apu) {
         if (cpu == null) {
@@ -60,11 +61,20 @@ public class BusImpl implements Bus {
 
     @Override
     public int read(int address) {
-        return 0;
+        var data = 0x00;
+
+        if (address >= 0x0000 && address <= 0x1FFF) {
+            data = cpuRam[address % cpuRam.length];
+        }
+
+        return data;
     }
 
     @Override
     public void write(int address, int data) {
+        if (address >= 0x0000 && address <= 0x1FFF) {
+            cpuRam[address % cpuRam.length] = data & 0xFF;
+        }
     }
 
     @Override

@@ -15,7 +15,7 @@ public record Opcode(
             throw new IllegalArgumentException("mnemonic cannot be null");
         }
         if (cycles < 1) {
-            throw new IllegalArgumentException("cycles must be at least 1");
+            throw new IllegalArgumentException("additionalCyclesFromAddressingMode must be at least 1");
         }
     }
 

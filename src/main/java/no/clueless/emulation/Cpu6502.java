@@ -5,6 +5,11 @@ package no.clueless.emulation;
  */
 public interface Cpu6502 {
     /**
+     * The number of additionalCyclesFromAddressingMode the CPU has been clocked.
+     */
+    int getClockCount();
+
+    /**
      * The Accumulator register.
      *
      * @return An 8-bit value.
@@ -52,6 +57,20 @@ public interface Cpu6502 {
      * @return An 8-bit value.
      */
     int getStackPointer();
+
+    /**
+     * Reads the Stack Pointer and increments it.
+     *
+     * @return An 8-bit value.
+     */
+    int getAndIncrementStackPointer();
+
+    /**
+     * Pops a value from the stack by incrementing the stack pointer and reading the value from the bus at address 0x0100 + stack pointer.
+     *
+     * @return An 8-bit value.
+     */
+    int pullFromStack();
 
     /**
      * Sets the Stack Pointer.

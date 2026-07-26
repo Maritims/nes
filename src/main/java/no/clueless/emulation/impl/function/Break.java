@@ -1,8 +1,6 @@
 package no.clueless.emulation.impl.function;
 
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.impl.AddressingModes;
-import no.clueless.emulation.impl.Instruction;
 import no.clueless.emulation.impl.OpcodeFunction;
 
 public class Break implements OpcodeFunction {
@@ -24,6 +22,6 @@ public class Break implements OpcodeFunction {
         var newPc         = (newPcHighByte << 8) | newPcLowByte;
         cpu.setProgramCounter(newPc);
 
-        return newPc;
+        return 7;
     }
 }

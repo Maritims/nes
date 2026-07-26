@@ -18,7 +18,7 @@ public enum AddressingModes implements AddressingModeFunction<Cpu6502> {
     IZX(new IndirectX()),
     IZY(new IndirectY()),
     REL(new Relative()),
-    IMP(null);
+    IMP(new Implied());
 
     private final AddressingModeFunction<Cpu6502> function;
 

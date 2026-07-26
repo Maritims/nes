@@ -18,6 +18,7 @@ public class LoadRegisterFromMemory implements OpcodeFunction {
         cpu.setFlag(Cpu6502.Flag.ZERO, memoryData == 0);
         cpu.setFlag(Cpu6502.Flag.NEGATIVE, (memoryData & 0x80) != 0);
         register.accept(cpu, memoryData);
-        return memoryData;
+
+        return 2;
     }
 }

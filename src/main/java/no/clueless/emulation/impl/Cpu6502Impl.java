@@ -2,20 +2,26 @@ package no.clueless.emulation.impl;
 
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
+import no.clueless.emulation.util.Disassembler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static no.clueless.emulation.cpu.CPU.PC_ADDRESS_AT_POWER_ON;
 import static no.clueless.emulation.cpu.CPU.STACK_POINTER_AT_POWER_ON;
 
 public class Cpu6502Impl implements Cpu6502 {
+    private static final Logger log = LoggerFactory.getLogger(Cpu6502Impl.class);
+
     private final int MASK_8BIT  = 0xFF;
     private final int MASK_16BIT = 0xFFFF;
 
-    private int a      = 0x00;
-    private int x      = 0x00;
-    private int y      = 0x00;
-    private int sp     = 0xFF;
-    private int pc     = 0x0000;
-    private int status = 0x00;
+    private int clockCount = 0;
+    private int a          = 0x00;
+    private int x          = 0x00;
+    private int y          = 0x00;
+    private int sp         = 0xFF;
+    private int pc         = 0x0000;
+    private int status     = 0x00;
 
     private Bus bus;
     private int cycles = 0;
@@ -31,6 +37,11 @@ public class Cpu6502Impl implements Cpu6502 {
     @Override
     public boolean hasFlag(Flag flag) {
         return (status & flag.getValue()) != 0;
+    }
+
+    @Override
+    public int getClockCount() {
+        return clockCount;
     }
 
     @Override
@@ -65,6 +76,16 @@ public class Cpu6502Impl implements Cpu6502 {
     @Override
     public int getStackPointer() {
         return sp & MASK_8BIT;
+    }
+
+    @Override
+    public int getAndIncrementStackPointer() {
+        return sp++;
+    }
+
+    @Override
+    public int pullFromStack() {
+        return read(0x0100 + sp++);
     }
 
     @Override
@@ -113,23 +134,37 @@ public class Cpu6502Impl implements Cpu6502 {
 
     @Override
     public void clock() {
-        var opcode = read(pc++);
+        var opcode      = read(pc++);
+        var instruction = InstructionTable.INSTRUCTIONS[opcode];
+
+        if (instruction.opcode().getFunction() == null) {
+            throw new IllegalStateException("Opcode has not been implemented yet: 0x%02X %s".formatted(opcode, instruction.opcode().name()));
+        }
 
         // Always set the unused flag.
         setFlag(Flag.UNUSED, true);
 
-        var instruction = InstructionTable.INSTRUCTIONS[opcode];
-        this.cycles = instruction.cycles();
+        this.cycles = instruction.additionalCyclesFromAddressingMode();
+
+        //log.info("{}: {} {}", "0x%02X".formatted(opcode), instruction.opcode().name(), instruction.addressingMode().name());
 
         var operandResult = instruction.addressingMode().resolve(this, bus);
         var address       = operandResult.address();
         this.cycles += operandResult.cyclesConsumed();
 
+        log.info(Disassembler.disassemble(pc, instruction, address));
+
         var extraCycleFromOpcode = instruction.opcode().resolve(this, address);
+        if (extraCycleFromOpcode == 0) {
+            throw new IllegalStateException("Extra cycle from opcode not implemented yet: 0x%02X %s".formatted(opcode, instruction.opcode().name()));
+        }
+
         this.cycles += extraCycleFromOpcode;
 
         // Always set the unused flag.
         setFlag(Flag.UNUSED, true);
+
+        clockCount++;
     }
 
     @Override
@@ -147,7 +182,7 @@ public class Cpu6502Impl implements Cpu6502 {
         // Always set the unused flag.
         status = Flag.INTERRUPT_DISABLE.getValue() | Flag.UNUSED.getValue();
 
-        // A reset consumes 8 clock cycles.
+        // A reset consumes 8 clock additionalCyclesFromAddressingMode.
         cycles = 8;
     }
 

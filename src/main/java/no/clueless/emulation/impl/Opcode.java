@@ -1,7 +1,6 @@
 package no.clueless.emulation.impl;
 
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.cpu.operations.*;
 import no.clueless.emulation.impl.function.*;
 
 public enum Opcode {
@@ -12,9 +11,9 @@ public enum Opcode {
     ORA(new BitwiseOR()),
     EOR(new BitwiseExclusiveOR()),
     BIT(new BitTest()),
-    CMP(new CompareAccumulator()),
-    CPX(new CompareX()),
-    CPY(new CompareY()),
+    CMP(new Compare(Cpu6502::getAccumulator)),
+    CPX(new Compare(Cpu6502::getX)),
+    CPY(new Compare(Cpu6502::getY)),
     DCP(new DecrementAndCompare()),
     ISB(new IncrementAndSubtract()),
     SLO(new ShiftLeftAndOr()),
@@ -110,6 +109,10 @@ public enum Opcode {
 
     Opcode(OpcodeFunction function) {
         this.function = function;
+    }
+
+    public OpcodeFunction getFunction() {
+        return function;
     }
 
     /**

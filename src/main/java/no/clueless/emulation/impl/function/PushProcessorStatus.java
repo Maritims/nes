@@ -10,6 +10,7 @@ public class PushProcessorStatus implements OpcodeFunction {
         // Source: https://www.nesdev.org/wiki/Instruction_reference#PHP
         var result = cpu.getStatusRegister() | Cpu6502.Flag.BREAK.getValue();
         cpu.pushToStack(result);
-        return result;
+
+        return 3;
     }
 }

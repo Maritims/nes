@@ -14,15 +14,18 @@ public class Branch implements OpcodeFunction {
 
     @Override
     public int execute(Cpu6502 cpu, int address) {
+        var cycles = 2;
+
         if(predicate.test(cpu)) {
-            cpu.addCycles(1);
+            cycles++;
 
             if (PageBoundaryChecker.hasCrossed(cpu.getProgramCounter(), address)) {
-                cpu.addCycles(1);
+                cycles++;
             }
 
             cpu.setProgramCounter(address);
         }
-        return cpu.getProgramCounter();
+
+        return cycles;
     }
 }

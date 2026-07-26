@@ -15,6 +15,6 @@ public class BitwiseOR implements OpcodeFunction {
         cpu.setFlag(Flag.ZERO, result == 0);
         cpu.setFlag(Flag.NEGATIVE, (result & 0x80) != 0);
 
-        return result;
+        return 2;
     }
 }
