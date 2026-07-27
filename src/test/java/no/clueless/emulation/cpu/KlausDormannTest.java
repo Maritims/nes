@@ -1,7 +1,7 @@
 package no.clueless.emulation.cpu;
 
 import no.clueless.emulation.*;
-import no.clueless.emulation.impl.Cpu6502Impl;
+import no.clueless.emulation.impl.cpu.Cpu6502Impl;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;

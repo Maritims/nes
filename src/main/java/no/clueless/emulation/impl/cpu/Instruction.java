@@ -1,4 +1,6 @@
-package no.clueless.emulation.impl;
+package no.clueless.emulation.impl.cpu;
+
+import no.clueless.emulation.impl.AddressingModes;
 
 /**
  * Represents an instruction.

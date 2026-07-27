@@ -1,8 +1,7 @@
-package no.clueless.emulation.impl;
+package no.clueless.emulation.impl.cpu;
 
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
-import no.clueless.emulation.util.Disassembler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

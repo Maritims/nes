@@ -84,7 +84,7 @@ public class BusImpl implements Bus {
             // APU and I/O test
         } else if (address >= 0x8000 && address <= 0xFFFF) {
             // Cartridge
-            data = cartridge.read(address);
+            data = cartridge.readPrgRom(address).orElseThrow();
         } else {
             log.warn("Read from unknown address: {}", "$%04X".formatted(address));
         }

@@ -1,8 +1,8 @@
-package no.clueless.emulation.impl;
+package no.clueless.emulation.impl.cpu;
 
 import static no.clueless.emulation.impl.AddressingModes.*;
-import static no.clueless.emulation.impl.Instruction.i;
-import static no.clueless.emulation.impl.Opcode.*;
+import static no.clueless.emulation.impl.cpu.Instruction.i;
+import static no.clueless.emulation.impl.cpu.Opcode.*;
 
 public class InstructionTable {
     /**

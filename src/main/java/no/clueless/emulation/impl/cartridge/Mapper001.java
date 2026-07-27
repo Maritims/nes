@@ -2,7 +2,7 @@ package no.clueless.emulation.impl.cartridge;
 
 import no.clueless.emulation.Mapper;
 
-import java.util.OptionalInt;
+import java.util.Optional;
 
 public class Mapper001 implements Mapper {
     @Override
@@ -11,12 +11,12 @@ public class Mapper001 implements Mapper {
     }
 
     @Override
-    public OptionalInt mapCpuAddress(int address) {
-        return OptionalInt.empty();
+    public Optional<Integer> mapCpuAddress(int address) {
+        return Optional.empty();
     }
 
     @Override
-    public OptionalInt mapPpuAddress(int address) {
-        return OptionalInt.empty();
+    public Optional<Integer> mapPpuAddress(int address) {
+        return Optional.empty();
     }
 }

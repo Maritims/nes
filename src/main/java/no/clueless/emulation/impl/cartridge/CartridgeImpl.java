@@ -6,6 +6,7 @@ import no.clueless.emulation.Mapper;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.Optional;
 
 /**
  * Represents a cartridge for the Nintendo Entertainment System.
@@ -59,9 +60,13 @@ public class CartridgeImpl implements Cartridge {
     }
 
     @Override
-    public int read(int address) {
-        var mappedAddress = mapper.mapCpuAddress(address).orElseThrow();
-        return prgRom[mappedAddress];
+    public Optional<Integer> readPrgRom(int address) {
+        return mapper.mapCpuAddress(address).map(i -> (int) prgRom[i & 0xFFFF]);
+    }
+
+    @Override
+    public Optional<Integer> readChrRom(int address) {
+        return mapper.mapPpuAddress(address).map(i -> (int) chrRom[i & 0xFFFF]);
     }
 
     @Override

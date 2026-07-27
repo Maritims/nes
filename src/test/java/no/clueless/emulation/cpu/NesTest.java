@@ -3,7 +3,7 @@ package no.clueless.emulation.cpu;
 import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.cartridge.CartridgeImpl;
 import no.clueless.emulation.impl.BusImpl;
-import no.clueless.emulation.impl.Cpu6502Impl;
+import no.clueless.emulation.impl.cpu.Cpu6502Impl;
 import org.junit.jupiter.api.Assertions;
 import org.junit.jupiter.api.Test;
 

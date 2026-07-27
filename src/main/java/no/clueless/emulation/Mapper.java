@@ -1,6 +1,6 @@
 package no.clueless.emulation;
 
-import java.util.OptionalInt;
+import java.util.Optional;
 
 public interface Mapper {
     /**
@@ -14,7 +14,7 @@ public interface Mapper {
      * @param address A 16-bit address to translate.
      * @return A 16-bit address, or empty if the address does not map to a valid PRG-ROM bank.
      */
-    OptionalInt mapCpuAddress(int address);
+    Optional<Integer> mapCpuAddress(int address);
 
     /**
      * Translate a PPU address into a physical index inside CHR-ROM.
@@ -22,5 +22,5 @@ public interface Mapper {
      * @param address A 16-bit address to translate.
      * @return A 16-bit address, or empty if the address does not map to a valid CHR-ROM bank.
      */
-    OptionalInt mapPpuAddress(int address);
+    Optional<Integer> mapPpuAddress(int address);
 }

@@ -1,7 +1,7 @@
 package no.clueless.emulation.util;
 
 import no.clueless.emulation.impl.AddressingModes;
-import no.clueless.emulation.impl.Opcode;
+import no.clueless.emulation.impl.cpu.Opcode;
 
 public class Disassembler {
     public static String disassemble(int pc, Opcode opcode, AddressingModes addressingMode, int address) {

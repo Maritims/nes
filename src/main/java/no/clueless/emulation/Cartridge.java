@@ -1,7 +1,11 @@
 package no.clueless.emulation;
 
+import java.util.Optional;
+
 public interface Cartridge {
-    int read(int address);
+    Optional<Integer> readPrgRom(int address);
+
+    Optional<Integer> readChrRom(int address);
 
     void reset();
 }

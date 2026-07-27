@@ -2,6 +2,7 @@ package no.clueless.emulation.impl;
 
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
+import no.clueless.emulation.impl.cpu.Cpu6502Impl;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
