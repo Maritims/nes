@@ -7,7 +7,7 @@ import no.clueless.emulation.util.ResolvedAddress;
 
 import java.util.function.Function;
 
-public abstract class AbsoluteWithRegister implements AddressingModeFunction<Cpu6502> {
+public class AbsoluteWithRegister implements AddressingModeFunction<Cpu6502> {
     private final Function<Cpu6502, Integer> registerFunction;
 
     public AbsoluteWithRegister(Function<Cpu6502, Integer> registerFunction) {
@@ -16,8 +16,9 @@ public abstract class AbsoluteWithRegister implements AddressingModeFunction<Cpu
 
     @Override
     public ResolvedAddress resolve(Cpu6502 cpu, Bus bus) {
-        var lowByte       = bus.read(cpu.getAndIncrementProgramCounter());
-        var highByte      = bus.read(cpu.getAndIncrementProgramCounter());
+        var lowByte  = bus.read(cpu.getAndIncrementProgramCounter());
+        var highByte = bus.read(cpu.getAndIncrementProgramCounter());
+
         var base          = (highByte << 8) | lowByte;
         var register      = registerFunction.apply(cpu);
         var address       = base + register;

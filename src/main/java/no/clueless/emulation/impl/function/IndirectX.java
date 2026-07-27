@@ -8,12 +8,15 @@ import no.clueless.emulation.util.ResolvedAddress;
 public class IndirectX implements AddressingModeFunction<Cpu6502> {
     @Override
     public ResolvedAddress resolve(Cpu6502 cpu, Bus bus) {
-        var base            = bus.read(cpu.getAndIncrementProgramCounter());
+        var base = bus.read(cpu.getAndIncrementProgramCounter());
+
         var pointerLowByte  = (base + cpu.getX()) & 0xFF;
         var pointerHighByte = (pointerLowByte + 1) & 0xFF;
+
         var addressLowByte  = bus.read(pointerLowByte);
         var addressHighByte = bus.read(pointerHighByte);
         var address         = (addressHighByte << 8) | addressLowByte;
+
         return new ResolvedAddress(address, false);
     }
 }

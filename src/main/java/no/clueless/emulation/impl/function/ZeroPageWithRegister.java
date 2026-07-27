@@ -16,9 +16,10 @@ public class ZeroPageWithRegister implements AddressingModeFunction<Cpu6502> {
 
     @Override
     public ResolvedAddress resolve(Cpu6502 cpu, Bus bus) {
-        var base     = bus.read(cpu.getAndIncrementProgramCounter());
+        var lowByte = bus.read(cpu.getAndIncrementProgramCounter());
+
         var register = registerFunction.apply(cpu);
-        var address  = (base + register) & 0xFF;
+        var address  = (lowByte + register) & 0xFF;
 
         return new ResolvedAddress(address, false);
     }

@@ -9,6 +9,10 @@ import java.util.function.BiConsumer;
 public class LoadRegisterFromMemory implements OpcodeFunction {
     private final BiConsumer<Cpu6502, Integer> setRegisterFunction;
 
+    public static LoadRegisterFromMemory LDA = new LoadRegisterFromMemory(Cpu6502::setAccumulator);
+    public static LoadRegisterFromMemory LDX = new LoadRegisterFromMemory(Cpu6502::setX);
+    public static LoadRegisterFromMemory LDY = new LoadRegisterFromMemory(Cpu6502::setY);
+
     public LoadRegisterFromMemory(BiConsumer<Cpu6502, Integer> setRegisterFunction) {
         this.setRegisterFunction = setRegisterFunction;
     }

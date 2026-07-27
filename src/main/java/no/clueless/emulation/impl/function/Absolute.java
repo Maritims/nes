@@ -10,7 +10,9 @@ public class Absolute implements AddressingModeFunction<Cpu6502> {
     public ResolvedAddress resolve(Cpu6502 cpu, Bus bus) {
         var lowByte  = bus.read(cpu.getAndIncrementProgramCounter());
         var highByte = bus.read(cpu.getAndIncrementProgramCounter());
+
         var address  = ((highByte << 8) | lowByte) & 0xFFFF;
+
         return new ResolvedAddress(address, false);
     }
 }

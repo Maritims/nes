@@ -15,10 +15,10 @@ public enum Opcode {
     CMP(Compare.CMP),
     CPX(new Compare(Cpu6502::getX)),
     CPY(new Compare(Cpu6502::getY)),
-    DCP(new DecrementAndCompare()),
-    ISC(new IncrementAndSubtractWithCarry()),
-    SLO(new ShiftLeftAndOr()),
-    SRE(ShiftRightAndEor.SRE),
+    DCP(Decrement.DEC.andThen(Compare.CMP)),
+    ISC(Increment.INC.andThen(SubtractWithCarry.SBC)),
+    SLO(ArithmeticShiftLeft.ASL.andThen(BitwiseOperation.ORA)),
+    SRE(LogicalShiftRight.LSR.andThen(BitwiseOperation.EOR)),
     // endregion
     // region Jump operations
     BRK(new Break()),
@@ -37,13 +37,10 @@ public enum Opcode {
     SEI(new SetFlag(Cpu6502.Flag.INTERRUPT_DISABLE)),
     // endregion
     // region Memory operations
-    LDA(new LoadRegisterFromMemory(Cpu6502::setAccumulator)),
-    LDX(new LoadRegisterFromMemory(Cpu6502::setX)),
-    LDY(new LoadRegisterFromMemory(Cpu6502::setY)),
-    LAX(new LoadRegisterFromMemory((cpu, value) -> {
-        cpu.setAccumulator(value);
-        cpu.setX(value);
-    })),
+    LDA(LoadRegisterFromMemory.LDA),
+    LDX(LoadRegisterFromMemory.LDX),
+    LDY(LoadRegisterFromMemory.LDY),
+    LAX(LoadRegisterFromMemory.LDA.andThen(LoadRegisterFromMemory.LDX, true)),
     SAX(new StoreRegisterInMemory(cpu -> (cpu.getAccumulator() & cpu.getX()) & 0xFF)),
     STA(new StoreRegisterInMemory(Cpu6502::getAccumulator)),
     STX(new StoreRegisterInMemory(Cpu6502::getX)),
@@ -65,8 +62,8 @@ public enum Opcode {
     LSR(LogicalShiftRight.LSR),
     ROL(Rotate.ROL),
     ROR(Rotate.ROR),
-    RLA(new RotateLeftAndBitwiseAND()),
-    RRA(new RotateRightAndAddWithCarry()),
+    RLA(Rotate.ROL.andThen(BitwiseOperation.AND)),
+    RRA(Rotate.ROR.andThen(AddWithCarry.ADC)),
     // endregion
     // region Stack operations
     PHA(new PushAccumulator()),
