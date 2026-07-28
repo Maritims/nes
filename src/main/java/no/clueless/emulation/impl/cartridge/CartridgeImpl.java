@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Represents a cartridge for the Nintendo Entertainment System.
@@ -61,7 +62,9 @@ public class CartridgeImpl implements Cartridge {
 
     @Override
     public Optional<Integer> cpuRead(int address) {
-        return mapper.mapCpuRead(address).map(i -> (int) prgRom[i & 0xFFFF]);
+        var data = new AtomicInteger();
+        mapper.mapCpuRead(address, (mappedAddress) -> data.set(prgRom[mappedAddress & 0xFFFF]));
+        return Optional.of(data.get());
     }
 
     @Override

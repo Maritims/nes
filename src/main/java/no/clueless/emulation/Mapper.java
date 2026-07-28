@@ -1,15 +1,18 @@
 package no.clueless.emulation;
 
 import java.util.Optional;
+import java.util.function.IntConsumer;
 
 public interface Mapper {
+
     /**
-     * Maps a CPU-read operation.
+     * Maps a CPU read operation.
      *
-     * @param address A 16-bit address.
-     * @return An 8-bit value.
+     * @param address  A 16-bit address.
+     * @param callback callback to be called with the mapped address.
+     * @return true if the CPU read operation was mapped, false otherwise.
      */
-    Optional<Integer> mapCpuRead(int address);
+    boolean mapCpuRead(int address, IntConsumer callback);
 
     /**
      * Maps a CPU write operation.

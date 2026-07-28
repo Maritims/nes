@@ -3,12 +3,13 @@ package no.clueless.emulation.impl.cartridge;
 import no.clueless.emulation.Mapper;
 
 import java.util.Optional;
+import java.util.function.IntConsumer;
 
 public class Mapper001 implements Mapper {
 
     @Override
-    public Optional<Integer> mapCpuRead(int address) {
-        return Optional.empty();
+    public boolean mapCpuRead(int address, IntConsumer callback) {
+        return false;
     }
 
     @Override

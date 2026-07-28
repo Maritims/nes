@@ -3,6 +3,7 @@ package no.clueless.emulation.impl.cartridge;
 import no.clueless.emulation.Mapper;
 
 import java.util.Optional;
+import java.util.function.IntConsumer;
 
 public class Mapper000 implements Mapper {
     private final int numberOfPrgBanks;
@@ -15,18 +16,16 @@ public class Mapper000 implements Mapper {
     }
 
     @Override
-    public Optional<Integer> mapCpuRead(int address) {
+    public boolean mapCpuRead(int address, IntConsumer callback) {
         if (address >= 0x8000 && address <= 0xFFFF) {
-            // Normalize address relative to window start ($8000)
             address -= 0x8000;
 
-            // If 16KB (1 bank), mirror the index by wrapping around at 16KB ($4000)
-            // If 32KB (2 banks), this operation leaves the index unchanged
             var mappedAddress = address & (numberOfPrgBanks > 1 ? 0x7FFF : 0x3FFF);
-            return Optional.of(mappedAddress);
+            callback.accept(mappedAddress);
+            return true;
         }
 
-        return Optional.empty(); // Address does not point to cartridge PRG memory
+        return false;
     }
 
     @Override
