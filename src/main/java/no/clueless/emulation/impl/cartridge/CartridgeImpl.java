@@ -15,11 +15,13 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class CartridgeImpl implements Cartridge {
     private final byte[]  prgRom;
     private final byte[]  chrRom;
+    private final int     numberOfPrgBanks;
+    private final int     numberOfChrBanks;
     private final Mapper  mapper;
     private final boolean mirroredVertically;
 
     public CartridgeImpl(byte[] data) {
-        if(data[0] != 'N' || data[1] != 'E' || data[2] != 'S' || data[3] != 0x1A) {
+        if (data[0] != 'N' || data[1] != 'E' || data[2] != 'S' || data[3] != 0x1A) {
             throw new IllegalArgumentException("Invalid iNES file format signature.");
         }
 
@@ -35,15 +37,15 @@ public class CartridgeImpl implements Cartridge {
         var offset = 16 + (isTrainerPresent ? 512 : 0);
 
         // The size of the PRG-ROM in 16KB chunks is stored in the fourth byte.
-        var prgRomBanks = data[4] & 0xFF;
+        this.numberOfPrgBanks = data[4] & 0xFF;
 
         // The size of the CHR-ROM in 8KB chunks is stored in the fifth byte.
-        var chrRomBanks = data[5] & 0xFF;
+        this.numberOfChrBanks = data[5] & 0xFF;
 
-        this.prgRom = new byte[prgRomBanks * 16384];
-        this.chrRom = new byte[chrRomBanks * 8192];
+        this.prgRom = new byte[numberOfPrgBanks * 16384];
+        this.chrRom = new byte[numberOfChrBanks * 8192];
         this.mapper = switch (mapperId) {
-            case 0 -> new Mapper000(prgRomBanks);
+            case 0 -> new Mapper000(numberOfPrgBanks);
             case 1 -> new Mapper001();
             default -> throw new IllegalStateException("Unexpected value: " + mapperId);
         };
@@ -63,13 +65,25 @@ public class CartridgeImpl implements Cartridge {
     @Override
     public Optional<Integer> cpuRead(int address) {
         var data = new AtomicInteger();
-        mapper.mapCpuRead(address, (mappedAddress) -> data.set(prgRom[mappedAddress & 0xFFFF]));
-        return Optional.of(data.get());
+        return mapper.mapCpuRead(address, (mappedAddress) -> data.set(prgRom[mappedAddress & 0xFFFF])) ? Optional.of(data.get()) : Optional.empty();
+    }
+
+    @Override
+    public void cpuWrite(int address, int value) {
+        address &= 0xFFFF;
+        mapper.mapCpuWrite(address & 0xFFFF, mappedAddress -> prgRom[mappedAddress & 0xFFFF] = (byte) (value & 0xFF));
     }
 
     @Override
     public Optional<Integer> ppuRead(int address) {
-        return mapper.mapPpuRead(address).map(i -> (int) chrRom[i & 0xFFFF]);
+        var data = new AtomicInteger();
+        return mapper.mapPpuRead(address, (mappedAddress) -> data.set(chrRom[mappedAddress & 0xFFFF])) ? Optional.of(data.get()) : Optional.empty();
+    }
+
+    @Override
+    public void ppuWrite(int address, int value) {
+        address &= 0xFFFF;
+        mapper.mapCpuWrite(address & 0xFFFF, mappedAddress -> chrRom[mappedAddress & 0xFFFF] = (byte) (value & 0xFF));
     }
 
     @Override
