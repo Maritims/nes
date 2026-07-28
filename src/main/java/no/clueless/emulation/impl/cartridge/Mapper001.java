@@ -22,7 +22,7 @@ public class Mapper001 implements Mapper {
     }
 
     @Override
-    public void mapPpuWrite(int address, int value) {
-
+    public boolean mapPpuWrite(int address, IntConsumer callback) {
+        return false;
     }
 }

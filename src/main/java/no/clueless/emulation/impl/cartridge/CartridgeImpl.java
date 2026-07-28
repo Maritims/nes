@@ -45,7 +45,7 @@ public class CartridgeImpl implements Cartridge {
         this.prgRom = new byte[numberOfPrgBanks * 16384];
         this.chrRom = new byte[numberOfChrBanks * 8192];
         this.mapper = switch (mapperId) {
-            case 0 -> new Mapper000(numberOfPrgBanks);
+            case 0 -> new Mapper000(numberOfPrgBanks, numberOfChrBanks);
             case 1 -> new Mapper001();
             default -> throw new IllegalStateException("Unexpected value: " + mapperId);
         };
@@ -81,9 +81,9 @@ public class CartridgeImpl implements Cartridge {
     }
 
     @Override
-    public void ppuWrite(int address, int value) {
+    public boolean ppuWrite(int address, int value) {
         address &= 0xFFFF;
-        mapper.mapCpuWrite(address & 0xFFFF, mappedAddress -> chrRom[mappedAddress & 0xFFFF] = (byte) (value & 0xFF));
+        return mapper.mapPpuWrite(address & 0xFFFF, mappedAddress -> chrRom[mappedAddress & 0xFFFF] = (byte) (value & 0xFF));
     }
 
     @Override

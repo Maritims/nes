@@ -34,8 +34,9 @@ public interface Mapper {
     /**
      * Maps a PPU write operation.
      *
-     * @param address A 16-bit address.
-     * @param value   An 8-bit value.
+     * @param address  A 16-bit address.
+     * @param callback callback to be called with the mapped address.
+     * @return true if the PPU write operation was mapped, false otherwise.
      */
-    void mapPpuWrite(int address, int value);
+    boolean mapPpuWrite(int address, IntConsumer callback);
 }

@@ -9,7 +9,7 @@ public interface Cartridge {
 
     Optional<Integer> ppuRead(int address);
 
-    void ppuWrite(int address, int value);
+    boolean ppuWrite(int address, int value);
 
     void reset();
 }

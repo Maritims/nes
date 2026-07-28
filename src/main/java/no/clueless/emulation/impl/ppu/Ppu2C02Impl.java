@@ -82,7 +82,14 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     @Override
     public void reset() {
-
+        fineX      = 0;
+        writeLatch = 0;
+        dataBuffer = 0;
+        ppustatus  = 0;
+        ppuctrl.write(0);
+        ppumask.write(0);
+        currentVramAddress.write(0);
+        tempVramAddress.write(0);
     }
 
     private void populateDataBuffer(int address) {
@@ -129,16 +136,19 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 // Reading from the PPUDATA register is delayed by one cycle.
                 // Rather than returning the data in the register, data is returned from an internal data buffer.
                 // The buffer is updated on every read from the PPUDATA register, but only after the previous contents have been returned to the CPU.
-                var data = dataBuffer;
-                populateDataBuffer(currentVramAddress.read());
+                var vramAddress = currentVramAddress.read() & 0x3FFF;
+                var data        = dataBuffer;
+                populateDataBuffer(vramAddress);
 
                 // The $3F00-$3FFF range of VRAM contains palette data on later PPUs, specifically the 2C02G, 2C02H and PAL PPUs.
-                if (currentVramAddress.read() >= 0x3F00) {
-                    data = dataBuffer;
+                if (vramAddress >= 0x3F00) {
+                    data       = paletteRAM.read(vramAddress);
+                    dataBuffer = nameTableManager.read(vramAddress);
                 }
 
                 // The VRAM address is incremented after each read from the PPUDATA register.
-                currentVramAddress.write(currentVramAddress.read() + ppuctrl.getIncrementMode() == 0 ? 1 : 32);
+                var increment = ppuctrl.getIncrementMode() == 0 ? 1 : 32;
+                currentVramAddress.write(currentVramAddress.read() + increment);
 
                 yield data;
             }
@@ -182,6 +192,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                     var highByte = (value & 0x3F) << 8;
                     var lowByte  = tempVramAddress.read() & 0x00FF;
                     tempVramAddress.write(highByte | lowByte);
+                    writeLatch = 1;
                 } else {
                     var highByte = tempVramAddress.read() & 0xFF00;
                     tempVramAddress.write(highByte | value);
@@ -190,8 +201,33 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 }
                 break;
             case 0x2007:
-                // TODO: Implement ppu write.
+                ppuWrite(currentVramAddress.read(), value);
+
+                var increment = ppuctrl.getIncrementMode() == 0 ? 1 : 32;
+                currentVramAddress.write(currentVramAddress.read() + increment);
                 break;
         }
+    }
+
+    private void ppuWrite(int address, int value) {
+        value &= 0xFF;
+
+        if (cartridge.ppuWrite(address, value)) {
+            return;
+        }
+
+        if (address <= 0x1FFF) {
+            var patternTableIndex = (address & 0x1000) >> 12;
+            patternTables[patternTableIndex].write(address & 0x0FFF, value);
+            return;
+        }
+
+        if (address <= 0x3EFF) {
+            address &= 0x0FFF;
+            nameTableManager.write(address, value);
+            return;
+        }
+
+        paletteRAM.write(address, value);
     }
 }

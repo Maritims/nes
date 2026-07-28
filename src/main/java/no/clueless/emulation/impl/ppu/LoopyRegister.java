@@ -40,7 +40,7 @@ public class LoopyRegister {
     }
 
     public void setCoarseY(int value) {
-        register = (register & ~0x03E0) | (value & 0x03E0);
+        register = (register & ~0x03E0) | ((value & 0x1F) << 5);
     }
 
     public void setNameTableX(int value) {
@@ -52,6 +52,6 @@ public class LoopyRegister {
     }
 
     public void setFineY(int value) {
-        register = (register & ~0x7000) | (value & 0x7000);
+        register = (register & ~0x7000) | ((value & 0x07) << 12);
     }
 }
