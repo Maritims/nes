@@ -14,7 +14,7 @@ public class PatternTable {
      * @return An 8-bit value.
      */
     public int read(int address) {
-        return memory[address & 0xFFFF] & 0xFF;
+        return memory[address & 0x0FFF] & 0xFF;
     }
 
     /**

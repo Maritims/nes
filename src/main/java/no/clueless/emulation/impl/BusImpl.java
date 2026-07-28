@@ -77,7 +77,7 @@ public class BusImpl implements Bus {
         if (address >= 0x0000 && address <= 0x1FFF) {
             data = cpuRam[address % cpuRam.length];
         } else if (address >= 0x2000 && address <= 0x3FFF) {
-            // PPU
+            data = ppu.read(address);
         } else if (address >= 0x4000 && address <= 0x04017) {
             // APU and I/O
         } else if (address >= 0x4018 && address <= 0x401F) {
@@ -86,7 +86,7 @@ public class BusImpl implements Bus {
             // Cartridge
             data = cartridge.cpuRead(address).orElseThrow();
         } else {
-            log.warn("Read from unknown address: {}", "$%04X".formatted(address));
+            //log.warn("Read from unknown address: {}", "$%04X".formatted(address));
         }
 
         return data & 0xFF;

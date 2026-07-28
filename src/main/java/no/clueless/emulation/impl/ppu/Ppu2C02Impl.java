@@ -59,7 +59,9 @@ public class Ppu2C02Impl implements Ppu2C02 {
      */
     private int writeLatch;
 
-    private final PatternTable[] patternTables = new PatternTable[]{new PatternTable(), new PatternTable()};
+    private final PatternTable[]   patternTables    = new PatternTable[]{new PatternTable(), new PatternTable()};
+    private final NameTableManager nameTableManager = new NameTableManager();
+    private final PaletteRAM       paletteRAM       = new PaletteRAM();
 
     /**
      * The PPU data buffer.
@@ -83,6 +85,27 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     }
 
+    private void populateDataBuffer(int address) {
+        address &= 0x3FFF;
+
+        if (cartridge != null) {
+            var cartridgeData = cartridge.ppuRead(address).orElse(null);
+            if (cartridgeData != null) {
+                dataBuffer = cartridgeData;
+                return;
+            }
+        }
+
+        if (address <= 0x1FFF) {
+            var patternTableIndex = (address & 0x1000) >> 12;
+            dataBuffer = patternTables[patternTableIndex].read(address & 0x0FFF);
+        } else if (address <= 0x3EFF) {
+            dataBuffer = nameTableManager.read(address);
+        } else {
+            dataBuffer = paletteRAM.read(address);
+        }
+    }
+
     @Override
     public int read(int address) {
         address &= 0xFFFF;
@@ -94,7 +117,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 var data = (ppustatus & 0xE0) | (dataBuffer & 0x1F);
 
                 // Clear the VBLANK flag.
-                ppustatus &= (1 << 7);
+                ppustatus &= ~(1 << 7);
 
                 // Clear the write-latch.
                 writeLatch = 0;
@@ -107,7 +130,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 // Rather than returning the data in the register, data is returned from an internal data buffer.
                 // The buffer is updated on every read from the PPUDATA register, but only after the previous contents have been returned to the CPU.
                 var data = dataBuffer;
-                //populateDataBuffer();
+                populateDataBuffer(currentVramAddress);
 
                 // The $3F00-$3FFF range of VRAM contains palette data on later PPUs, specifically the 2C02G, 2C02H and PAL PPUs.
                 if (currentVramAddress >= 0x3F00) {
@@ -121,40 +144,6 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
             default -> throw new IllegalStateException("Unexpected value: " + address);
         };
-    }
-
-    void populateDataBuffer(int address) {
-        address &= 0x3FFF;
-
-        var foo = cartridge.cpuRead(currentVramAddress).orElse(null);
-        if (foo != null) {
-            dataBuffer = foo;
-            return;
-        }
-
-        if (address <= 0x0FFF) {
-            dataBuffer = patternTables[0].read(address);
-        } else if (address <= 0x1FFF) {
-            dataBuffer = patternTables[1].read(address);
-        } else if (address <= 0x23BF) {
-            // Nametable 0
-        } else if (address <= 0x23FF) {
-            // Attribute table 0
-        } else if (address <= 0x27BF) {
-            // Nametable 1
-        } else if (address <= 0x27FF) {
-            // Attribute table 1
-        } else if (address <= 0x2BBF) {
-            // Nametable 2
-        } else if (address <= 0x2BFF) {
-            // Attribute table 2
-        } else if (address <= 0x2FBF) {
-            // Nametable 3
-        } else if (address <= 0x2FFF) {
-            // Attribute table 3
-        } else if (address >= 0x3F00) {
-            // Palette RAM
-        }
     }
 
     @Override
