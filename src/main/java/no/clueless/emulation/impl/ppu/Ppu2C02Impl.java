@@ -150,5 +150,30 @@ public class Ppu2C02Impl implements Ppu2C02 {
     public void write(int address, int value) {
         address &= 0xFFFF;
         value &= 0xFF;
+
+        switch (address) {
+            case 0x2000:
+                ppuctrl.write(value);
+                // TODO: Update temp vram address.
+                break;
+            case 0x2001:
+                ppumask = value;
+                break;
+            case 0x2003:
+                oamaddr = value;
+                break;
+            case 0x2004:
+                oamdata.write(oamaddr, value);
+                break;
+            case 0x2005:
+                // TODO: Implement scroll.
+                break;
+            case 0x2006:
+                // TODO: Implement ppuaddr.
+                break;
+            case 0x2007:
+                // TODO: Implement ppu write.
+                break;
+        }
     }
 }
