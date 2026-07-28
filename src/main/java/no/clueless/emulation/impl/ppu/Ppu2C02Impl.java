@@ -7,48 +7,48 @@ public class Ppu2C02Impl implements Ppu2C02 {
     /**
      * The PPUCTRL register ($2000, VPHB SINN).
      */
-    private PPUCTRL ppuctrl;
+    private final PPUCTRL ppuctrl = new PPUCTRL();
     /**
      * The PPUMASK register ($2001, BGRs bMmG).
      */
-    private int     ppumask;
+    private final PPUMASK ppumask = new PPUMASK();
     /**
      * The PPUSTATUS register ($2002, VSO- ----).
      */
-    private int     ppustatus;
+    private       int     ppustatus;
     /**
      * The OAM read/write address ($2003).
      */
-    private int     oamaddr;
+    private       int     oamaddr;
     /**
      * The OAM data ($2004).
      */
-    private OAM     oamdata;
+    private       OAM     oamdata;
     /**
      * The PPUSCROLL register ($2005, XXXX XXXX YYYY YYYY).
      */
-    private int     ppuscroll;
+    private       int     ppuscroll;
     /**
      * The VRAM address ($2006).
      */
-    private int     ppuaddr;
+    private       int     ppuaddr;
     /**
      * The VRAM data ($2007).
      */
-    private int     ppudata;
+    private       int     ppudata;
     /**
      * The OAM DMA high address ($4014).
      */
-    private int     oamdma;
+    private       int     oamdma;
 
     /**
      * The current VRAM address. In the hardware this is read from the internal 'v' register outside rendering. In software it is more practical with a dedicated field.
      */
-    private int currentVramAddress;
+    private final LoopyRegister currentVramAddress = new LoopyRegister();
     /**
      * The temporary VRAM address before it is transferred to the 'v' register. In the hardware this is read from the internal 't' register outside rendering. In software it is more practical with a dedicated field.
      */
-    private int tempVramAddress;
+    private final LoopyRegister tempVramAddress    = new LoopyRegister();
 
     /**
      * The fine X scroll position. In the hardware this is read from the internal 'x' register during rendering. In software, it is more practical with a dedicated field.
@@ -130,15 +130,15 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 // Rather than returning the data in the register, data is returned from an internal data buffer.
                 // The buffer is updated on every read from the PPUDATA register, but only after the previous contents have been returned to the CPU.
                 var data = dataBuffer;
-                populateDataBuffer(currentVramAddress);
+                populateDataBuffer(currentVramAddress.read());
 
                 // The $3F00-$3FFF range of VRAM contains palette data on later PPUs, specifically the 2C02G, 2C02H and PAL PPUs.
-                if (currentVramAddress >= 0x3F00) {
+                if (currentVramAddress.read() >= 0x3F00) {
                     data = dataBuffer;
                 }
 
                 // The VRAM address is incremented after each read from the PPUDATA register.
-                currentVramAddress += ppuctrl.getVramAddressIncrement();
+                currentVramAddress.write(currentVramAddress.read() + ppuctrl.getIncrementMode() == 0 ? 1 : 32);
 
                 yield data;
             }
@@ -154,10 +154,11 @@ public class Ppu2C02Impl implements Ppu2C02 {
         switch (address) {
             case 0x2000:
                 ppuctrl.write(value);
-                // TODO: Update temp vram address.
+                tempVramAddress.setNameTableX(ppuctrl.getNameTableX());
+                tempVramAddress.setNameTableY(ppuctrl.getNameTableY());
                 break;
             case 0x2001:
-                ppumask = value;
+                ppumask.write(value);
                 break;
             case 0x2003:
                 oamaddr = value;
@@ -166,10 +167,27 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 oamdata.write(oamaddr, value);
                 break;
             case 0x2005:
-                // TODO: Implement scroll.
+                if (writeLatch == 0) {
+                    fineX = value & 0x07;
+                    tempVramAddress.setCoarseX(value);
+                    writeLatch = 1;
+                } else {
+                    tempVramAddress.setFineY(value);
+                    tempVramAddress.setCoarseY(value);
+                    writeLatch = 0;
+                }
                 break;
             case 0x2006:
-                // TODO: Implement ppuaddr.
+                if (writeLatch == 0) {
+                    var highByte = (value & 0x3F) << 8;
+                    var lowByte  = tempVramAddress.read() & 0x00FF;
+                    tempVramAddress.write(highByte | lowByte);
+                } else {
+                    var highByte = tempVramAddress.read() & 0xFF00;
+                    tempVramAddress.write(highByte | value);
+                    currentVramAddress.write(tempVramAddress.read());
+                    writeLatch = 0;
+                }
                 break;
             case 0x2007:
                 // TODO: Implement ppu write.
