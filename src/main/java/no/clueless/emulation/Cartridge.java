@@ -3,9 +3,9 @@ package no.clueless.emulation;
 import java.util.Optional;
 
 public interface Cartridge {
-    Optional<Integer> readPrgRom(int address);
+    Optional<Integer> cpuRead(int address);
 
-    Optional<Integer> readChrRom(int address);
+    Optional<Integer> ppuRead(int address);
 
     void reset();
 }

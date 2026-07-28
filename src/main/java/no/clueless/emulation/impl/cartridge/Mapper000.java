@@ -5,11 +5,7 @@ import no.clueless.emulation.Mapper;
 import java.util.Optional;
 
 public class Mapper000 implements Mapper {
-    private static final int CPU_ADDRESS_SPACE_START = 0x8000;
-    private static final int CPU_ADDRESS_SPACE_END   = 0xFFFF;
-    private static final int PPU_ADDRESS_SPACE_START = 0x0000;
-    private static final int PPU_ADDRESS_SPACE_END   = 0x1FFF;
-    private final        int numberOfPrgBanks;
+    private final int numberOfPrgBanks;
 
     public Mapper000(int numberOfPrgBanks) {
         if (numberOfPrgBanks != 1 && numberOfPrgBanks != 2) {
@@ -19,15 +15,10 @@ public class Mapper000 implements Mapper {
     }
 
     @Override
-    public int getId() {
-        return 0;
-    }
-
-    @Override
-    public Optional<Integer> mapCpuAddress(int address) {
-        if (address >= CPU_ADDRESS_SPACE_START && address <= CPU_ADDRESS_SPACE_END) {
+    public Optional<Integer> mapCpuRead(int address) {
+        if (address >= 0x8000 && address <= 0xFFFF) {
             // Normalize address relative to window start ($8000)
-            address -= CPU_ADDRESS_SPACE_START;
+            address -= 0x8000;
 
             // If 16KB (1 bank), mirror the index by wrapping around at 16KB ($4000)
             // If 32KB (2 banks), this operation leaves the index unchanged
@@ -39,8 +30,18 @@ public class Mapper000 implements Mapper {
     }
 
     @Override
-    public Optional<Integer> mapPpuAddress(int address) {
+    public void mapCpuWrite(int address, int value) {
+
+    }
+
+    @Override
+    public Optional<Integer> mapPpuRead(int address) {
         // PPU reads pattern tables directly from $0000 to $1FFF (8KB)
-        return address >= PPU_ADDRESS_SPACE_START && address <= PPU_ADDRESS_SPACE_END ? Optional.of(address) : Optional.empty();
+        return address >= 0x0000 && address <= 0x1FFF ? Optional.of(address) : Optional.empty();
+    }
+
+    @Override
+    public void mapPpuWrite(int address, int value) {
+
     }
 }

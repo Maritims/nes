@@ -126,7 +126,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
     void populateDataBuffer(int address) {
         address &= 0x3FFF;
 
-        var foo = cartridge.readPrgRom(currentVramAddress).orElse(null);
+        var foo = cartridge.cpuRead(currentVramAddress).orElse(null);
         if (foo != null) {
             dataBuffer = foo;
             return;

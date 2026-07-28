@@ -60,13 +60,13 @@ public class CartridgeImpl implements Cartridge {
     }
 
     @Override
-    public Optional<Integer> readPrgRom(int address) {
-        return mapper.mapCpuAddress(address).map(i -> (int) prgRom[i & 0xFFFF]);
+    public Optional<Integer> cpuRead(int address) {
+        return mapper.mapCpuRead(address).map(i -> (int) prgRom[i & 0xFFFF]);
     }
 
     @Override
-    public Optional<Integer> readChrRom(int address) {
-        return mapper.mapPpuAddress(address).map(i -> (int) chrRom[i & 0xFFFF]);
+    public Optional<Integer> ppuRead(int address) {
+        return mapper.mapPpuRead(address).map(i -> (int) chrRom[i & 0xFFFF]);
     }
 
     @Override

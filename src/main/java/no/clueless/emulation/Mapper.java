@@ -4,23 +4,34 @@ import java.util.Optional;
 
 public interface Mapper {
     /**
-     * The ID of the mapper.
+     * Maps a CPU-read operation.
+     *
+     * @param address A 16-bit address.
+     * @return An 8-bit value.
      */
-    int getId();
+    Optional<Integer> mapCpuRead(int address);
 
     /**
-     * Translate a CPU address into a physical index inside PRG-ROM.
+     * Maps a CPU write operation.
      *
-     * @param address A 16-bit address to translate.
-     * @return A 16-bit address, or empty if the address does not map to a valid PRG-ROM bank.
+     * @param address A 16-bit address.
+     * @param value   An 8-bit value.
      */
-    Optional<Integer> mapCpuAddress(int address);
+    void mapCpuWrite(int address, int value);
 
     /**
-     * Translate a PPU address into a physical index inside CHR-ROM.
+     * Maps a PPU read operation.
      *
-     * @param address A 16-bit address to translate.
-     * @return A 16-bit address, or empty if the address does not map to a valid CHR-ROM bank.
+     * @param address A 16-bit address.
+     * @return An 8-bit value.
      */
-    Optional<Integer> mapPpuAddress(int address);
+    Optional<Integer> mapPpuRead(int address);
+
+    /**
+     * Maps a PPU write operation.
+     *
+     * @param address A 16-bit address.
+     * @param value   An 8-bit value.
+     */
+    void mapPpuWrite(int address, int value);
 }
