@@ -63,6 +63,9 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private final NameTableManager nameTableManager = new NameTableManager();
     private final PaletteRAM       paletteRAM       = new PaletteRAM();
 
+    private int scanLine = 0;
+    private int cycle    = 0;
+
     /**
      * The PPU data buffer.
      */
@@ -77,7 +80,53 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     @Override
     public void clock() {
+        if (scanLine >= -1 && scanLine < 240) {
+            if (scanLine == -1 && cycle == 1) {
+                // This is the start of a new frame.
 
+                // Clear VBLANK.
+                ppustatus &= ~(1 << 7);
+
+                // Clear Sprite 0 Hit.
+                ppustatus &= ~(1 << 6);
+
+                // Clear Sprite Overflow.
+                ppustatus &= ~(1 << 5);
+
+                // TODO: Clear shifters, whatever those are.
+            }
+
+            if((cycle >= 2 && cycle < 258) || (cycle >= 321 && cycle < 338)) {
+                // TODO: Update shifters, whatever those are.
+
+                switch ((cycle -1) % 8) {
+                    case 0:
+                        // TODO: Load background shifters, whatever those are.
+                        break;
+                    case 2:
+                        // TODO: Load background tile attribute somehow.
+                        break;
+                    case 4:
+                        // TODO: Load background tile LSB somehow.
+                        break;
+                    case 6:
+                        // TODO: Load background tile MSB somehow.
+                        break;
+                    case 7:
+                        // TODO: Handle scroll.
+                        break;
+                }
+            }
+
+            if (cycle == 256) {
+                // End of the line, go to the next line.
+                // TODO: Increment Y.
+            }
+
+            if(cycle == 257) {
+                // TODO: Reset X.
+            }
+        }
     }
 
     @Override

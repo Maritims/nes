@@ -8,7 +8,7 @@ public class LoopyRegister {
     private int register;
 
     public void write(int register) {
-        this.register = register & 0xFFFF;
+        this.register = register & 0x7FFF;
     }
 
     public int read() {
@@ -16,11 +16,15 @@ public class LoopyRegister {
     }
 
     public int getCoarseX() {
-        return register & 0x1F;
+        return register & 0x001F;
     }
 
     public int getCoarseY() {
-        return (register >> 5) & 0x1F;
+        return (register >> 5) & 0x001F;
+    }
+
+    public int getNameTableIndex() {
+        return (register >> 10) & 0x0003;
     }
 
     public boolean isNameTableX() {
@@ -32,7 +36,7 @@ public class LoopyRegister {
     }
 
     public int getFineY() {
-        return (register >> 12) & 0x07;
+        return (register >> 12) & 0x0007;
     }
 
     public void setCoarseX(int value) {

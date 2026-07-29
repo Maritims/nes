@@ -29,6 +29,47 @@ public class NameTableManager {
         table.write(calculation.offset(), data);
     }
 
+    /**
+     * Gets the tile id at the given coarse coordinates in the given name table.
+     */
+    public int getTileId(int nameTableIndex, int coarseX, int coarseY) {
+        // The nametable index is shifted left by 10 bits to select the correct nametable.
+        nameTableIndex <<= 10;
+
+        // The coarse X coordinate is masked to 0x1F to fit in the nametable.
+        coarseX &= 0x1F;
+
+        // The coarse Y coordinate is shifted left by 5 bits to jump to the start of the row.
+        coarseY = ((coarseY & 0x1F) << 5);
+
+        // All nametables start at $2000 in PPU memory.
+        // By OR-ing with the name table index, we get the correct nametable in memory.
+        // Then we OR-in the coarse X and coarse Y coordinates to get the correct tile id.
+        int address = 0x2000 | nameTableIndex | coarseY | coarseX;
+
+        // We utilise read() to apply mirroring.
+        return read(address);
+    }
+
+    public int getAttributePalette(int nameTableIndex, int coarseX, int coarseY) {
+        // The nametable index is shifted left by 10 bits to select the correct nametable.
+        nameTableIndex <<= 10;
+
+        // The attribute data starts at $23C0 in PPU memory, since $2000-$23BF is used for tile data.
+        var attributeBaseAddress = 0x23C0 | nameTableIndex;
+
+        // The coarse Y coordinate is divided by 4 to get the correct row, then multiplied by 8 to account for 8 attributes per row.
+        // The coarse X coordinate is divided by 4 to get the correct column.
+        var attributeOffset = ((coarseY / 4) * 8) + (coarseX / 4);
+        var attributeByte   = read(attributeBaseAddress + attributeOffset);
+
+        // Determine the palette index based on the coarse X and coarse Y coordinates.
+        var isBottomHalf = (coarseY % 4) >= 2;
+        var isRightHalf  = (coarseX % 4) >= 2;
+        var shift        = (isBottomHalf ? 4 : 0) + (isRightHalf ? 2 : 0);
+        return (attributeByte >> shift) & 0x03;
+    }
+
     record NameTableCalculation(int relativeAddress, int tableIndex, int offset) {
         public static NameTableCalculation calculate(int address) {
             var relativeAddress = (address - 0x2000) % 0x1000;
