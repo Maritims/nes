@@ -4,7 +4,9 @@ import no.clueless.emulation.Cpu6502;
 import no.clueless.emulation.impl.cartridge.CartridgeImpl;
 import no.clueless.emulation.impl.BusImpl;
 import no.clueless.emulation.impl.cpu.Cpu6502Impl;
+import no.clueless.emulation.impl.ppu.Ppu2C02Impl;
 import org.junit.jupiter.api.Assertions;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import java.nio.file.Files;
@@ -85,5 +87,41 @@ public class NesTest {
     }
 
     private record ExpectedState(int pc, int a, int x, int y, int p, int sp, int cyc) {
+    }
+
+    @Test
+    @DisplayName("Verify CPU writes nestest text into PPU Nametable RAM")
+    public void verifyNametableContentsAfterCpuExecution() throws Exception {
+        var romPath   = Paths.get("src/test/resources/Super Mario Bros. (Japan, USA).nes");
+        var cartridge = new CartridgeImpl(romPath);
+        var cpu       = new Cpu6502Impl(false);
+        var ppu       = new Ppu2C02Impl(mock());
+        var bus       = new BusImpl(cpu, ppu, mock());
+
+        bus.insertCartridge(cartridge);
+        bus.reset();
+
+        // Step CPU forward to let nestest run its internal routines
+        for (int i = 0; i < 100_000; i++) {
+            cpu.clock();
+            ppu.clock();
+            ppu.clock();
+            ppu.clock();
+        }
+
+        // Dump Nametable 0 (32 columns x 30 rows)
+        System.out.println("--- NAMETABLE 0 DUMP ---");
+        for (int row = 0; row < 30; row++) {
+            StringBuilder sb = new StringBuilder();
+            for (int col = 0; col < 32; col++) {
+                int vramAddr = 0x2000 + (row * 32) + col;
+                int tileIndex = ppu.readVramForTest(vramAddr); // Read raw VRAM tile index
+
+                // Convert tile index to ASCII character if printable, else show '.'
+                char c = (tileIndex >= 32 && tileIndex <= 126) ? (char) tileIndex : '.';
+                sb.append(c);
+            }
+            System.out.println(sb.toString());
+        }
     }
 }

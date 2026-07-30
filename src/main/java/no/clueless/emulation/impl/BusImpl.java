@@ -23,7 +23,7 @@ public class BusImpl implements Bus {
             throw new IllegalArgumentException("ppu cannot be null");
         }
         if (apu == null) {
-            throw new IllegalArgumentException("apu cannot be null");
+            //throw new IllegalArgumentException("apu cannot be null");
         }
         this.cpu = cpu;
         this.ppu = ppu;
@@ -60,7 +60,7 @@ public class BusImpl implements Bus {
 
     @Override
     public void clock() {
-        apu.clock();
+        //apu.clock();
         ppu.clock();
 
         if (totalClockCount > 0 && totalClockCount % 3 == 0) {
@@ -84,7 +84,7 @@ public class BusImpl implements Bus {
             // APU and I/O test
         } else if (address >= 0x8000 && address <= 0xFFFF) {
             // Cartridge
-            data = cartridge.cpuRead(address).orElseThrow();
+            data = cartridge.readPrg(address).orElseThrow();
         } else {
             //log.warn("Read from unknown address: {}", "$%04X".formatted(address));
         }

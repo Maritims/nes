@@ -21,8 +21,8 @@ public class Mapper000 implements Mapper {
     }
 
     @Override
-    public boolean mapCpuRead(int address, IntConsumer callback) {
-        if (address >= 0x8000 && address <= 0xFFFF) {
+    public boolean mapPrgRead(int address, IntConsumer callback) {
+        if(isValidPrgAddress(address)) {
             address -= 0x8000;
             callback.accept(mapCpuAddress(address));
             return true;
@@ -32,9 +32,9 @@ public class Mapper000 implements Mapper {
     }
 
     @Override
-    public boolean mapCpuWrite(int address, IntConsumer callback) {
-        if (address >= 0x8000 && address <= 0xFFFF) {
-            address -= 0x8000;
+    public boolean mapPrgWrite(int address, IntConsumer callback) {
+        if(isValidPrgAddress(address)) {
+            address -= getPrgStart();
             callback.accept(mapCpuAddress(address));
             return true;
         }
@@ -43,8 +43,8 @@ public class Mapper000 implements Mapper {
     }
 
     @Override
-    public boolean mapPpuRead(int address, IntConsumer callback) {
-        if (address >= 0x0000 && address <= 0x1FFF) {
+    public boolean mapChrRead(int address, IntConsumer callback) {
+        if(isValidChrAddress(address)) {
             callback.accept(address);
             return true;
         }
@@ -53,8 +53,8 @@ public class Mapper000 implements Mapper {
     }
 
     @Override
-    public boolean mapPpuWrite(int address, IntConsumer callback) {
-        if (address >= 0x0000 && address <= 0x1FFF) {
+    public boolean mapChrWrite(int address, IntConsumer callback) {
+        if(isValidChrAddress(address)) {
             if (numberOfChrBanks == 0) {
                 callback.accept(address);
                 return true;

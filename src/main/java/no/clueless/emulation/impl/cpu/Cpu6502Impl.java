@@ -2,6 +2,7 @@ package no.clueless.emulation.impl.cpu;
 
 import no.clueless.emulation.Bus;
 import no.clueless.emulation.Cpu6502;
+import no.clueless.emulation.util.Disassembler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -167,7 +168,7 @@ public class Cpu6502Impl implements Cpu6502 {
 
             var resolvedAddress = instruction.addressingMode().resolve(this, bus);
 
-            //log.info("{}", Disassembler.disassemble(originalPc, instruction.opcode(), instruction.addressingMode(), resolvedAddress.address()));
+            log.info("{}", Disassembler.disassemble(originalPc, instruction.opcode(), instruction.addressingMode(), resolvedAddress.address()));
 
             // Add any additional cycles from the instruction itself.
             var opcodeCycles = instruction.opcode().resolve(this, resolvedAddress);

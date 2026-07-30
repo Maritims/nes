@@ -4,39 +4,51 @@ import java.util.function.IntConsumer;
 
 public interface Mapper {
 
-    /**
-     * Maps a CPU read operation.
-     *
-     * @param address  A 16-bit address.
-     * @param callback callback to be called with the mapped address.
-     * @return true if the CPU read operation was mapped, false otherwise.
-     */
-    boolean mapCpuRead(int address, IntConsumer callback);
+    default int getPrgStart() {
+        return 0x8000;
+    }
+
+    default boolean isValidPrgAddress(int address) {
+        return address >= getPrgStart() &&  address <= 0xFFFF;
+    }
+
+    default boolean isValidChrAddress(int address) {
+        return address >= 0x0000 &&  address <= 0x1FFF;
+    }
 
     /**
-     * Maps a CPU write operation.
+     * Maps a PRG read request (from CPU address space) to an absolute PRG offset.
      *
-     * @param address  A 16-bit address.
-     * @param callback callback to be called with the mapped address.
-     * @return true if the CPU write operation was mapped, false otherwise.
+     * @param address  A 16-bit CPU bus address (typically 0x8000-0xFFFF).
+     * @param callback Callback executed with the translated PRG-ROM/RAM array offset.
+     * @return true if the address was handled by this mapper, false otherwise.
      */
-    boolean mapCpuWrite(int address, IntConsumer callback);
+    boolean mapPrgRead(int address, IntConsumer callback);
 
     /**
-     * Maps a PPU read operation.
+     * Maps a PRG write request (from CPU address space) or mapper register write.
      *
-     * @param address  A 16-bit address.
-     * @param callback callback to be called with the mapped address.
-     * @return true if the PPU read operation was mapped, false otherwise.
+     * @param address  A 16-bit CPU bus address.
+     * @param callback Callback executed with the translated PRG offset if writing to PRG-RAM.
+     * @return true if the address was handled by this mapper, false otherwise.
      */
-    boolean mapPpuRead(int address, IntConsumer callback);
+    boolean mapPrgWrite(int address, IntConsumer callback);
 
     /**
-     * Maps a PPU write operation.
+     * Maps a CHR read request (from PPU address space) to an absolute CHR offset.
      *
-     * @param address  A 16-bit address.
-     * @param callback callback to be called with the mapped address.
-     * @return true if the PPU write operation was mapped, false otherwise.
+     * @param address  A 14-bit PPU bus address (typically 0x0000-0x1FFF).
+     * @param callback Callback executed with the translated CHR-ROM/RAM array offset.
+     * @return true if the address was handled by this mapper, false otherwise.
      */
-    boolean mapPpuWrite(int address, IntConsumer callback);
+    boolean mapChrRead(int address, IntConsumer callback);
+
+    /**
+     * Maps a CHR write request (from PPU address space) to an absolute CHR offset.
+     *
+     * @param address  A 14-bit PPU bus address (0x0000-0x1FFF).
+     * @param callback Callback executed with the translated CHR-RAM array offset.
+     * @return true if the address was handled by this mapper, false otherwise.
+     */
+    boolean mapChrWrite(int address, IntConsumer callback);
 }

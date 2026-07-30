@@ -7,22 +7,22 @@ import java.util.function.IntConsumer;
 public class Mapper001 implements Mapper {
 
     @Override
-    public boolean mapCpuRead(int address, IntConsumer callback) {
+    public boolean mapPrgRead(int address, IntConsumer callback) {
         return false;
     }
 
     @Override
-    public boolean mapCpuWrite(int address, IntConsumer callback) {
+    public boolean mapPrgWrite(int address, IntConsumer callback) {
         return false;
     }
 
     @Override
-    public boolean mapPpuRead(int address, IntConsumer callback) {
+    public boolean mapChrRead(int address, IntConsumer callback) {
         return false;
     }
 
     @Override
-    public boolean mapPpuWrite(int address, IntConsumer callback) {
+    public boolean mapChrWrite(int address, IntConsumer callback) {
         return false;
     }
 }

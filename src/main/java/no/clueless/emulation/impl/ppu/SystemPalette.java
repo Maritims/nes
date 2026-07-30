@@ -1,0 +1,34 @@
+package no.clueless.emulation.impl.ppu;
+
+/**
+ * Maps 6-bit NES system color indices ($00-$3F) to 24-bit RGB colors (0xRRGGBB).
+ */
+public final class SystemPalette {
+
+    private static final int[] RGB = new int[] {
+            // Row 0x00: Dark shades / Earth tones
+            0x666666, 0x002A88, 0x1412A7, 0x3B00A4, 0x5C007E, 0x6E0040, 0x6C0600, 0x561D00,
+            0x333500, 0x0B4800, 0x005200, 0x004F08, 0x00404D, 0x000000, 0x000000, 0x000000,
+
+            // Row 0x10: Mid shades / Standard colors
+            0xADADAD, 0x155FD9, 0x4240FF, 0x7527FE, 0xA01ACC, 0xB71E7B, 0xB53120, 0x994E00,
+            0x6B6D00, 0x278200, 0x008A00, 0x008328, 0x00748D, 0x000000, 0x000000, 0x000000,
+
+            // Row 0x20: Bright shades / Vibrant colors
+            0xFFFFFF, 0x64B0FF, 0x9290FF, 0xC676FF, 0xF26AFF, 0xFF6ECC, 0xFF7E70, 0xE89C35,
+            0xABAF26, 0x65C720, 0x42CE43, 0x3CC78B, 0x3AC3D9, 0x4C4C4C, 0x000000, 0x000000,
+
+            // Row 0x30: Pastel shades / Light tints
+            0xFFFFFF, 0xC0E0FF, 0xD3D2FF, 0xE8C5FF, 0xFAC2FF, 0xFFC4EA, 0xFFCECA, 0xF5D3AF,
+            0xDCDEAE, 0xC7E8A6, 0xB8EAB7, 0xB5E8D5, 0xB4E5F2, 0xB8B8B8, 0x000000, 0x000000
+    };
+
+    private SystemPalette() {}
+
+    /**
+     * Retrieves the 24-bit RGB integer (0xRRGGBB) for an NES system color index (0-63).
+     */
+    public static int getRgb(int nesColorIndex) {
+        return RGB[nesColorIndex & 0x3F];
+    }
+}

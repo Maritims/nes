@@ -1,7 +1,9 @@
 package no.clueless.emulation.impl.ppu;
 
 import no.clueless.emulation.Cartridge;
+import no.clueless.emulation.FrameBuffer;
 import no.clueless.emulation.Ppu2C02;
+import no.clueless.emulation.util.SwingFrameBuffer;
 
 public class Ppu2C02Impl implements Ppu2C02 {
     /**
@@ -59,12 +61,14 @@ public class Ppu2C02Impl implements Ppu2C02 {
      */
     private int writeLatch;
 
-    private final PatternTable[]   patternTables    = new PatternTable[]{new PatternTable(), new PatternTable()};
-    private final NameTableManager nameTableManager = new NameTableManager();
-    private final PaletteRAM       paletteRAM       = new PaletteRAM();
+    private final PatternTable[]       patternTables    = new PatternTable[]{new PatternTable(), new PatternTable()};
+    private final NameTableManager     nameTableManager = new NameTableManager();
+    private final PaletteRAM           paletteRAM       = new PaletteRAM();
+    private final PpuBackgroundFetcher fetcher          = new PpuBackgroundFetcher();
+    private final FrameBuffer          frameBuffer;
 
     private int scanLine = 0;
-    private int cycle    = 0;
+    private int dot      = 0;
 
     /**
      * The PPU data buffer.
@@ -73,58 +77,78 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     private Cartridge cartridge;
 
+    public Ppu2C02Impl(FrameBuffer frameBuffer) {
+        this.frameBuffer = frameBuffer;
+    }
+
     @Override
     public void connectToCartridge(Cartridge cartridge) {
         this.cartridge = cartridge;
     }
 
+    public int getFinalPixelColor(int pixelColorIndex) {
+        // If the 2-bit CHR pattern is 0, it is transparent -> render universal background color ($3F00)
+        int paletteAddress = ((pixelColorIndex & 0x03) == 0)
+                ? 0x3F00
+                : (0x3F00 | pixelColorIndex);
+
+        // Reads 6-bit NES system color index (0..63)
+        int nesColorIndex = paletteRAM.read(paletteAddress);
+
+        // Convert NES color index (0..63) to an RGB integer (0xRRGGBB) using an NES color palette lookup table
+        return SystemPalette.getRgb(nesColorIndex);
+    }
+
+    public int readVramForTest(int address) {
+        address &= 0x3FFF; // Mask address to 16KB PPU space
+
+        if (address < 0x2000) {
+            // CHR-ROM / CHR-RAM via Cartridge
+            return cartridge != null ? cartridge.readChr(address).orElse(0) : 0;
+        } else if (address < 0x3F00) {
+            // Nametable RAM ($2000 - $3EFF) mapped via NameTableManager
+            return nameTableManager.read(address);
+        } else {
+            // Palette RAM ($3F00 - $3FFF)
+            int paletteAddr = address & 0x001F;
+            // Mirror sprite palette backdrop addresses ($10, $14, $18, $1C) to universal backdrop ($00)
+            if ((paletteAddr & 0x13) == 0x10) {
+                paletteAddr &= ~0x10;
+            }
+            return paletteRAM.read(paletteAddr & 0xFF);
+        }
+    }
+
     @Override
     public void clock() {
-        if (scanLine >= -1 && scanLine < 240) {
-            if (scanLine == -1 && cycle == 1) {
-                // This is the start of a new frame.
-
-                // Clear VBLANK.
-                ppustatus &= ~(1 << 7);
-
-                // Clear Sprite 0 Hit.
-                ppustatus &= ~(1 << 6);
-
-                // Clear Sprite Overflow.
-                ppustatus &= ~(1 << 5);
-
-                // TODO: Clear shifters, whatever those are.
-            }
-
-            if((cycle >= 2 && cycle < 258) || (cycle >= 321 && cycle < 338)) {
-                // TODO: Update shifters, whatever those are.
-
-                switch ((cycle -1) % 8) {
-                    case 0:
-                        // TODO: Load background shifters, whatever those are.
-                        break;
-                    case 2:
-                        // TODO: Load background tile attribute somehow.
-                        break;
-                    case 4:
-                        // TODO: Load background tile LSB somehow.
-                        break;
-                    case 6:
-                        // TODO: Load background tile MSB somehow.
-                        break;
-                    case 7:
-                        // TODO: Handle scroll.
-                        break;
+        if (scanLine >= 0 && scanLine < 240) {
+            if (dot > 0 && dot <= 256) {
+                if (dot > 1) {
+                    fetcher.shiftRegistersLeft();
                 }
-            }
 
-            if (cycle == 256) {
-                // End of the line, go to the next line.
-                // TODO: Increment Y.
-            }
+                var colorIndex = fetcher.getPixelColorIndex(fineX);
+                var rgbColor = getFinalPixelColor(colorIndex);
+                frameBuffer.setPixel(dot - 1, scanLine, rgbColor);
 
-            if(cycle == 257) {
-                // TODO: Reset X.
+                var backgroundPatternTableAddress = ppuctrl.getBackgroundPatternTableAddress();
+                fetcher.performSequence(dot, currentVramAddress, nameTableManager, cartridge, backgroundPatternTableAddress);
+            } else if (dot == 257) {
+                currentVramAddress.transferHorizontalBits(tempVramAddress);
+            } else if (dot == 256) {
+                currentVramAddress.incrementFineY();
+            }
+        }
+
+        dot++;
+        if (dot >= 341) {
+            dot = 0;
+            scanLine++;
+
+            if (scanLine >= 262) {
+                scanLine = 0;
+                // End of frame: render the completed frame buffer to screen
+                frameBuffer.render();
             }
         }
     }
@@ -145,7 +169,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
         address &= 0x3FFF;
 
         if (cartridge != null) {
-            var cartridgeData = cartridge.ppuRead(address).orElse(null);
+            var cartridgeData = cartridge.readChr(address).orElse(null);
             if (cartridgeData != null) {
                 dataBuffer = cartridgeData;
                 return;
@@ -213,8 +237,8 @@ public class Ppu2C02Impl implements Ppu2C02 {
         switch (address) {
             case 0x2000:
                 ppuctrl.write(value);
-                tempVramAddress.setNameTableX(ppuctrl.getNameTableX());
-                tempVramAddress.setNameTableY(ppuctrl.getNameTableY());
+                tempVramAddress.setNameTableX((ppuctrl.getNameTableX() & 0x01) != 0);
+                tempVramAddress.setNameTableY((ppuctrl.getNameTableY() & 0x02) != 0);
                 break;
             case 0x2001:
                 ppumask.write(value);
@@ -261,8 +285,10 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private void ppuWrite(int address, int value) {
         value &= 0xFF;
 
-        if (cartridge.ppuWrite(address, value)) {
-            return;
+        if (cartridge != null) {
+            if (cartridge.writeChr(address, value)) {
+                return;
+            }
         }
 
         if (address <= 0x1FFF) {

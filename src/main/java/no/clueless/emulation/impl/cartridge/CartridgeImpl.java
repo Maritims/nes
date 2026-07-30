@@ -26,8 +26,8 @@ public class CartridgeImpl implements Cartridge {
         }
 
         // The ID of the mapper is stored in the high nibble of the first byte, and the low nibble of the second byte.
-        var mapperIdHighNibble = (data[6] & 0xF0) >> 4;
-        var mapperIdLowNibble  = (data[7] & 0x0F);
+        var mapperIdHighNibble = (data[7] & 0x0F);
+        var mapperIdLowNibble  = (data[6] & 0xF0) >> 4;
         var mapperId           = mapperIdHighNibble | mapperIdLowNibble;
 
         // The trainer buffer is present in the ROM if the 4th bit of the 6th byte is set.
@@ -63,27 +63,27 @@ public class CartridgeImpl implements Cartridge {
     }
 
     @Override
-    public Optional<Integer> cpuRead(int address) {
+    public Optional<Integer> readPrg(int address) {
         var data = new AtomicInteger();
-        return mapper.mapCpuRead(address, (mappedAddress) -> data.set(prgRom[mappedAddress & 0xFFFF])) ? Optional.of(data.get()) : Optional.empty();
+        return mapper.mapPrgRead(address, (mappedAddress) -> data.set(prgRom[mappedAddress & 0xFFFF])) ? Optional.of(data.get()) : Optional.empty();
     }
 
     @Override
-    public void cpuWrite(int address, int value) {
+    public void writePrg(int address, int value) {
         address &= 0xFFFF;
-        mapper.mapCpuWrite(address & 0xFFFF, mappedAddress -> prgRom[mappedAddress & 0xFFFF] = (byte) (value & 0xFF));
+        mapper.mapPrgWrite(address & 0xFFFF, mappedAddress -> prgRom[mappedAddress & 0xFFFF] = (byte) (value & 0xFF));
     }
 
     @Override
-    public Optional<Integer> ppuRead(int address) {
+    public Optional<Integer> readChr(int address) {
         var data = new AtomicInteger();
-        return mapper.mapPpuRead(address, (mappedAddress) -> data.set(chrRom[mappedAddress & 0xFFFF])) ? Optional.of(data.get()) : Optional.empty();
+        return mapper.mapChrRead(address, (mappedAddress) -> data.set(chrRom[mappedAddress & 0xFFFF])) ? Optional.of(data.get()) : Optional.empty();
     }
 
     @Override
-    public boolean ppuWrite(int address, int value) {
+    public boolean writeChr(int address, int value) {
         address &= 0xFFFF;
-        return mapper.mapPpuWrite(address & 0xFFFF, mappedAddress -> chrRom[mappedAddress & 0xFFFF] = (byte) (value & 0xFF));
+        return mapper.mapChrWrite(address & 0xFFFF, mappedAddress -> chrRom[mappedAddress & 0xFFFF] = (byte) (value & 0xFF));
     }
 
     @Override

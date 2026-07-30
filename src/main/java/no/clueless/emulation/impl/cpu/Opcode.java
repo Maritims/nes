@@ -118,6 +118,10 @@ public enum Opcode {
      * @param address A 16-bit address.
      */
     public int resolve(Cpu6502 cpu, ResolvedAddress address) {
+        if (function == null) {
+            //throw new UnsupportedOperationException(this.name() + " is not implemented");
+            return 0;
+        }
         return function.execute(cpu, address);
     }
 }
