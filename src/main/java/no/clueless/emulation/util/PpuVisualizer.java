@@ -27,7 +27,7 @@ public class PpuVisualizer {
         cpu.setProgramCounter(0xC000);
 
         // Force PPU rendering flags ON manually (0x1E = show BG + Sprites + Left margin)
-        ppu.write(0x2001, 0x1E);
+        ppu.writeRegister(0x2001, 0x1E);
 
         // Run continuous execution loop (~60 FPS)
         Timer timer = new Timer(16, e -> {

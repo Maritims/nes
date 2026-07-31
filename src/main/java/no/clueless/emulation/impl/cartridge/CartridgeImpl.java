@@ -63,6 +63,11 @@ public class CartridgeImpl implements Cartridge {
     }
 
     @Override
+    public Mapper getMapper() {
+        return mapper;
+    }
+
+    @Override
     public Optional<Integer> readPrg(int address) {
         var data = new AtomicInteger();
         return mapper.mapPrgRead(address, (mappedAddress) -> data.set(prgRom[mappedAddress & 0xFFFF])) ? Optional.of(data.get()) : Optional.empty();
@@ -76,12 +81,18 @@ public class CartridgeImpl implements Cartridge {
 
     @Override
     public Optional<Integer> readChr(int address) {
+        if (chrRom.length < 8) {
+            return Optional.empty();
+        }
         var data = new AtomicInteger();
         return mapper.mapChrRead(address, (mappedAddress) -> data.set(chrRom[mappedAddress & 0xFFFF])) ? Optional.of(data.get()) : Optional.empty();
     }
 
     @Override
     public boolean writeChr(int address, int value) {
+        if (chrRom.length < 8) {
+            return false;
+        }
         address &= 0xFFFF;
         return mapper.mapChrWrite(address & 0xFFFF, mappedAddress -> chrRom[mappedAddress & 0xFFFF] = (byte) (value & 0xFF));
     }

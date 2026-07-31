@@ -12,13 +12,13 @@ public class Cpu6502Impl implements Cpu6502 {
     private final        int    MASK_16BIT = 0xFFFF;
 
     private final boolean isDecimalModeEnabled;
-    private       int     clockCount = 0;
-    private       int     a          = 0x00;
-    private       int     x          = 0x00;
-    private       int     y          = 0x00;
-    private       int     sp         = 0xFF;
-    private       int     pc         = 0x0000;
-    private       int     status     = 0x00;
+    private       int     totalClockCount = 0;
+    private       int     a               = 0x00;
+    private       int     x               = 0x00;
+    private       int     y               = 0x00;
+    private       int     sp              = 0xFF;
+    private       int     pc              = 0x0000;
+    private       int     status          = 0x00;
 
     private Bus bus;
     private int cycles = 0;
@@ -41,6 +41,48 @@ public class Cpu6502Impl implements Cpu6502 {
     }
 
     @Override
+    public void nmi() {
+        pushToStack((pc >> 8) & 0x00FF);
+        pushToStack(pc & 0x00FF);
+
+        setFlag(Flag.BREAK, false);
+        setFlag(Flag.UNUSED, true);
+        setFlag(Flag.INTERRUPT_DISABLE, true);
+        pushToStack(status & 0x00FF);
+
+        var low  = read(0xFFFA);
+        var high = read(0xFFFB);
+        pc = ((high << 8) | low) & 0xFFFF;
+
+        cycles = 8;
+    }
+
+    public void irq() {
+        if (hasFlag(Flag.INTERRUPT_DISABLE)) {
+            return;
+        }
+
+        pushToStack((pc >> 8) & 0x00FF);
+        pushToStack(pc & 0x00FF);
+
+        setFlag(Flag.BREAK, false); // Set to true if triggered specifically by a BRK instruction
+        setFlag(Flag.UNUSED, true);
+        setFlag(Flag.INTERRUPT_DISABLE, true);
+        pushToStack(status & 0x00FF);
+
+        var low  = read(0xFFFE);
+        var high = read(0xFFFF);
+        pc = (high << 8) | low;
+
+        cycles = 7;
+    }
+
+    @Override
+    public boolean isStalling() {
+        return isStalling;
+    }
+
+    @Override
     public boolean isDecimalModeEnabled() {
         return isDecimalModeEnabled;
     }
@@ -56,8 +98,8 @@ public class Cpu6502Impl implements Cpu6502 {
     }
 
     @Override
-    public int getClockCount() {
-        return clockCount;
+    public int getTotalClockCount() {
+        return totalClockCount;
     }
 
     @Override
@@ -148,6 +190,10 @@ public class Cpu6502Impl implements Cpu6502 {
         this.bus = bus;
     }
 
+    private String previousDisassembly = "";
+    private int previousDisassemblyCount = 0;
+    private boolean isStalling;
+
     @Override
     public void clock() {
         // Is the CPU available for work?
@@ -168,7 +214,19 @@ public class Cpu6502Impl implements Cpu6502 {
 
             var resolvedAddress = instruction.addressingMode().resolve(this, bus);
 
-            log.info("{}", Disassembler.disassemble(originalPc, instruction.opcode(), instruction.addressingMode(), resolvedAddress.address()));
+            var currentDisassembly = Disassembler.disassemble(originalPc, instruction.opcode(), instruction.addressingMode(), resolvedAddress.address());
+            //log.info("{}", currentDisassembly);
+
+            if (!currentDisassembly.equals(previousDisassembly)) {
+                previousDisassembly = currentDisassembly;
+                previousDisassemblyCount = 1;
+            } else {
+                previousDisassemblyCount++;
+            }
+
+            if (previousDisassemblyCount == 10) {
+                isStalling = true;
+            }
 
             // Add any additional cycles from the instruction itself.
             var opcodeCycles = instruction.opcode().resolve(this, resolvedAddress);
@@ -181,7 +239,7 @@ public class Cpu6502Impl implements Cpu6502 {
             setFlag(Flag.UNUSED, true);
         }
 
-        clockCount++;
+        totalClockCount++;
         cycles--;
     }
 
@@ -201,7 +259,7 @@ public class Cpu6502Impl implements Cpu6502 {
         status = Flag.INTERRUPT_DISABLE.getValue() | Flag.UNUSED.getValue();
 
         // A reset consumes 7 clock cycles.
-        clockCount = 7;
+        totalClockCount += 7;
     }
 
     @Override

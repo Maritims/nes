@@ -51,4 +51,10 @@ public interface Mapper {
      * @return true if the address was handled by this mapper, false otherwise.
      */
     boolean mapChrWrite(int address, IntConsumer callback);
+
+    default boolean isIrqState() {
+        return false;
+    }
+
+    default void clearIrq() {}
 }

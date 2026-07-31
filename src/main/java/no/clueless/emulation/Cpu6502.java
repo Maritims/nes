@@ -24,7 +24,7 @@ public interface Cpu6502 {
     /**
      * The number of cycles the CPU has been clocked.
      */
-    int getClockCount();
+    int getTotalClockCount();
 
     /**
      * The Accumulator register.
@@ -196,4 +196,10 @@ public interface Cpu6502 {
     void setFlag(Flag flag, boolean value);
 
     boolean hasFlag(Flag flag);
+
+    void nmi();
+
+    void irq();
+
+    boolean isStalling();
 }

@@ -109,17 +109,28 @@ public class PpuBackgroundFetcher {
         var shift = 15 - fineX;
 
         // Bit 0 (weight 1).
-        var lowBitplanePixel  = (bgPatternShiftLow >> shift) & 0x01;
+        var lowBitplanePixel = (bgPatternShiftLow >> shift) & 0x01;
 
         // Bit 1 (weight 2).
         var highBitplanePixel = ((bgPatternShiftHigh >> shift) & 0x01) << 1;
 
         // Bit 3 (weight 4).
-        var lowPalette        = ((bgAttributeShiftLow >> shift) & 0x01) << 2;
+        var lowPalette = ((bgAttributeShiftLow >> shift) & 0x01) << 2;
 
         // Bit 4 (weight 8).
-        var highPalette       = ((bgAttributeShiftHigh >> shift) & 0x01) << 3;
+        var highPalette = ((bgAttributeShiftHigh >> shift) & 0x01) << 3;
 
         return (highPalette | lowPalette | highBitplanePixel | lowBitplanePixel) & 0x0F;
+    }
+
+    public void reset() {
+        bgPatternShiftLow        = 0;
+        bgPatternShiftHigh       = 0;
+        bgAttributeShiftHigh     = 0;
+        bgAttributeShiftLow      = 0;
+        nextTileIdByte           = 0;
+        nextAttributeByte        = 0;
+        nextPatternTableLowByte  = 0;
+        nextPatternTableHighByte = 0;
     }
 }

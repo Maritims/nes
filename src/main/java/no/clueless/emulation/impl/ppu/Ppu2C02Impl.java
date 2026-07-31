@@ -3,45 +3,46 @@ package no.clueless.emulation.impl.ppu;
 import no.clueless.emulation.Cartridge;
 import no.clueless.emulation.FrameBuffer;
 import no.clueless.emulation.Ppu2C02;
-import no.clueless.emulation.util.SwingFrameBuffer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Ppu2C02Impl implements Ppu2C02 {
     /**
      * The PPUCTRL register ($2000, VPHB SINN).
      */
-    private final PPUCTRL ppuctrl = new PPUCTRL();
+    private final        PPUCTRL   ppuctrl   = new PPUCTRL();
     /**
      * The PPUMASK register ($2001, BGRs bMmG).
      */
-    private final PPUMASK ppumask = new PPUMASK();
+    private final        PPUMASK   ppumask   = new PPUMASK();
     /**
      * The PPUSTATUS register ($2002, VSO- ----).
      */
-    private       int     ppustatus;
+    private final        PPUSTATUS ppustatus = new PPUSTATUS();
     /**
      * The OAM read/write address ($2003).
      */
-    private       int     oamaddr;
+    private              int       oamaddr;
     /**
      * The OAM data ($2004).
      */
-    private       OAM     oamdata;
+    private              OAM       oamdata;
     /**
      * The PPUSCROLL register ($2005, XXXX XXXX YYYY YYYY).
      */
-    private       int     ppuscroll;
+    private              int       ppuscroll;
     /**
      * The VRAM address ($2006).
      */
-    private       int     ppuaddr;
+    private              int       ppuaddr;
     /**
      * The VRAM data ($2007).
      */
-    private       int     ppudata;
+    private              int       ppudata;
     /**
      * The OAM DMA high address ($4014).
      */
-    private       int     oamdma;
+    private              int       oamdma;
 
     /**
      * The current VRAM address. In the hardware this is read from the internal 'v' register outside rendering. In software it is more practical with a dedicated field.
@@ -68,7 +69,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private final FrameBuffer          frameBuffer;
 
     private int scanLine = 0;
-    private int dot      = 0;
+    private int cycle    = 0;
 
     /**
      * The PPU data buffer.
@@ -76,6 +77,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private int dataBuffer;
 
     private Cartridge cartridge;
+    private boolean   nmi;
 
     public Ppu2C02Impl(FrameBuffer frameBuffer) {
         this.frameBuffer = frameBuffer;
@@ -121,34 +123,31 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     @Override
     public void clock() {
-        if (scanLine >= 0 && scanLine < 240) {
-            if (dot > 0 && dot <= 256) {
-                if (dot > 1) {
-                    fetcher.shiftRegistersLeft();
-                }
-
-                var colorIndex = fetcher.getPixelColorIndex(fineX);
-                var rgbColor = getFinalPixelColor(colorIndex);
-                frameBuffer.setPixel(dot - 1, scanLine, rgbColor);
-
-                var backgroundPatternTableAddress = ppuctrl.getBackgroundPatternTableAddress();
-                fetcher.performSequence(dot, currentVramAddress, nameTableManager, cartridge, backgroundPatternTableAddress);
-            } else if (dot == 257) {
-                currentVramAddress.transferHorizontalBits(tempVramAddress);
-            } else if (dot == 256) {
-                currentVramAddress.incrementFineY();
+        if (scanLine >= -1 && scanLine < 240) {
+            if (scanLine == -1 && cycle == 1) {
+                ppustatus.setVblank(false);
+                ppustatus.setSprite0Hit(false);
+                ppustatus.setSpriteOverflow(false);
             }
         }
 
-        dot++;
-        if (dot >= 341) {
-            dot = 0;
-            scanLine++;
+        if (scanLine >= 241 && scanLine <= 261) {
+            if (scanLine == 241 && cycle == 1) {
+                ppustatus.setVblank(true);
 
-            if (scanLine >= 262) {
-                scanLine = 0;
-                // End of frame: render the completed frame buffer to screen
-                frameBuffer.render();
+                if (ppuctrl.isNmiEnabled()) {
+                    nmi = true;
+                }
+            }
+        }
+
+        cycle++;
+
+        if (cycle >= 341) {
+            cycle = 0;
+            scanLine++;
+            if (scanLine >= 261) {
+                scanLine = -1;
             }
         }
     }
@@ -158,46 +157,30 @@ public class Ppu2C02Impl implements Ppu2C02 {
         fineX      = 0;
         writeLatch = 0;
         dataBuffer = 0;
-        ppustatus  = 0;
+        scanLine   = 0;
+        cycle      = 0;
+        ppustatus.write(0);
         ppuctrl.write(0);
         ppumask.write(0);
         currentVramAddress.write(0);
         tempVramAddress.write(0);
-    }
 
-    private void populateDataBuffer(int address) {
-        address &= 0x3FFF;
-
-        if (cartridge != null) {
-            var cartridgeData = cartridge.readChr(address).orElse(null);
-            if (cartridgeData != null) {
-                dataBuffer = cartridgeData;
-                return;
-            }
-        }
-
-        if (address <= 0x1FFF) {
-            var patternTableIndex = (address & 0x1000) >> 12;
-            dataBuffer = patternTables[patternTableIndex].read(address & 0x0FFF);
-        } else if (address <= 0x3EFF) {
-            dataBuffer = nameTableManager.read(address);
-        } else {
-            dataBuffer = paletteRAM.read(address);
-        }
+        fetcher.reset();
     }
 
     @Override
-    public int read(int address) {
-        address &= 0xFFFF;
+    public int readRegister(int address) {
+        address = 0x2000 + (address & 0x0007);
 
         return switch (address) {
+            case 0x2000, 0x2001, 0x2003, 0x2005, 0x2006 -> dataBuffer;
             case 0x2002 -> {
                 // Only the 3 bits furthest to the left in the PPUSTATUS register contain status information.
                 // However, when reading the PPUSTATUS register, the bottom 5 bits is expected to contain data from the previous PPU bus operation.
-                var data = (ppustatus & 0xE0) | (dataBuffer & 0x1F);
+                var data = (ppustatus.read() & 0xE0) | (dataBuffer & 0x1F);
 
                 // Clear the VBLANK flag.
-                ppustatus &= ~(1 << 7);
+                ppustatus.setVblank(false);
 
                 // Clear the write-latch.
                 writeLatch = 0;
@@ -211,7 +194,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 // The buffer is updated on every read from the PPUDATA register, but only after the previous contents have been returned to the CPU.
                 var vramAddress = currentVramAddress.read() & 0x3FFF;
                 var data        = dataBuffer;
-                populateDataBuffer(vramAddress);
+                readVideoMemory(vramAddress);
 
                 // The $3F00-$3FFF range of VRAM contains palette data on later PPUs, specifically the 2C02G, 2C02H and PAL PPUs.
                 if (vramAddress >= 0x3F00) {
@@ -225,12 +208,12 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
                 yield data;
             }
-            default -> throw new IllegalStateException("Unexpected value: " + address);
+            default -> throw new IllegalStateException("Unexpected value: " + "%04X".formatted(address));
         };
     }
 
     @Override
-    public void write(int address, int value) {
+    public void writeRegister(int address, int value) {
         address &= 0xFFFF;
         value &= 0xFF;
 
@@ -267,14 +250,17 @@ public class Ppu2C02Impl implements Ppu2C02 {
                     tempVramAddress.write(highByte | lowByte);
                     writeLatch = 1;
                 } else {
+                    var t = tempVramAddress.read();
+                    t = (t & 0xFF00) | value;
+                    tempVramAddress.write(t);
                     var highByte = tempVramAddress.read() & 0xFF00;
                     tempVramAddress.write(highByte | value);
-                    currentVramAddress.write(tempVramAddress.read());
+                    currentVramAddress.write(t);
                     writeLatch = 0;
                 }
                 break;
             case 0x2007:
-                ppuWrite(currentVramAddress.read(), value);
+                writeVideoMemory(currentVramAddress.read(), value);
 
                 var increment = ppuctrl.getIncrementMode() == 0 ? 1 : 32;
                 currentVramAddress.write(currentVramAddress.read() + increment);
@@ -282,7 +268,40 @@ public class Ppu2C02Impl implements Ppu2C02 {
         }
     }
 
-    private void ppuWrite(int address, int value) {
+    @Override
+    public boolean isNmi() {
+        return nmi;
+    }
+
+    @Override
+    public void handleNmi() {
+        nmi = false;
+    }
+
+    public int readVideoMemory(int address) {
+        address &= 0x3FFF;
+
+        if (cartridge != null) {
+            var cartridgeData = cartridge.readChr(address).orElse(null);
+            if (cartridgeData != null) {
+                dataBuffer = cartridgeData;
+                return dataBuffer;
+            }
+        }
+
+        if (address <= 0x1FFF) {
+            var patternTableIndex = (address & 0x1000) >> 12;
+            dataBuffer = patternTables[patternTableIndex].read(address & 0x0FFF);
+        } else if (address <= 0x3EFF) {
+            dataBuffer = nameTableManager.read(address);
+        } else {
+            dataBuffer = paletteRAM.read(address);
+        }
+
+        return dataBuffer;
+    }
+
+    private void writeVideoMemory(int address, int value) {
         value &= 0xFF;
 
         if (cartridge != null) {

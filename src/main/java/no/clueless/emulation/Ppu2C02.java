@@ -22,7 +22,7 @@ public interface Ppu2C02 {
      * @param address A 16-bit address.
      * @return An 8-bit value.
      */
-    int read(int address);
+    int readRegister(int address);
 
     /**
      * Writes an 8-bit value to a 16-bit address.
@@ -30,5 +30,9 @@ public interface Ppu2C02 {
      * @param address A 16-bit address.
      * @param value   An 8-bit value.
      */
-    void write(int address, int value);
+    void writeRegister(int address, int value);
+
+    boolean isNmi();
+
+    void handleNmi();
 }

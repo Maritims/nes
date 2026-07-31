@@ -8,7 +8,8 @@ public class LoopyRegister {
     private int register;
 
     public void write(int register) {
-        this.register = register & 0x7FFF;
+        //this.register = register & 0x7FFF;
+        this.register = register;
     }
 
     public int read() {

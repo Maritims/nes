@@ -53,7 +53,7 @@ public class NesTest {
                 cpu.getY(),
                 cpu.getStatusRegister(),
                 cpu.getStackPointer(),
-                cpu.getClockCount());
+                cpu.getTotalClockCount());
         var expectedState = String.format("PC:%04X A:%02X X:%02X Y:%02X P:%02X SP:%02X CYC:%d",
                 expected.pc, expected.a, expected.x, expected.y, expected.p, expected.sp, expected.cyc);
 
@@ -115,7 +115,7 @@ public class NesTest {
             StringBuilder sb = new StringBuilder();
             for (int col = 0; col < 32; col++) {
                 int vramAddr = 0x2000 + (row * 32) + col;
-                int tileIndex = ppu.readVramForTest(vramAddr); // Read raw VRAM tile index
+                int tileIndex = ppu.readVideoMemory(vramAddr); // Read raw VRAM tile index
 
                 // Convert tile index to ASCII character if printable, else show '.'
                 char c = (tileIndex >= 32 && tileIndex <= 126) ? (char) tileIndex : '.';

@@ -40,8 +40,8 @@ public class PPUCTRL {
         return (register >> 6) & 0x01;
     }
 
-    public int getNMIEnable() {
-        return (register >> 7) & 0x01;
+    public boolean isNmiEnabled() {
+        return ((register >> 7) & 0x01) != 0;
     }
 
     public void setNameTableX(boolean value) {

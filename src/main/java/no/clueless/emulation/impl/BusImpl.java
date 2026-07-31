@@ -9,13 +9,13 @@ public class BusImpl implements Bus {
     private static final Logger  log = LoggerFactory.getLogger(BusImpl.class);
     private final        Cpu6502 cpu;
     private final        Ppu2C02 ppu;
-    private final        Apu     apu;
+    private final        Apu2A03 apu;
 
     private final int[]     cpuRam          = new int[2048];
     private       Cartridge cartridge;
     private       int       totalClockCount = 0;
 
-    public BusImpl(Cpu6502 cpu, Ppu2C02 ppu, Apu apu) {
+    public BusImpl(Cpu6502 cpu, Ppu2C02 ppu, Apu2A03 apu) {
         if (cpu == null) {
             throw new IllegalArgumentException("cpu cannot be null");
         }
@@ -23,7 +23,7 @@ public class BusImpl implements Bus {
             throw new IllegalArgumentException("ppu cannot be null");
         }
         if (apu == null) {
-            //throw new IllegalArgumentException("apu cannot be null");
+            throw new IllegalArgumentException("apu cannot be null");
         }
         this.cpu = cpu;
         this.ppu = ppu;
@@ -43,7 +43,7 @@ public class BusImpl implements Bus {
     }
 
     @Override
-    public Apu getApu() {
+    public Apu2A03 getApu() {
         return apu;
     }
 
@@ -60,14 +60,24 @@ public class BusImpl implements Bus {
 
     @Override
     public void clock() {
-        //apu.clock();
-        ppu.clock();
+        cpu.clock();
 
-        if (totalClockCount > 0 && totalClockCount % 3 == 0) {
-            cpu.clock();
+        for(var i = 0; i < 3; i++) {
+            ppu.clock();
+            apu.clock();
+
+            if (ppu.isNmi()) {
+                ppu.handleNmi();
+                cpu.nmi();
+            }
         }
 
-        totalClockCount++;
+        if(cartridge.getMapper().isIrqState()) {
+            cartridge.getMapper().clearIrq();
+            cpu.irq();
+        }
+
+        totalClockCount += 3;
     }
 
     @Override
@@ -77,14 +87,18 @@ public class BusImpl implements Bus {
         if (address >= 0x0000 && address <= 0x1FFF) {
             data = cpuRam[address % cpuRam.length];
         } else if (address >= 0x2000 && address <= 0x3FFF) {
-            data = ppu.read(address);
+            data = ppu.readRegister(address);
         } else if (address >= 0x4000 && address <= 0x04017) {
             // APU and I/O
+            data = apu.readRegister(address);
         } else if (address >= 0x4018 && address <= 0x401F) {
             // APU and I/O test
+            data = apu.readRegister(address);
         } else if (address >= 0x8000 && address <= 0xFFFF) {
             // Cartridge
             data = cartridge.readPrg(address).orElseThrow();
+        } else if (address >= 0x6000 && address <= 0x7FFF) {
+            data = wram[address - 0x6000];
         } else {
             //log.warn("Read from unknown address: {}", "$%04X".formatted(address));
         }
@@ -92,10 +106,20 @@ public class BusImpl implements Bus {
         return data & 0xFF;
     }
 
+    private final int[] wram = new int[8192];
+
     @Override
     public void write(int address, int data) {
         if (address >= 0x0000 && address <= 0x1FFF) {
             cpuRam[address % cpuRam.length] = data & 0xFF;
+        } else if (address >= 0x2000 && address <= 0x3FFF) {
+            ppu.writeRegister(address, data);
+        } else if (address >= 0x4000 && address <= 0x04017) {
+            apu.writeRegister(address, data);
+        } else if (address >= 0x6000 && address <= 0x7FFF) {
+            //cartridge.writePrg(address, data);
+            log.warn("Writing {} to {}", "%02X".formatted(data), "%04X".formatted(address));
+            wram[address - 0x6000] = data & 0xFF;
         }
     }
 

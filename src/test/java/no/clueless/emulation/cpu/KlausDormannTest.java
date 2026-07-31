@@ -32,7 +32,7 @@ public class KlausDormannTest {
         }
 
         @Override
-        public Apu getApu() {
+        public Apu2A03 getApu() {
             throw new UnsupportedOperationException();
         }
 
@@ -87,7 +87,7 @@ public class KlausDormannTest {
         var maxCycles    = 100_000_000;
         var instructions = 0;
 
-        while (cpu6502.getClockCount() < maxCycles) {
+        while (cpu6502.getTotalClockCount() < maxCycles) {
             var pc = cpu6502.getProgramCounter();
             cpu6502.clock();
             instructions++;
