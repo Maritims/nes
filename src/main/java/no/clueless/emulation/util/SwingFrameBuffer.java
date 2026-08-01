@@ -12,7 +12,7 @@ public class SwingFrameBuffer extends JFrame implements FrameBuffer {
     private final int[]         pixels;
 
     public SwingFrameBuffer(String title, int scale) {
-        image = new BufferedImage(FrameBuffer.WIDTH, FrameBuffer.HEIGHT, BufferedImage.TYPE_INT_ARGB);
+        image  = new BufferedImage(FrameBuffer.WIDTH, FrameBuffer.HEIGHT, BufferedImage.TYPE_INT_RGB);
         pixels = ((DataBufferInt) image.getRaster().getDataBuffer()).getData();
 
         var panel = new JPanel() {
@@ -36,7 +36,7 @@ public class SwingFrameBuffer extends JFrame implements FrameBuffer {
 
     @Override
     public void setPixel(int x, int y, int rgb) {
-        if (x >= 0 &&  y >= 0 && x < FrameBuffer.WIDTH && y < FrameBuffer.HEIGHT) {
+        if (x >= 0 && y >= 0 && x < FrameBuffer.WIDTH && y < FrameBuffer.HEIGHT) {
             pixels[y * FrameBuffer.WIDTH + x] = rgb;
         }
     }
@@ -44,5 +44,9 @@ public class SwingFrameBuffer extends JFrame implements FrameBuffer {
     @Override
     public void render() {
         repaint();
+    }
+
+    public int convertRgbToInt(int red, int green, int blue) {
+        return ((red & 0xFF) << 16) | ((green & 0xFF) << 8) | (blue & 0xFF);
     }
 }

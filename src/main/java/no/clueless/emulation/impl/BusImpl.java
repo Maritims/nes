@@ -87,7 +87,7 @@ public class BusImpl implements Bus {
         if (address >= 0x0000 && address <= 0x1FFF) {
             data = cpuRam[address % cpuRam.length];
         } else if (address >= 0x2000 && address <= 0x3FFF) {
-            data = ppu.readRegister(address);
+            data = ppu.readRegister(address & 0x0007);
         } else if (address >= 0x4000 && address <= 0x04017) {
             // APU and I/O
             data = apu.readRegister(address);

@@ -1,0 +1,57 @@
+package no.clueless.emulation.impl.ppu;
+
+public class PPUStatus {
+    private int register;
+
+    public int getRegister() {
+        return register & 0xFF;
+    }
+
+    public void setRegister(int register) {
+        this.register = register & 0xFF;
+    }
+
+    public int getUnused() {
+        return (register & 0x01);
+    }
+
+    public void setUnused(int unused) {
+        this.register = (this.register & 0x1F) | (unused & 0x1F);
+    }
+
+    public boolean isSpriteOverflow() {
+        return (register & 0x20) != 0;
+    }
+
+    public void setSpriteOverflow(boolean overflow) {
+        if (overflow) {
+            register |= 0x20;
+        } else {
+            register &= ~0x20;
+        }
+    }
+
+    public boolean isSpriteZeroHit() {
+        return (register & 0x40) != 0;
+    }
+
+    public void setSpriteZeroHit(boolean hit) {
+        if (hit) {
+            register |= 0x40;
+        } else {
+            register &= ~0x40;
+        }
+    }
+
+    public boolean isVerticalBlank() {
+        return (register & 0x80) != 0;
+    }
+
+    public void setVerticalBlank(boolean verticalBlank) {
+        if (verticalBlank) {
+            register |= 0x80;
+        } else {
+            register &= ~0x80;
+        }
+    }
+}

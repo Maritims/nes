@@ -7,4 +7,6 @@ public interface FrameBuffer {
     void setPixel(int x, int y, int rgb);
 
     void render();
+
+    int convertRgbToInt(int red, int green, int blue);
 }

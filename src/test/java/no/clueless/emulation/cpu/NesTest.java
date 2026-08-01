@@ -70,12 +70,12 @@ public class NesTest {
         // Example: C000  4C F5 C5  JMP $C5F5                       A:00 X:00 Y:00 P:24 SP:FD PPU:  0, 21 CYC:7
         int pc = Integer.parseInt(line.substring(0, 4), 16);
 
-        int aPos       = line.indexOf("A:") + 2;
-        int xPos       = line.indexOf("X:") + 2;
-        int yPos       = line.indexOf("Y:") + 2;
-        int pPos       = line.indexOf("P:") + 2;
-        int spPos      = line.indexOf("SP:") + 3;
-        var cycPos     = line.indexOf("CYC:") + 4;
+        int aPos   = line.indexOf("A:") + 2;
+        int xPos   = line.indexOf("X:") + 2;
+        int yPos   = line.indexOf("Y:") + 2;
+        int pPos   = line.indexOf("P:") + 2;
+        int spPos  = line.indexOf("SP:") + 3;
+        var cycPos = line.indexOf("CYC:") + 4;
 
         int a   = Integer.parseInt(line.substring(aPos, aPos + 2), 16);
         int x   = Integer.parseInt(line.substring(xPos, xPos + 2), 16);
@@ -114,7 +114,7 @@ public class NesTest {
         for (int row = 0; row < 30; row++) {
             StringBuilder sb = new StringBuilder();
             for (int col = 0; col < 32; col++) {
-                int vramAddr = 0x2000 + (row * 32) + col;
+                int vramAddr  = 0x2000 + (row * 32) + col;
                 int tileIndex = ppu.readVideoMemory(vramAddr); // Read raw VRAM tile index
 
                 // Convert tile index to ASCII character if printable, else show '.'

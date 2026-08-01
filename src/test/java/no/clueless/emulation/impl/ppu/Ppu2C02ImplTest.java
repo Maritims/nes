@@ -13,11 +13,10 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 class Ppu2C02ImplTest {
-    private PPUCTRL ppuctrl;
-    ;
-    private PPUMASK       ppumask;
-    private PPUSTATUS     ppustatus;
-    private LoopyRegister currentVramAddress;
+    private PPUCtrl       control;
+    private PPUMask       mask;
+    private PPUStatus     status;
+    private LoopyRegister v;
     private FrameBuffer   frameBuffer;
     private Ppu2C02Impl   sut;
 
@@ -53,7 +52,7 @@ class Ppu2C02ImplTest {
     }
 
     public static Stream<Arguments> verticalBlankingLinesSetsVblankAndSetsNmiIfEnabled() {
-        return  Stream.of(
+        return Stream.of(
                 Arguments.of(241, true, true),
                 Arguments.of(242, true, true),
                 Arguments.of(243, true, true),
@@ -79,12 +78,12 @@ class Ppu2C02ImplTest {
 
     @BeforeEach
     void setUp() {
-        ppuctrl            = spy(new PPUCTRL());
-        ppumask            = spy(new PPUMASK());
-        ppustatus          = spy(new PPUSTATUS());
-        currentVramAddress = spy(new LoopyRegister());
-        frameBuffer        = mock(FrameBuffer.class);
-        sut                = new Ppu2C02Impl(ppuctrl, ppumask, ppustatus, currentVramAddress, frameBuffer);
+        control     = spy(new PPUCtrl());
+        mask        = spy(new PPUMask());
+        status      = spy(new PPUStatus());
+        v           = spy(new LoopyRegister());
+        frameBuffer = mock(FrameBuffer.class);
+        sut         = new Ppu2C02Impl(control, mask, status, v, frameBuffer);
     }
 
     @Test
@@ -97,16 +96,16 @@ class Ppu2C02ImplTest {
         sut.clock();
 
         // assert
-        verify(ppustatus).setVblank(false);
-        verify(ppustatus).setSprite0Hit(false);
-        verify(ppustatus).setSpriteOverflow(false);
+        verify(status).setVerticalBlank(false);
+        verify(status).setSpriteZeroHit(false);
+        verify(status).setSpriteOverflow(false);
     }
 
     @ParameterizedTest
     @MethodSource
     void preRenderScanLineTransfersVerticalBitsFromCycle280ToCycle304WhenRenderingIsEnabled(int cycle, int transferVerticalBitsInvocations) {
         // arrange
-        ppumask.setSpriteRenderingEnabled(true);
+        mask.setRenderSprites(true);
         sut.setScanLine(-1);
         sut.setCycle(cycle);
 
@@ -114,7 +113,7 @@ class Ppu2C02ImplTest {
         sut.clock();
 
         // assert
-        verify(currentVramAddress, times(transferVerticalBitsInvocations)).transferVerticalBits(any(LoopyRegister.class));
+        verify(v, times(transferVerticalBitsInvocations)).transferVerticalBits(any(LoopyRegister.class));
     }
 
     @ParameterizedTest
@@ -123,7 +122,7 @@ class Ppu2C02ImplTest {
         // arrange
         sut.setScanLine(scanLine);
         sut.setCycle(1);
-        ppuctrl.setNmiEnabled(isNmiEnabled);
+        control.setEnableNmi(isNmiEnabled);
 
         // act
         sut.clock();

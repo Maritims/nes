@@ -7,45 +7,38 @@ package no.clueless.emulation.impl.ppu;
 public class LoopyRegister {
     private int register;
 
-    public void write(int register) {
-        //this.register = register & 0x7FFF;
-        this.register = register;
-    }
-
-    public int read() {
+    public int getRegister() {
         return register;
     }
 
+    public void setRegister(int register) {
+        this.register = register;
+    }
+
+    /**
+     * Coarse X is stored in bits 1-5.
+     */
     public int getCoarseX() {
-        return register & 0x001F;
-    }
-
-    public int getCoarseY() {
-        return (register >> 5) & 0x001F;
-    }
-
-    public int getNameTableIndex() {
-        return (register >> 10) & 0x0003;
-    }
-
-    public boolean isNameTableX() {
-        return ((register >> 10) & 0x01) != 0;
-    }
-
-    public boolean isNameTableY() {
-        return ((register >> 11) & 0x01) != 0;
-    }
-
-    public int getFineY() {
-        return (register >> 12) & 0x0007;
+        return register & 0x1F;
     }
 
     public void setCoarseX(int value) {
         register = (register & ~0x001F) | (value & 0x001F);
     }
 
+    /**
+     * Coarse Y is stored in bits 6-10.
+     */
+    public int getCoarseY() {
+        return (register & 0x3E0) >> 5;
+    }
+
     public void setCoarseY(int value) {
-        register = (register & ~0x03E0) | ((value & 0x1F) << 5);
+        register = (register & ~0x03E0) | ((value << 5) & 0x03E0);
+    }
+
+    public int getNameTableX() {
+        return (register & 0x400) >> 10;
     }
 
     public void setNameTableX(boolean value) {
@@ -60,6 +53,10 @@ public class LoopyRegister {
         register ^= 0x0400;
     }
 
+    public int getNameTableY() {
+        return (register & 0x800) >> 11;
+    }
+
     public void setNameTableY(boolean value) {
         if (value) {
             register |= 0x0800;
@@ -72,14 +69,33 @@ public class LoopyRegister {
         register ^= 0x0800;
     }
 
+    public int getFineY() {
+        return (register & 0x7000) >> 12;
+    }
+
     public void setFineY(int value) {
-        register = (register & ~0x7000) | ((value & 0x07) << 12);
+        register = (register & ~0x7000) | ((value << 12) & 0x7000);
+    }
+
+    /**
+     * The value of the nametable index is stored in bits 11-12.
+     */
+    public int getNameTableIndex() {
+        return register & 0x0FFF;
+    }
+
+    public int getUnused() {
+        return register & 0x80;
+    }
+
+    public void setUnused(int unused) {
+        this.register = unused & 0x80;
     }
 
     /**
      * Increments coarse X (bits 0-4). On overflow coarse X is reset to 0 and bit 10 is flipped.
      */
-    public void incrementCoarseX() {
+    public void incrementX() {
         var coarseX = getCoarseX();
 
         if (coarseX == 31) {
@@ -90,28 +106,19 @@ public class LoopyRegister {
         }
     }
 
-    /**
-     * Increments fine Y (bits 12-14).
-     * On overflow fine Y resets to zero and coarse Y (bits 5-9) increments.
-     * If coarse Y reaches 29, it resets to 0 and flips bit 11. Reaching 29 means we have reached the bottom of the nametable.
-     */
-    public void incrementFineY() {
-        var fineY = getFineY();
-
-        if (fineY < 7) {
-            setFineY(fineY + 1);
+    public void IncrementY() {
+        if (getFineY() < 7) {
+            setFineY(getFineY() + 1);
         } else {
             setFineY(0);
 
-            var coarseY = getCoarseY();
-
-            if (coarseY == 29) {
+            if (getCoarseY() == 29) {
                 setCoarseY(0);
                 flipNameTableY();
-            } else if (coarseY == 31) {
+            } else if (getCoarseY() == 31) {
                 setCoarseY(0);
             } else {
-                setCoarseY(coarseY + 1);
+                setCoarseY(getCoarseY() + 1);
             }
         }
     }
@@ -124,7 +131,7 @@ public class LoopyRegister {
 
     public void transferVerticalBits(LoopyRegister from) {
         setFineY(from.getFineY());
-        setNameTableY(from.isNameTableY());
+        setNameTableY(from.getNameTableY() != 0);
         setCoarseY(from.getCoarseY());
     }
 }

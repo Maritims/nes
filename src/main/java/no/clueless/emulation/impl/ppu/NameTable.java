@@ -5,7 +5,7 @@ public class NameTable {
     private static final int ROWS                 = 30;
     private static final int NUMBER_OF_TILES      = COLS * ROWS;
     private static final int ATTRIBUTES           = 64;
-    private static final int NAME_TABLE_BYTE_SIZE = NUMBER_OF_TILES * ATTRIBUTES;
+    private static final int NAME_TABLE_BYTE_SIZE = NUMBER_OF_TILES + ATTRIBUTES;
 
     private final int[] memory = new int[NAME_TABLE_BYTE_SIZE];
 
