@@ -1,5 +1,8 @@
 package no.clueless.emulation.impl.ppu;
 
+import static no.clueless.emulation.impl.Masks.MASK_12BIT;
+import static no.clueless.emulation.impl.Masks.MASK_8BIT;
+
 public class PatternTable {
     private static final int TILE_COUNT          = 256;
     private static final int BYTES_PER_TILE      = 16;
@@ -14,7 +17,7 @@ public class PatternTable {
      * @return An 8-bit value.
      */
     public int read(int address) {
-        return memory[address & 0x0FFF] & 0xFF;
+        return memory[address & MASK_12BIT] & MASK_8BIT;
     }
 
     /**
@@ -24,6 +27,6 @@ public class PatternTable {
      * @param data    An 8-bit value.
      */
     public void write(int address, int data) {
-        memory[address & 0xFFFF] = data & 0xFF;
+        memory[address & MASK_12BIT] = data & MASK_8BIT;
     }
 }

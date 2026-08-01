@@ -3,10 +3,17 @@ package no.clueless.emulation.impl.ppu;
 import no.clueless.emulation.Cartridge;
 import no.clueless.emulation.FrameBuffer;
 import no.clueless.emulation.Ppu2C02;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.awt.*;
+import static no.clueless.emulation.impl.CpuMemoryMap.PPU_REGISTER_START;
+import static no.clueless.emulation.impl.CpuMemoryMap.PRG_ROM_START;
+import static no.clueless.emulation.impl.Masks.*;
+import static no.clueless.emulation.impl.PpuMemoryMap.*;
 
 public class Ppu2C02Impl implements Ppu2C02 {
+    private static final Logger log = LoggerFactory.getLogger(Ppu2C02Impl.class);
+
     // region Registers
     private final PPUCtrl   control;
     private final PPUMask   mask;
@@ -23,11 +30,19 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     private int fineX;
     private int addressLatch;
+
+    private void resetRegisters() {
+        control.setRegister(0);
+        mask.setRegister(0);
+        status.setRegister(0);
+        vramAddress.setRegister(0);
+        tempVramAddress.setRegister(0);
+    }
     // endregion
 
     private final PatternTable[] patternTables = new PatternTable[]{new PatternTable(), new PatternTable()};
     private final int[][]        nameTables    = new int[2][1024];
-    private final PaletteRAM     paletteRAM    = new PaletteRAM();
+    private final int[]          paletteTable  = new int[32];
     private final FrameBuffer    frameBuffer;
     private final int[]          palette       = new int[64];
 
@@ -134,19 +149,30 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private int backgroundShifterAttributeHigh = 0x0000;
 
     public void loadBackgroundShifters() {
-        backgroundShifterPatternLow    = (backgroundShifterPatternLow & 0xFF00) | backgroundNextTileLsb;
-        backgroundShifterPatternHigh   = (backgroundShifterPatternHigh & 0xFF00) | backgroundNextTileMsb;
+        backgroundShifterPatternLow    = (backgroundShifterPatternLow & 0xFF00) | (backgroundNextTileLsb & 0x00FF);
+        backgroundShifterPatternHigh   = (backgroundShifterPatternHigh & 0xFF00) | (backgroundNextTileMsb & 0x00FF);
         backgroundShifterAttributeLow  = (backgroundShifterAttributeLow & 0xFF00) | ((backgroundNextTileAttribute & 0b01) != 0 ? 0xFF : 0x00);
         backgroundShifterAttributeHigh = (backgroundShifterAttributeHigh & 0xFF00) | ((backgroundNextTileAttribute & 0b10) != 0 ? 0xFF : 0x00);
     }
 
     public void updateShifters() {
         if (mask.isRenderBackground()) {
-            backgroundShifterPatternLow <<= 1;
-            backgroundShifterPatternHigh <<= 1;
-            backgroundShifterAttributeLow <<= 1;
-            backgroundShifterAttributeHigh <<= 1;
+            backgroundShifterPatternLow = (backgroundShifterPatternLow << 1) & MASK_16BIT;
+            backgroundShifterPatternHigh = (backgroundShifterPatternHigh << 1) & MASK_16BIT;
+            backgroundShifterAttributeLow = (backgroundShifterAttributeLow << 1) & MASK_16BIT;
+            backgroundShifterAttributeHigh = (backgroundShifterAttributeHigh << 1) & MASK_16BIT;
         }
+    }
+
+    private void resetShifters() {
+        backgroundNextTileId           = 0;
+        backgroundNextTileAttribute    = 0;
+        backgroundNextTileLsb          = 0;
+        backgroundNextTileMsb          = 0;
+        backgroundShifterPatternLow    = 0;
+        backgroundShifterPatternHigh   = 0;
+        backgroundShifterAttributeLow  = 0;
+        backgroundShifterAttributeHigh = 0;
     }
     // endregion
 
@@ -168,8 +194,11 @@ public class Ppu2C02Impl implements Ppu2C02 {
         this.cartridge = cartridge;
     }
 
+    /**
+     * Convenience function for retrieving an RGB value based on the palette and pixel.
+     */
     int getRgbFromPalette(int palette, int pixel) {
-        return this.palette[readVideoMemory(0x3F00 + (palette << 2) + pixel) & 0x3F];
+        return this.palette[readVideoMemory(PALETTE_RAM_START + (palette << 2) + pixel) & 0x3F];
     }
 
     @Override
@@ -193,10 +222,10 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 switch ((cycle - 1) % 8) {
                     case 0:
                         loadBackgroundShifters();
-                        backgroundNextTileId = readVideoMemory(0x2000 | (vramAddress.getRegister() & 0x0FFF));
+                        backgroundNextTileId = readVideoMemory(PPU_REGISTER_START | (vramAddress.getRegister() & MASK_12BIT));
                         break;
                     case 2:
-                        backgroundNextTileAttribute = readVideoMemory(0x23C0
+                        backgroundNextTileAttribute = readVideoMemory(ATTRIBUTE_TABLE_0_START
                                 | (vramAddress.getNameTableY() & 0x0C00)
                                 | vramAddress.getNameTableX()
                                 | ((vramAddress.getCoarseY() >> 2) << 3)
@@ -212,12 +241,12 @@ public class Ppu2C02Impl implements Ppu2C02 {
                         break;
                     case 4:
                         backgroundNextTileLsb = readVideoMemory((control.getBackgroundPatternTableAddress() << 12)
-                                + ((backgroundNextTileId << 4) & 0xFFFF)
+                                + ((backgroundNextTileId << 4) & MASK_16BIT)
                                 + (vramAddress.getFineY()));
                         break;
                     case 6:
                         backgroundNextTileMsb = readVideoMemory((control.getBackgroundPatternTableAddress() << 12)
-                                + ((backgroundNextTileId << 4) & 0xFFFF)
+                                + ((backgroundNextTileId << 4) & MASK_16BIT)
                                 + (vramAddress.getFineY() + 8));
                         break;
                     case 7:
@@ -243,7 +272,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
 
             if (cycle == 338 || cycle == 340) {
-                backgroundNextTileId = readVideoMemory(0x2000 | (vramAddress.getRegister() & 0x0FFF));
+                backgroundNextTileId = readVideoMemory(PPU_REGISTER_START | (vramAddress.getRegister() & MASK_12BIT));
             }
 
             if (scanLine == -1 && cycle >= 280 && cycle < 305) {
@@ -277,7 +306,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
         if (mask.isRenderBackground()) {
             if (mask.isRenderBackgroundLeft() || cycle >= 9) {
-                var bitMux = 0x8000 >> fineX;
+                var bitMux = PRG_ROM_START >> fineX;
 
                 var p0Pixel = (backgroundShifterPatternLow & bitMux) > 0 ? 1 : 0;
                 var p1Pixel = (backgroundShifterPatternHigh & bitMux) > 0 ? 1 : 0;
@@ -322,112 +351,145 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     @Override
     public void reset() {
-        fineX                          = 0;
-        addressLatch                   = 0;
-        dataBuffer                     = 0;
-        scanLine                       = 0;
-        cycle                          = 0;
-        backgroundNextTileId           = 0;
-        backgroundNextTileAttribute    = 0;
-        backgroundNextTileLsb          = 0;
-        backgroundNextTileMsb          = 0;
-        backgroundShifterPatternLow    = 0;
-        backgroundShifterPatternHigh   = 0;
-        backgroundShifterAttributeLow  = 0;
-        backgroundShifterAttributeHigh = 0;
-        oddFrame                       = false;
-        status.setRegister(0);
-        mask.setRegister(0);
-        control.setRegister(0);
-        vramAddress.setRegister(0);
-        tempVramAddress.setRegister(0);
+        fineX        = 0;
+        addressLatch = 0;
+        dataBuffer   = 0;
+        scanLine     = 0;
+        cycle        = 0;
+        oddFrame     = false;
+
+        resetShifters();
+        resetRegisters();
+    }
+
+    /**
+     * Reading from the PPUSTATUS register will clear the VBLANK flag in {@link #control}.
+     * <p>
+     * Only the 3 biths furthest to the left in the PPUSTATUS register contain status information.
+     * However, when reading the PPUSTATUS register, the bottom 5 bits is expected to contain data from the previous PPU bus operation.
+     */
+    private int readPpuStatus() {
+        var data = (status.getRegister() & 0xE0) | (dataBuffer & 0x1F);
+
+        // Clear the VBLANK flag.
+        status.setVerticalBlank(false);
+
+        // Clear the write-latch.
+        addressLatch = 0;
+
+        return data;
+    }
+
+    /**
+     * Reading from the PPUDATA register will add either 1 (horizontal progression) or 32 (vertical progression) to {@link #vramAddress} depending on the return value of the {@link PPUCtrl#getIncrementMode()}.
+     * <p>
+     * Reading from the PPUDATA register is delayed by one cycle, but rather than returning the data in the register, data is returned from an internal data buffer, {@link #dataBuffer}.
+     * The buffer is updated on every read from the PPUDATA register, but only after the previous contents have been returned to the CPU.
+     */
+    private int readPpuData() {
+        var data = dataBuffer;
+        dataBuffer = readVideoMemory(vramAddress.getRegister());
+
+        if (vramAddress.getRegister() >= PALETTE_RAM_START) {
+            data = dataBuffer;
+        }
+
+        // The VRAM address is incremented after each read from the PPUDATA register.
+        var increment = control.getIncrementMode() == 0 ? 1 : 32;
+        this.vramAddress.setRegister(this.vramAddress.getRegister() + increment);
+
+        return data;
     }
 
     @Override
     public int readRegister(int address) {
         return switch (address) {
-            case 0x0002 -> {
-                // Only the 3 bits furthest to the left in the PPUSTATUS register contain status information.
-                // However, when reading the PPUSTATUS register, the bottom 5 bits is expected to contain data from the previous PPU bus operation.
-                var data = (status.getRegister() & 0xE0) | (dataBuffer & 0x1F);
-
-                // Clear the VBLANK flag.
-                status.setVerticalBlank(false);
-
-                // Clear the write-latch.
-                addressLatch = 0;
-
-                yield data;
+            case PPUSTATUS -> readPpuStatus();
+            case OAMDATA -> oamdata.read(oamaddr);
+            case PPUDATA -> readPpuData();
+            default -> {
+                log.warn("Unknown register: {}", "%04X".formatted(address));
+                yield 0x00;
             }
-            case 0x0004 -> oamdata.read(oamaddr);
-            case 0x0007 -> {
-                // Reading from the PPUDATA register is delayed by one cycle.
-                // Rather than returning the data in the register, data is returned from an internal data buffer.
-                // The buffer is updated on every read from the PPUDATA register, but only after the previous contents have been returned to the CPU.
-                var data = dataBuffer;
-                dataBuffer = readVideoMemory(vramAddress.getRegister());
-
-                // The $3F00-$3FFF range of VRAM contains palette data on later PPUs, specifically the 2C02G, 2C02H and PAL PPUs.
-                if (vramAddress.getRegister() >= 0x3F00) {
-                    data = dataBuffer;
-                }
-
-                // The VRAM address is incremented after each read from the PPUDATA register.
-                var increment = control.getIncrementMode() == 0 ? 1 : 32;
-                this.vramAddress.setRegister(this.vramAddress.getRegister() + increment);
-
-                yield data;
-            }
-            default -> 0x00;
         };
+    }
+
+    /**
+     * TODO: Add documentation.
+     */
+    private void writePpuCtrl(int data) {
+        control.setRegister(data);
+        tempVramAddress.setNameTableX((control.getNameTableX() & 0x400) != 0);
+        tempVramAddress.setNameTableY((control.getNameTableY() & 0x800) != 0);
+    }
+
+    /**
+     * TODO: Add documentation.
+     */
+    private void writePpuScroll(int data) {
+        if (addressLatch == 0) {
+            fineX = data & 0x07;
+            tempVramAddress.setCoarseX(data >> 3);
+            addressLatch = 1;
+        } else {
+            tempVramAddress.setFineY(data & 0x07);
+            tempVramAddress.setCoarseY(data >> 3);
+            addressLatch = 0;
+        }
+    }
+
+    /**
+     * TODO: Add documentation.
+     */
+    private void writePpuAddr(int data) {
+        if (addressLatch == 0) {
+            tempVramAddress.setRegister(((data & 0x3F) << 8) | (tempVramAddress.getRegister() & 0x00FF));
+            addressLatch = 1;
+        } else {
+            tempVramAddress.setRegister((tempVramAddress.getRegister() & 0xFF00) | data);
+            vramAddress.setRegister(tempVramAddress.getRegister());
+            addressLatch = 0;
+        }
+    }
+
+    /**
+     * Writes to the PPUDATA register will add either 1 (horizontal progression) or 32 (vertical progression) to {@link #vramAddress} depending on the return value of the {@link PPUCtrl#getIncrementMode()}.
+     */
+    private void writePpuData(int data) {
+        writeVideoMemory(vramAddress.getRegister(), data);
+        var increment = control.getIncrementMode() == 0 ? 1 : 32;
+        vramAddress.setRegister(vramAddress.getRegister() + increment);
     }
 
     @Override
     public void writeRegister(int address, int data) {
-        address &= 0xFFFF;
-        data &= 0xFF;
+        address &= MASK_16BIT;
+        data &= MASK_8BIT;
 
         switch (address) {
-            case 0x2000:
-                control.setRegister(data);
-                tempVramAddress.setNameTableX((control.getNameTableX() & 0x400) != 0);
-                tempVramAddress.setNameTableY((control.getNameTableY() & 0x800) != 0);
+            case PPUCTRL:
+                writePpuCtrl(data);
                 break;
-            case 0x2001:
+            case PPUMASK:
                 mask.setRegister(data);
                 break;
-            case 0x2003:
+            case OAMADDR:
                 oamaddr = data;
                 break;
-            case 0x2004:
+            case OAMDATA:
                 oamdata.write(oamaddr, data);
                 break;
-            case 0x2005:
-                if (addressLatch == 0) {
-                    fineX = data & 0x07;
-                    tempVramAddress.setCoarseX(data >> 3);
-                    addressLatch = 1;
-                } else {
-                    tempVramAddress.setFineY(data & 0x07);
-                    tempVramAddress.setCoarseY(data >> 3);
-                    addressLatch = 0;
-                }
+            case PPUSCROLL:
+                writePpuScroll(data);
                 break;
-            case 0x2006:
-                if (addressLatch == 0) {
-                    tempVramAddress.setRegister(((data & 0x3F) << 8) | (tempVramAddress.getRegister() & 0x00FF));
-                    addressLatch = 1;
-                } else {
-                    tempVramAddress.setRegister((tempVramAddress.getRegister() & 0xFF00) | data);
-                    vramAddress.setRegister(tempVramAddress.getRegister());
-                    addressLatch = 0;
-                }
+            case PPUADDR:
+                writePpuAddr(data);
                 break;
-            case 0x2007:
-                writeVideoMemory(vramAddress.getRegister(), data);
-
-                var increment = control.getIncrementMode() == 0 ? 1 : 32;
-                vramAddress.setRegister(vramAddress.getRegister() + increment);
+            case PPUDATA:
+                writePpuData(data);
+                break;
+            default:
+                log.warn("Unknown register: {}", "%04X".formatted(address));
                 break;
         }
     }
@@ -448,86 +510,97 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
         }
 
-        if (address <= 0x1FFF) {
-            var patternTableIndex = (address & 0x1000) >> 12;
-            data = patternTables[patternTableIndex].read(address & 0x0FFF);
-        } else if (address <= 0x3EFF) {
+        if (address >= PATTERN_TABLES_START && address <= PATTERN_TABLES_END) {
+            var patternTableIndex = (address & PATTERN_TABLE_SIZE) >> 12;
+            data = patternTables[patternTableIndex].read(address & MASK_12BIT);
+        } else if (address >= NAME_TABLE_START && address <= UNUSED_END) {
             if (cartridge != null) {
-                address &= 0x0FFF;
+                address &= MASK_12BIT;
 
                 if (cartridge.isMirroredVertically()) {
-                    if (address <= 0x03FF) {
-                        data = nameTables[0][address & 0x03FF];
+                    if (address <= NAME_TABLE_SIZE_MINUS_ONE) {
+                        data = nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE];
                     } else if (address <= 0x07FF) {
-                        data = nameTables[1][address & 0x03FF];
+                        data = nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE];
                     } else if (address <= 0x0BFF) {
-                        data = nameTables[0][address & 0x03FF];
+                        data = nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE];
                     } else {
-                        data = nameTables[1][address & 0x03FF];
+                        data = nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE];
                     }
                 } else {
-                    if (address <= 0x03FF) {
-                        data = nameTables[0][address & 0x03FF];
+                    if (address <= NAME_TABLE_SIZE_MINUS_ONE) {
+                        data = nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE];
                     } else if (address <= 0x07FF) {
-                        data = nameTables[0][address & 0x03FF];
+                        data = nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE];
                     } else if (address <= 0x0BFF) {
-                        data = nameTables[1][address & 0x03FF];
+                        data = nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE];
                     } else {
-                        data = nameTables[1][address & 0x03FF];
+                        data = nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE];
                     }
                 }
             }
-        } else {
-            data = paletteRAM.read(address);
+        } else if (address >= PALETTE_RAM_START && address <= PALETTE_RAM_END) {
+            address &= 0x001F;
+            if (address == 0x0010) address = 0x0000;
+            if (address == 0x0014) address = 0x0004;
+            if (address == 0x0018) address = 0x0008;
+            if (address == 0x001C) address = 0x000C;
+            data = paletteTable[address] & (mask.isGrayscale() ? 0x30 : 0x3F);
         }
 
         return data;
     }
 
-    private void writeVideoMemory(int address, int value) {
-        value &= 0xFF;
+    private void writeVideoMemory(int address, int data) {
+        data &= MASK_8BIT;
 
         if (cartridge != null) {
-            if (cartridge.writeChr(address, value)) {
+            if (cartridge.writeChr(address, data)) {
                 return;
             }
         }
 
-        if (address <= 0x1FFF) {
-            var patternTableIndex = (address & 0x1000) >> 12;
-            patternTables[patternTableIndex].write(address & 0x0FFF, value);
+        if (address >= PATTERN_TABLES_START && address <= PATTERN_TABLES_END) {
+            var patternTableIndex = (address & PATTERN_TABLE_SIZE) >> 12;
+            patternTables[patternTableIndex].write(address & MASK_12BIT, data);
             return;
         }
 
-        if (address <= 0x3EFF) {
-            address &= 0x0FFF;
+        if (address >= NAME_TABLE_START && address <= UNUSED_END) {
+            address &= MASK_12BIT;
 
             if (cartridge != null) {
                 if (cartridge.isMirroredVertically()) {
-                    if (address <= 0x03FF) {
-                        nameTables[0][address & 0x03FF] = value;
+                    if (address <= NAME_TABLE_SIZE_MINUS_ONE) {
+                        nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
                     } else if (address <= 0x07FF) {
-                        nameTables[1][address & 0x03FF] = value;
+                        nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
                     } else if (address <= 0x0BFF) {
-                        nameTables[0][address & 0x03FF] = value;
+                        nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
                     } else {
-                        nameTables[1][address & 0x03FF] = value;
+                        nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
                     }
                 } else {
-                    if (address <= 0x03FF) {
-                        nameTables[0][address & 0x03FF] = value;
+                    if (address <= NAME_TABLE_SIZE_MINUS_ONE) {
+                        nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
                     } else if (address <= 0x07FF) {
-                        nameTables[0][address & 0x03FF] = value;
+                        nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
                     } else if (address <= 0x0BFF) {
-                        nameTables[1][address & 0x03FF] = value;
+                        nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
                     } else {
-                        nameTables[1][address & 0x03FF] = value;
+                        nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
                     }
                 }
             }
-            return;
         }
 
-        paletteRAM.write(address, value);
+        if (address >= PALETTE_RAM_START && address <= PALETTE_RAM_END) {
+            address &= 0x001F;
+            if (address == 0x0010) address = 0x0000;
+            if (address == 0x0014) address = 0x0004;
+            if (address == 0x0018) address = 0x0008;
+            if (address == 0x001C) address = 0x000C;
+            paletteTable[address] = data;
+        }
     }
 }

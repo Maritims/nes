@@ -5,6 +5,8 @@ import no.clueless.emulation.impl.cartridge.CartridgeImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static no.clueless.emulation.impl.CpuMemoryMap.*;
+
 public class BusImpl implements Bus {
     private static final Logger  log = LoggerFactory.getLogger(BusImpl.class);
     private final        Cpu6502 cpu;
@@ -62,7 +64,7 @@ public class BusImpl implements Bus {
     public void clock() {
         cpu.clock();
 
-        for(var i = 0; i < 3; i++) {
+        for (var i = 0; i < 3; i++) {
             ppu.clock();
             apu.clock();
 
@@ -72,7 +74,7 @@ public class BusImpl implements Bus {
             }
         }
 
-        if(cartridge.getMapper().isIrqState()) {
+        if (cartridge.getMapper().isIrqState()) {
             cartridge.getMapper().clearIrq();
             cpu.irq();
         }
@@ -84,21 +86,21 @@ public class BusImpl implements Bus {
     public int read(int address) {
         var data = 0x00;
 
-        if (address >= 0x0000 && address <= 0x1FFF) {
+        if (address >= RAM_START && address <= RAM_END) {
             data = cpuRam[address % cpuRam.length];
-        } else if (address >= 0x2000 && address <= 0x3FFF) {
-            data = ppu.readRegister(address & 0x0007);
-        } else if (address >= 0x4000 && address <= 0x04017) {
+        } else if (address >= PPU_REGISTER_START && address <= PPU_REGISTER_END) {
+            data = ppu.readRegister(address);
+        } else if (address >= APU_IO_START && address <= APU_IO_END) {
             // APU and I/O
             data = apu.readRegister(address);
-        } else if (address >= 0x4018 && address <= 0x401F) {
+        } else if (address >= APU_TEST_START && address <= APU_TEST_END) {
             // APU and I/O test
             data = apu.readRegister(address);
-        } else if (address >= 0x8000 && address <= 0xFFFF) {
+        } else if (address >= PRG_ROM_START && address <= PRG_ROM_END) {
             // Cartridge
             data = cartridge.readPrg(address).orElseThrow();
-        } else if (address >= 0x6000 && address <= 0x7FFF) {
-            data = wram[address - 0x6000];
+        } else if (address >= WRAM_START && address <= WRAM_END) {
+            data = wram[address - WRAM_START];
         } else {
             //log.warn("Read from unknown address: {}", "$%04X".formatted(address));
         }
@@ -110,16 +112,16 @@ public class BusImpl implements Bus {
 
     @Override
     public void write(int address, int data) {
-        if (address >= 0x0000 && address <= 0x1FFF) {
+        if (address >= RAM_START && address <= RAM_END) {
             cpuRam[address % cpuRam.length] = data & 0xFF;
-        } else if (address >= 0x2000 && address <= 0x3FFF) {
+        } else if (address >= PPU_REGISTER_START && address <= PPU_REGISTER_END) {
             ppu.writeRegister(address, data);
-        } else if (address >= 0x4000 && address <= 0x04017) {
+        } else if (address >= APU_IO_START && address <= APU_IO_END) {
             apu.writeRegister(address, data);
-        } else if (address >= 0x6000 && address <= 0x7FFF) {
+        } else if (address >= WRAM_START && address <= WRAM_END) {
             //cartridge.writePrg(address, data);
             log.warn("Writing {} to {}", "%02X".formatted(data), "%04X".formatted(address));
-            wram[address - 0x6000] = data & 0xFF;
+            wram[address - WRAM_START] = data & 0xFF;
         }
     }
 

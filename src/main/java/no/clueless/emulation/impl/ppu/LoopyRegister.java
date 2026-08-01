@@ -1,5 +1,7 @@
 package no.clueless.emulation.impl.ppu;
 
+import static no.clueless.emulation.impl.Masks.MASK_12BIT;
+
 /**
  * Represents the Loopy Register.
  * <p>Source: <a href="https://www.nesdev.org/wiki/PPU_scrolling#PPU_internal_registers">https://www.nesdev.org/wiki/PPU_scrolling#PPU_internal_registers</a></p>
@@ -81,7 +83,7 @@ public class LoopyRegister {
      * The value of the nametable index is stored in bits 11-12.
      */
     public int getNameTableIndex() {
-        return register & 0x0FFF;
+        return register & MASK_12BIT;
     }
 
     public int getUnused() {

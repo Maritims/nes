@@ -6,10 +6,11 @@ import no.clueless.emulation.util.Disassembler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import static no.clueless.emulation.impl.Masks.MASK_16BIT;
+import static no.clueless.emulation.impl.Masks.MASK_8BIT;
+
 public class Cpu6502Impl implements Cpu6502 {
     private static final Logger log        = LoggerFactory.getLogger(Cpu6502Impl.class);
-    private final        int    MASK_8BIT  = 0xFF;
-    private final        int    MASK_16BIT = 0xFFFF;
 
     private final boolean isDecimalModeEnabled;
     private       int     totalClockCount = 0;
