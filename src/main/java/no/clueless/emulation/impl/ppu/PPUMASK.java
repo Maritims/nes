@@ -38,4 +38,20 @@ public class PPUMASK {
     public boolean isGrayscale() {
         return (register & (1 << 0)) != 0;
     }
+
+    public void setSpriteRenderingEnabled(boolean value) {
+        if (value) {
+            register |= (1 << 4);
+        } else {
+            register &= ~(1 << 4);
+        }
+    }
+
+    public void setBackgroundRenderingEnabled(boolean value) {
+        if (value) {
+            register |= (1 << 3);
+        } else {
+            register &= ~(1 << 3);
+        }
+    }
 }

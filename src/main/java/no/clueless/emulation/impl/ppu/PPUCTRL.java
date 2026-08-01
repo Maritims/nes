@@ -29,7 +29,7 @@ public class PPUCTRL {
     }
 
     public int getBackgroundPatternTableAddress() {
-        return (register >> 4) & 0x01;
+        return ((register >> 4) & 0x01) == 0 ? 0x0000 : 0x1000;
     }
 
     public int getSpriteSize() {
@@ -41,7 +41,15 @@ public class PPUCTRL {
     }
 
     public boolean isNmiEnabled() {
-        return ((register >> 7) & 0x01) != 0;
+        return (register & 0x80) != 0;
+    }
+
+    public void setNmiEnabled(boolean enabled) {
+        if (enabled) {
+            register |= (1 << 7);
+        } else {
+            register &= ~(1 << 7);
+        }
     }
 
     public void setNameTableX(boolean value) {

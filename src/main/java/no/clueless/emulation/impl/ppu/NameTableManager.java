@@ -1,6 +1,10 @@
 package no.clueless.emulation.impl.ppu;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 public class NameTableManager {
+    private static final Logger log = LoggerFactory.getLogger(NameTableManager.class);
     private final NameTable[] nameTables = new NameTable[]{new NameTable(), new NameTable()};
     private       Mirroring   mode       = Mirroring.VERTICAL;
 
@@ -24,6 +28,11 @@ public class NameTableManager {
     }
 
     public void write(int address, int data) {
+
+        if (data != 32 && data != 0) {
+            //System.out.println("Non-blank tile written: " + data + " at " + Integer.toHexString(address));
+        }
+
         var calculation = NameTableCalculation.calculate(address);
         var table       = resolvePhysicalTable(calculation.tableIndex());
         table.write(calculation.offset(), data);
@@ -33,6 +42,7 @@ public class NameTableManager {
      * Gets the tile id at the given coarse coordinates in the given name table.
      */
     public int getTileId(int nameTableIndex, int coarseX, int coarseY) {
+
         // The nametable index is shifted left by 10 bits to select the correct nametable.
         nameTableIndex <<= 10;
 

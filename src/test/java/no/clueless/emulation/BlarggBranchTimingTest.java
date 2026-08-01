@@ -5,6 +5,7 @@ import no.clueless.emulation.impl.apu.Apu2A03Impl;
 import no.clueless.emulation.impl.cartridge.CartridgeImpl;
 import no.clueless.emulation.impl.cpu.Cpu6502Impl;
 import no.clueless.emulation.impl.ppu.Ppu2C02Impl;
+import no.clueless.emulation.util.SwingFrameBuffer;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -29,12 +30,13 @@ class BlarggBranchTimingTest {
     })
     @DisplayName("Run Blargg Branch Timing ROMs")
     void testBranchTimingRom(String romFilename) throws Exception {
-        var romPath   = Paths.get("src/test/resources/blargg/branch_timing_tests", romFilename);
-        var cpu       = new Cpu6502Impl(false);
-        var ppu       = new Ppu2C02Impl(mock());
-        var apu       = new Apu2A03Impl();
-        var cartridge = new CartridgeImpl(romPath);
-        var bus       = new BusImpl(cpu, ppu, apu);
+        var romPath     = Paths.get("src/test/resources/blargg/branch_timing_tests", romFilename);
+        var cpu         = new Cpu6502Impl(false);
+        var frameBuffer = new SwingFrameBuffer("NES", 3);
+        var ppu         = new Ppu2C02Impl(frameBuffer);
+        var apu         = new Apu2A03Impl();
+        var cartridge   = new CartridgeImpl(romPath);
+        var bus         = new BusImpl(cpu, ppu, apu);
         bus.insertCartridge(cartridge);
         bus.reset();
 

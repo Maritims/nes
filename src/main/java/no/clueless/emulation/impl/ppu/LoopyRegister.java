@@ -121,4 +121,10 @@ public class LoopyRegister {
         var current = this.register;
         this.register = (current & ~0x041F) | (source & 0x041F);
     }
+
+    public void transferVerticalBits(LoopyRegister from) {
+        setFineY(from.getFineY());
+        setNameTableY(from.isNameTableY());
+        setCoarseY(from.getCoarseY());
+    }
 }

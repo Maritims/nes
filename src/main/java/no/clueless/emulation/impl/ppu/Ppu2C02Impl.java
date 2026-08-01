@@ -7,51 +7,52 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 public class Ppu2C02Impl implements Ppu2C02 {
+    private static final Logger log = LoggerFactory.getLogger(Ppu2C02Impl.class);
     /**
      * The PPUCTRL register ($2000, VPHB SINN).
      */
-    private final        PPUCTRL   ppuctrl   = new PPUCTRL();
+    private final PPUCTRL       ppuctrl;
     /**
      * The PPUMASK register ($2001, BGRs bMmG).
      */
-    private final        PPUMASK   ppumask   = new PPUMASK();
+    private final PPUMASK       ppumask;
     /**
      * The PPUSTATUS register ($2002, VSO- ----).
      */
-    private final        PPUSTATUS ppustatus = new PPUSTATUS();
+    private final PPUSTATUS     ppustatus;
     /**
      * The OAM read/write address ($2003).
      */
-    private              int       oamaddr;
+    private       int       oamaddr;
     /**
      * The OAM data ($2004).
      */
-    private              OAM       oamdata;
+    private       OAM       oamdata;
     /**
      * The PPUSCROLL register ($2005, XXXX XXXX YYYY YYYY).
      */
-    private              int       ppuscroll;
+    private       int       ppuscroll;
     /**
      * The VRAM address ($2006).
      */
-    private              int       ppuaddr;
+    private       int       ppuaddr;
     /**
      * The VRAM data ($2007).
      */
-    private              int       ppudata;
+    private       int       ppudata;
     /**
      * The OAM DMA high address ($4014).
      */
-    private              int       oamdma;
+    private       int       oamdma;
 
     /**
      * The current VRAM address. In the hardware this is read from the internal 'v' register outside rendering. In software it is more practical with a dedicated field.
      */
-    private final LoopyRegister currentVramAddress = new LoopyRegister();
+    private final LoopyRegister v;
     /**
      * The temporary VRAM address before it is transferred to the 'v' register. In the hardware this is read from the internal 't' register outside rendering. In software it is more practical with a dedicated field.
      */
-    private final LoopyRegister tempVramAddress    = new LoopyRegister();
+    private final LoopyRegister t = new LoopyRegister();
 
     /**
      * The fine X scroll position. In the hardware this is read from the internal 'x' register during rendering. In software, it is more practical with a dedicated field.
@@ -79,13 +80,40 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private Cartridge cartridge;
     private boolean   nmi;
 
-    public Ppu2C02Impl(FrameBuffer frameBuffer) {
+    public Ppu2C02Impl(PPUCTRL ppuctrl, PPUMASK ppumask, PPUSTATUS ppustatus, LoopyRegister v, FrameBuffer frameBuffer) {
+        this.ppuctrl     = ppuctrl;
+        this.ppumask     = ppumask;
+        this.ppustatus   = ppustatus;
+        this.v           = v;
         this.frameBuffer = frameBuffer;
+    }
+
+    public Ppu2C02Impl(FrameBuffer frameBuffer) {
+        this(new PPUCTRL(), new PPUMASK(), new PPUSTATUS(), new LoopyRegister(), frameBuffer);
+    }
+
+    @Override
+    public boolean isNmi() {
+        return nmi;
+    }
+
+    public void setScanLine(int scanLine) {
+        this.scanLine = scanLine;
+    }
+
+    public void setCycle(int cycle) {
+        this.cycle = cycle;
     }
 
     @Override
     public void connectToCartridge(Cartridge cartridge) {
         this.cartridge = cartridge;
+
+        if (this.cartridge.isMirroredVertically()) {
+            nameTableManager.setMirroring(Mirroring.VERTICAL);
+        } else {
+            nameTableManager.setMirroring(Mirroring.HORIZONTAL);
+        }
     }
 
     public int getFinalPixelColor(int pixelColorIndex) {
@@ -101,28 +129,9 @@ public class Ppu2C02Impl implements Ppu2C02 {
         return SystemPalette.getRgb(nesColorIndex);
     }
 
-    public int readVramForTest(int address) {
-        address &= 0x3FFF; // Mask address to 16KB PPU space
-
-        if (address < 0x2000) {
-            // CHR-ROM / CHR-RAM via Cartridge
-            return cartridge != null ? cartridge.readChr(address).orElse(0) : 0;
-        } else if (address < 0x3F00) {
-            // Nametable RAM ($2000 - $3EFF) mapped via NameTableManager
-            return nameTableManager.read(address);
-        } else {
-            // Palette RAM ($3F00 - $3FFF)
-            int paletteAddr = address & 0x001F;
-            // Mirror sprite palette backdrop addresses ($10, $14, $18, $1C) to universal backdrop ($00)
-            if ((paletteAddr & 0x13) == 0x10) {
-                paletteAddr &= ~0x10;
-            }
-            return paletteRAM.read(paletteAddr & 0xFF);
-        }
-    }
-
     @Override
     public void clock() {
+        // region Phase 1
         if (scanLine >= -1 && scanLine < 240) {
             if (scanLine == -1 && cycle == 1) {
                 ppustatus.setVblank(false);
@@ -131,23 +140,69 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
         }
 
-        if (scanLine >= 241 && scanLine <= 261) {
-            if (scanLine == 241 && cycle == 1) {
-                ppustatus.setVblank(true);
+        if (scanLine >= -1 && cycle >= 280 && cycle <= 304) {
+            if (ppumask.isBackgroundRenderingEnabled() || ppumask.isSpriteRenderingEnabled()) {
+                v.transferVerticalBits(t);
+            }
+        }
+        // endregion
 
-                if (ppuctrl.isNmiEnabled()) {
-                    nmi = true;
+        // region Phase 2
+        var isRenderingEnabled = ppumask.isBackgroundRenderingEnabled() || ppumask.isSpriteRenderingEnabled();
+
+        if (isRenderingEnabled) {
+            if (cycle >= 1 && cycle <= 256 && scanLine >= 0 && scanLine <= 239) {
+                // Shift registers to the left to feed the pixel to the screen.
+                fetcher.shiftRegistersLeft();
+
+                // Run the background fetcher pipeline to load the next tile's pattern and attribute data.
+                fetcher.performSequence(cycle, v, nameTableManager, cartridge, ppuctrl.getBackgroundPatternTableAddress());
+
+                // Render
+                var pixelColorIndex = fetcher.getPixelColorIndex(fineX);
+                var finalPixelColor = getFinalPixelColor(pixelColorIndex);
+
+                frameBuffer.setPixel(cycle - 1, scanLine, finalPixelColor);
+            }
+
+            if (scanLine >= -1 && scanLine <= 239) {
+                if (scanLine >= 0 && cycle == 256) {
+                    // Increment fine Y since we've now finished rendering an entire row of pixels.
+                    v.incrementFineY();
+                } else if (cycle == 257) {
+                    // Transfer the horizontal bits so that the next scanline starts at the correct left horizontal offset.
+                    v.transferHorizontalBits(t);
+                } else if (cycle >= 321 && cycle <= 340) {
+                    // Pre-fetch the first two tiles for the next scanline.
+                    fetcher.shiftRegistersLeft();
+                    fetcher.performSequence(cycle, v, nameTableManager, cartridge, ppuctrl.getBackgroundPatternTableAddress());
                 }
             }
         }
+        // endregion
+
+        // region Phase 3
+        if (scanLine == 240) {
+            // The post render scanline. Nothing happens here.
+        }
+        // endregion
+
+        // region Phase 4
+        if (scanLine >= 241 && scanLine <= 260 && cycle == 1) {
+            ppustatus.setVblank(true);
+            if (ppuctrl.isNmiEnabled()) {
+                nmi = true;
+            }
+        }
+        // endregion
 
         cycle++;
-
         if (cycle >= 341) {
             cycle = 0;
             scanLine++;
-            if (scanLine >= 261) {
+            if (scanLine > 261) {
                 scanLine = -1;
+                frameBuffer.render();
             }
         }
     }
@@ -162,8 +217,8 @@ public class Ppu2C02Impl implements Ppu2C02 {
         ppustatus.write(0);
         ppuctrl.write(0);
         ppumask.write(0);
-        currentVramAddress.write(0);
-        tempVramAddress.write(0);
+        v.write(0);
+        t.write(0);
 
         fetcher.reset();
     }
@@ -192,7 +247,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 // Reading from the PPUDATA register is delayed by one cycle.
                 // Rather than returning the data in the register, data is returned from an internal data buffer.
                 // The buffer is updated on every read from the PPUDATA register, but only after the previous contents have been returned to the CPU.
-                var vramAddress = currentVramAddress.read() & 0x3FFF;
+                var vramAddress = v.read() & 0x3FFF;
                 var data        = dataBuffer;
                 readVideoMemory(vramAddress);
 
@@ -204,7 +259,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
                 // The VRAM address is incremented after each read from the PPUDATA register.
                 var increment = ppuctrl.getIncrementMode() == 0 ? 1 : 32;
-                currentVramAddress.write(currentVramAddress.read() + increment);
+                v.write(v.read() + increment);
 
                 yield data;
             }
@@ -220,8 +275,8 @@ public class Ppu2C02Impl implements Ppu2C02 {
         switch (address) {
             case 0x2000:
                 ppuctrl.write(value);
-                tempVramAddress.setNameTableX((ppuctrl.getNameTableX() & 0x01) != 0);
-                tempVramAddress.setNameTableY((ppuctrl.getNameTableY() & 0x02) != 0);
+                t.setNameTableX((ppuctrl.getNameTableX() & 0x01) != 0);
+                t.setNameTableY((ppuctrl.getNameTableY() & 0x02) != 0);
                 break;
             case 0x2001:
                 ppumask.write(value);
@@ -235,42 +290,37 @@ public class Ppu2C02Impl implements Ppu2C02 {
             case 0x2005:
                 if (writeLatch == 0) {
                     fineX = value & 0x07;
-                    tempVramAddress.setCoarseX(value);
+                    t.setCoarseX(value);
                     writeLatch = 1;
                 } else {
-                    tempVramAddress.setFineY(value);
-                    tempVramAddress.setCoarseY(value);
+                    t.setFineY(value);
+                    t.setCoarseY(value);
                     writeLatch = 0;
                 }
                 break;
             case 0x2006:
                 if (writeLatch == 0) {
                     var highByte = (value & 0x3F) << 8;
-                    var lowByte  = tempVramAddress.read() & 0x00FF;
-                    tempVramAddress.write(highByte | lowByte);
+                    var lowByte  = t.read() & 0x00FF;
+                    t.write(highByte | lowByte);
                     writeLatch = 1;
                 } else {
-                    var t = tempVramAddress.read();
+                    var t = this.t.read();
                     t = (t & 0xFF00) | value;
-                    tempVramAddress.write(t);
-                    var highByte = tempVramAddress.read() & 0xFF00;
-                    tempVramAddress.write(highByte | value);
-                    currentVramAddress.write(t);
+                    this.t.write(t);
+                    var highByte = this.t.read() & 0xFF00;
+                    this.t.write(highByte | value);
+                    v.write(t);
                     writeLatch = 0;
                 }
                 break;
             case 0x2007:
-                writeVideoMemory(currentVramAddress.read(), value);
+                writeVideoMemory(v.read(), value);
 
                 var increment = ppuctrl.getIncrementMode() == 0 ? 1 : 32;
-                currentVramAddress.write(currentVramAddress.read() + increment);
+                v.write(v.read() + increment);
                 break;
         }
-    }
-
-    @Override
-    public boolean isNmi() {
-        return nmi;
     }
 
     @Override

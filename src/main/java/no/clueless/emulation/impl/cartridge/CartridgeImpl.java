@@ -26,8 +26,8 @@ public class CartridgeImpl implements Cartridge {
         }
 
         // The ID of the mapper is stored in the high nibble of the first byte, and the low nibble of the second byte.
-        var mapperIdHighNibble = (data[7] & 0x0F);
         var mapperIdLowNibble  = (data[6] & 0xF0) >> 4;
+        var mapperIdHighNibble = (data[7] & 0xF0); // Upper nibble from byte 7
         var mapperId           = mapperIdHighNibble | mapperIdLowNibble;
 
         // The trainer buffer is present in the ROM if the 4th bit of the 6th byte is set.
@@ -60,6 +60,10 @@ public class CartridgeImpl implements Cartridge {
 
     public CartridgeImpl(Path path) throws IOException {
         this(Files.readAllBytes(path));
+    }
+
+    public boolean isMirroredVertically() {
+        return mirroredVertically;
     }
 
     @Override

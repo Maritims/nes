@@ -1,6 +1,8 @@
 package no.clueless.emulation.impl.ppu;
 
 import no.clueless.emulation.Cartridge;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * The background fetcher acts as an assembly line which prepares data for rendering to the screen. It operates in three stages:
@@ -11,18 +13,19 @@ import no.clueless.emulation.Cartridge;
  * </ul>
  */
 public class PpuBackgroundFetcher {
+    private static final Logger log                 = LoggerFactory.getLogger(PpuBackgroundFetcher.class);
     /**
      * Bitplane 0.
      */
-    private int bgPatternShiftLow    = 0;
+    private int                 bgPatternShiftLow   = 0;
     /**
      * Bitplane 1.
      */
-    private int bgPatternShiftHigh   = 0;
+    private int                 bgPatternShiftHigh  = 0;
     /**
      * Bitplane 2.
      */
-    private int bgAttributeShiftLow  = 0;
+    private int                 bgAttributeShiftLow = 0;
     /**
      * Bitplane 3.
      */
@@ -94,10 +97,12 @@ public class PpuBackgroundFetcher {
             case 4:
                 var lowBitplaneAddress = calculateChrPatternAddress(nextTileIdByte, vram.getFineY(), 0, backgroundPatternTableAddress);
                 nextPatternTableLowByte = cartridge.readChr(lowBitplaneAddress).orElse(0);
+                //System.out.println("Fetched CHR Low Byte: " + nextPatternTableLowByte + " for tile ID: " + nextTileIdByte);
                 break;
             case 6:
                 var highBitplaneAddress = calculateChrPatternAddress(nextTileIdByte, vram.getFineY(), 1, backgroundPatternTableAddress);
                 nextPatternTableHighByte = cartridge.readChr(highBitplaneAddress).orElse(0);
+                //System.out.println("Fetched CHR Low Byte: " + nextPatternTableLowByte + " for tile ID: " + nextTileIdByte);
                 break;
             case 7:
                 vram.incrementCoarseX();
