@@ -316,7 +316,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 var backgroundPalette0 = (backgroundShifterAttributeLow & bitMux) > 0 ? 1 : 0;
                 var backgroundPalette1 = (backgroundShifterAttributeHigh & bitMux) > 0 ? 1 : 0;
 
-                backgroundPalette = (backgroundPalette0 << 1) | backgroundPalette1;
+                backgroundPalette = (backgroundPalette1 << 1) | backgroundPalette0;
             }
         }
 
