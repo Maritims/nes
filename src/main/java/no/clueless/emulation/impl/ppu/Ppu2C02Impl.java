@@ -321,10 +321,12 @@ public class Ppu2C02Impl implements Ppu2C02 {
             // The post render scanline. Nothing happens here.
         }
 
-        if (scanLine >= 241 && scanLine <= 260 && cycle == 1) {
-            status.setVerticalBlank(true);
-            if (control.getEnableNmi()) {
-                nmi = true;
+        if (scanLine >= 241 && scanLine <= 260) {
+            if (scanLine == 241 && cycle == 1) {
+                status.setVerticalBlank(true);
+                if (control.getEnableNmi()) {
+                    nmi = true;
+                }
             }
         }
 

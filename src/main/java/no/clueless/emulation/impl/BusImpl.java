@@ -96,7 +96,7 @@ public class BusImpl implements Bus {
             cpu.irq();
         }
 
-        totalClockCount += 3;
+        totalClockCount++;
     }
 
     @Override
