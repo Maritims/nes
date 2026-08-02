@@ -32,11 +32,11 @@ class BlarggBranchTimingTest {
     void testBranchTimingRom(String romFilename) throws Exception {
         var romPath     = Paths.get("src/test/resources/blargg/branch_timing_tests", romFilename);
         var cpu         = new Cpu6502Impl(false);
-        var frameBuffer = new SwingFrameBuffer("NES", 3);
+        var frameBuffer = new SwingFrameBuffer("NES", 3, mock());
         var ppu         = new Ppu2C02Impl(frameBuffer);
         var apu         = new Apu2A03Impl();
         var cartridge   = new CartridgeImpl(romPath);
-        var bus         = new BusImpl(cpu, ppu, apu);
+        var bus         = new BusImpl(cpu, ppu, apu, mock(), mock());
         bus.insertCartridge(cartridge);
         bus.reset();
 

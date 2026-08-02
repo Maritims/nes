@@ -329,7 +329,6 @@ public class Ppu2C02Impl implements Ppu2C02 {
         }
 
         frameBuffer.setPixel(cycle - 1, scanLine, getFinalPixelColor());
-        frameBuffer.render();
 
         cycle++;
 

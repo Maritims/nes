@@ -21,7 +21,7 @@ public class NesTest {
         var romPath   = Paths.get("src/test/resources/nestest/nestest.nes");
         var cartridge = new CartridgeImpl(romPath);
         var cpu       = new Cpu6502Impl(false);
-        var bus       = new BusImpl(cpu, mock(), mock());
+        var bus       = new BusImpl(cpu, mock(), mock(), mock(), mock());
         bus.insertCartridge(cartridge);
         bus.reset();
 
@@ -96,7 +96,7 @@ public class NesTest {
         var cartridge = new CartridgeImpl(romPath);
         var cpu       = new Cpu6502Impl(false);
         var ppu       = new Ppu2C02Impl(mock());
-        var bus       = new BusImpl(cpu, ppu, mock());
+        var bus       = new BusImpl(cpu, ppu, mock(), mock(), mock());
 
         bus.insertCartridge(cartridge);
         bus.reset();

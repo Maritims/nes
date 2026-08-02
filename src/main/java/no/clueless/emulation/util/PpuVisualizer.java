@@ -19,7 +19,7 @@ public class PpuVisualizer {
         var ppu = new Ppu2C02Impl(null);
 
         // Pass cpu and ppu into your Bus
-        var bus = new BusImpl(cpu, ppu, null);
+        var bus = new BusImpl(cpu, ppu, null, null, null);
         bus.insertCartridge(cartridge);
         bus.reset();
 

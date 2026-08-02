@@ -42,6 +42,16 @@ public class KlausDormannTest {
         }
 
         @Override
+        public Controller getController1() {
+            return null;
+        }
+
+        @Override
+        public Controller getController2() {
+            return null;
+        }
+
+        @Override
         public void insertCartridge(Cartridge cartridge) {
             throw new UnsupportedOperationException();
         }

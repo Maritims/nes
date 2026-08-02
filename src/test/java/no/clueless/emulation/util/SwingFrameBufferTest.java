@@ -6,13 +6,15 @@ import javax.swing.*;
 import java.lang.reflect.InvocationTargetException;
 import java.util.concurrent.CountDownLatch;
 
+import static org.mockito.Mockito.mock;
+
 class SwingFrameBufferTest {
     @Test
     void run() throws InterruptedException, InvocationTargetException {
         var latch = new CountDownLatch(1);
 
         SwingUtilities.invokeAndWait(() -> {
-            var sut = new SwingFrameBuffer("Test", 5);
+            var sut = new SwingFrameBuffer("Test", 5, mock());
             var brightRed = 0xFFFF0000;
 
             new Timer(16, e -> {

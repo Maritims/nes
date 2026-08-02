@@ -1,5 +1,7 @@
 package no.clueless.emulation;
 
+import java.util.List;
+
 /**
  * Represents the bus.
  */
@@ -12,6 +14,10 @@ public interface Bus {
     Apu2A03 getApu();
 
     Cartridge getCartridge();
+
+    Controller getController1();
+
+    Controller getController2();
     // endregion
 
     // region System methods
