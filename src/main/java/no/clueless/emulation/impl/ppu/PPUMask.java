@@ -1,14 +1,16 @@
 package no.clueless.emulation.impl.ppu;
 
+import static no.clueless.emulation.impl.Masks.MASK_8BIT;
+
 public class PPUMask {
     private int register;
 
     public int getRegister() {
-        return register & 0xFF;
+        return register & MASK_8BIT;
     }
 
     public void setRegister(int register) {
-        this.register = register & 0xFF;
+        this.register = register & MASK_8BIT;
     }
 
     public boolean isGrayscale() {

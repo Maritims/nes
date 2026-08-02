@@ -2,6 +2,8 @@ package no.clueless.emulation.impl.apu;
 
 import no.clueless.emulation.Apu2A03;
 
+import static no.clueless.emulation.impl.Masks.BOTTOM_5_BITS;
+
 public class Apu2A03Impl implements Apu2A03 {
     private int     clockCounter        = 0;
     private int     frameClockCounter   = 0;
@@ -41,7 +43,7 @@ public class Apu2A03Impl implements Apu2A03 {
 
         switch (address) {
             case 0x4003, 0x4007, 0x4008, 0x400F:
-                var lengthIndex = (value >> 3) & 0x1F;
+                var lengthIndex = (value >> 3) & BOTTOM_5_BITS;
                 if (address == 0x4003 && pulse1Enabled) {
                     pulse1LengthCounter = 0;
                 }

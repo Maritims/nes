@@ -15,7 +15,9 @@ public class PpuMemoryMap {
     public static final int PPUADDR                   = 0x2006;
     public static final int ATTRIBUTE_TABLE_0_START   = 0x23C0;
     /**
-     * The size of a name table is 1024 bytes (0x0400). Since the name table arrays are 0-indexed, we need a bitmask for 1023 which we can use to ensure addresses won't make us go out of bounds when accessing name tables.
+     * The size of a name table is 1024 bytes (0x0400).
+     * <p>
+     * Since the name table arrays are 0-indexed, we need a bitmask for 1023 which we can use to ensure addresses won't make us go out of bounds when accessing name tables.
      */
     public static final int NAME_TABLE_SIZE_MINUS_ONE = 0x03FF;
     public static final int UNUSED_END                = 0x3EFF;

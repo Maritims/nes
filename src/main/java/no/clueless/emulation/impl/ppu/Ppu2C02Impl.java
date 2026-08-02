@@ -3,6 +3,7 @@ package no.clueless.emulation.impl.ppu;
 import no.clueless.emulation.Cartridge;
 import no.clueless.emulation.FrameBuffer;
 import no.clueless.emulation.Ppu2C02;
+import no.clueless.emulation.impl.PpuMemoryMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -12,7 +13,9 @@ import static no.clueless.emulation.impl.Masks.*;
 import static no.clueless.emulation.impl.PpuMemoryMap.*;
 
 public class Ppu2C02Impl implements Ppu2C02 {
-    private static final Logger log = LoggerFactory.getLogger(Ppu2C02Impl.class);
+    private static final Logger log                        = LoggerFactory.getLogger(Ppu2C02Impl.class);
+    public static final  int    LOWER_PRE_RENDER_SCAN_LINE = -1;
+    public static final  int    UPPER_PRE_RENDER_SCAN_LINE = 261;
 
     // region Registers
     private final PPUCtrl   control;
@@ -40,21 +43,16 @@ public class Ppu2C02Impl implements Ppu2C02 {
     }
     // endregion
 
+    private final FrameBuffer    frameBuffer;
     private final PatternTable[] patternTables = new PatternTable[]{new PatternTable(), new PatternTable()};
     private final int[][]        nameTables    = new int[2][1024];
     private final int[]          paletteTable  = new int[32];
-    private final FrameBuffer    frameBuffer;
     private final int[]          palette       = new int[64];
 
-    private int     scanLine = 0;
-    private int     cycle    = 0;
-    private boolean oddFrame = false;
-
-    /**
-     * The PPU data buffer.
-     */
-    private int dataBuffer;
-
+    private int       scanLine = 0;
+    private int       cycle    = 0;
+    private boolean   oddFrame = false;
+    private int       ppuDataBuffer;
     private Cartridge cartridge;
     private boolean   nmi;
 
@@ -157,9 +155,9 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     public void updateShifters() {
         if (mask.isRenderBackground()) {
-            backgroundShifterPatternLow = (backgroundShifterPatternLow << 1) & MASK_16BIT;
-            backgroundShifterPatternHigh = (backgroundShifterPatternHigh << 1) & MASK_16BIT;
-            backgroundShifterAttributeLow = (backgroundShifterAttributeLow << 1) & MASK_16BIT;
+            backgroundShifterPatternLow    = (backgroundShifterPatternLow << 1) & MASK_16BIT;
+            backgroundShifterPatternHigh   = (backgroundShifterPatternHigh << 1) & MASK_16BIT;
+            backgroundShifterAttributeLow  = (backgroundShifterAttributeLow << 1) & MASK_16BIT;
             backgroundShifterAttributeHigh = (backgroundShifterAttributeHigh << 1) & MASK_16BIT;
         }
     }
@@ -194,21 +192,50 @@ public class Ppu2C02Impl implements Ppu2C02 {
         this.cartridge = cartridge;
     }
 
-    /**
-     * Convenience function for retrieving an RGB value based on the palette and pixel.
-     */
-    int getRgbFromPalette(int palette, int pixel) {
-        return this.palette[readVideoMemory(PALETTE_RAM_START + (palette << 2) + pixel) & 0x3F];
+    private int getFinalPixelColor() {
+        var backgroundPixel   = 0x00;
+        var backgroundPalette = 0x00;
+
+        if (mask.isRenderBackground()) {
+            if (mask.isRenderBackgroundLeft() || cycle >= 9) {
+                var bitMux = PRG_ROM_START >> fineX;
+
+                var p0Pixel = (backgroundShifterPatternLow & bitMux) > 0 ? 1 : 0;
+                var p1Pixel = (backgroundShifterPatternHigh & bitMux) > 0 ? 1 : 0;
+
+                backgroundPixel = (p1Pixel << 1) | p0Pixel;
+
+                var backgroundPalette0 = (backgroundShifterAttributeLow & bitMux) > 0 ? 1 : 0;
+                var backgroundPalette1 = (backgroundShifterAttributeHigh & bitMux) > 0 ? 1 : 0;
+
+                backgroundPalette = (backgroundPalette1 << 1) | backgroundPalette0;
+            }
+        }
+
+        var pixel   = 0x00;
+        var palette = 0x00;
+
+        if (backgroundPixel == 0) {
+            pixel   = 0x00;
+            palette = 0x00;
+        } else {
+            pixel   = backgroundPixel;
+            palette = backgroundPalette;
+        }
+
+        //noinspection UnnecessaryLocalVariable
+        var rgb = this.palette[readVideoMemory(PALETTE_RAM_START + (palette << 2) + pixel) & 0x3F];
+        return rgb;
     }
 
     @Override
     public void clock() {
-        if (scanLine >= -1 && scanLine < 240) {
+        if (scanLine >= LOWER_PRE_RENDER_SCAN_LINE && scanLine < 240) {
             if (scanLine == 0 && cycle == 0 && oddFrame && (mask.isRenderBackground() || mask.isRenderSprites())) {
                 cycle = 1;
             }
 
-            if (scanLine == -1 && cycle == 1) {
+            if (scanLine == LOWER_PRE_RENDER_SCAN_LINE && cycle == 1) {
                 status.setVerticalBlank(false);
                 status.setSpriteZeroHit(false);
                 status.setSpriteOverflow(false);
@@ -237,7 +264,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                         if ((vramAddress.getCoarseX() & 0x02) != 0) {
                             backgroundNextTileAttribute >>= 2;
                         }
-                        backgroundNextTileAttribute &= 0x03;
+                        backgroundNextTileAttribute &= BOTTOM_2_BITS;
                         break;
                     case 4:
                         backgroundNextTileLsb = readVideoMemory((control.getBackgroundPatternTableAddress() << 12)
@@ -275,7 +302,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 backgroundNextTileId = readVideoMemory(PPU_REGISTER_START | (vramAddress.getRegister() & MASK_12BIT));
             }
 
-            if (scanLine == -1 && cycle >= 280 && cycle < 305) {
+            if (scanLine == LOWER_PRE_RENDER_SCAN_LINE && cycle >= 280 && cycle < 305) {
                 if (mask.isRenderSprites() || mask.isRenderBackground()) {
                     vramAddress.transferVerticalBits(tempVramAddress);
                 }
@@ -301,40 +328,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
         }
 
-        var backgroundPixel   = 0x00;
-        var backgroundPalette = 0x00;
-
-        if (mask.isRenderBackground()) {
-            if (mask.isRenderBackgroundLeft() || cycle >= 9) {
-                var bitMux = PRG_ROM_START >> fineX;
-
-                var p0Pixel = (backgroundShifterPatternLow & bitMux) > 0 ? 1 : 0;
-                var p1Pixel = (backgroundShifterPatternHigh & bitMux) > 0 ? 1 : 0;
-
-                backgroundPixel = (p1Pixel << 1) | p0Pixel;
-
-                var backgroundPalette0 = (backgroundShifterAttributeLow & bitMux) > 0 ? 1 : 0;
-                var backgroundPalette1 = (backgroundShifterAttributeHigh & bitMux) > 0 ? 1 : 0;
-
-                backgroundPalette = (backgroundPalette1 << 1) | backgroundPalette0;
-            }
-        }
-
-        var pixel   = 0x00;
-        var palette = 0x00;
-
-        if (backgroundPixel == 0) {
-            pixel   = 0x00;
-            palette = 0x00;
-        } else {
-            pixel   = backgroundPixel;
-            palette = backgroundPalette;
-        }
-
-        var x   = cycle - 1;
-        var y   = scanLine;
-        var rgb = getRgbFromPalette(palette, pixel);
-        frameBuffer.setPixel(x, y, rgb);
+        frameBuffer.setPixel(cycle - 1, scanLine, getFinalPixelColor());
         frameBuffer.render();
 
         cycle++;
@@ -342,8 +336,8 @@ public class Ppu2C02Impl implements Ppu2C02 {
         if (cycle >= 341) {
             cycle = 0;
             scanLine++;
-            if (scanLine >= 261) {
-                scanLine = -1;
+            if (scanLine >= UPPER_PRE_RENDER_SCAN_LINE) {
+                scanLine = LOWER_PRE_RENDER_SCAN_LINE;
                 oddFrame = !oddFrame;
             }
         }
@@ -351,12 +345,12 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     @Override
     public void reset() {
-        fineX        = 0;
-        addressLatch = 0;
-        dataBuffer   = 0;
-        scanLine     = 0;
-        cycle        = 0;
-        oddFrame     = false;
+        fineX         = 0;
+        addressLatch  = 0;
+        ppuDataBuffer = 0;
+        scanLine      = 0;
+        cycle         = 0;
+        oddFrame      = false;
 
         resetShifters();
         resetRegisters();
@@ -369,7 +363,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
      * However, when reading the PPUSTATUS register, the bottom 5 bits is expected to contain data from the previous PPU bus operation.
      */
     private int readPpuStatus() {
-        var data = (status.getRegister() & 0xE0) | (dataBuffer & 0x1F);
+        var data = (status.getRegister() & BYTE_TOP_3_BITS) | (ppuDataBuffer & BOTTOM_5_BITS);
 
         // Clear the VBLANK flag.
         status.setVerticalBlank(false);
@@ -383,15 +377,15 @@ public class Ppu2C02Impl implements Ppu2C02 {
     /**
      * Reading from the PPUDATA register will add either 1 (horizontal progression) or 32 (vertical progression) to {@link #vramAddress} depending on the return value of the {@link PPUCtrl#getIncrementMode()}.
      * <p>
-     * Reading from the PPUDATA register is delayed by one cycle, but rather than returning the data in the register, data is returned from an internal data buffer, {@link #dataBuffer}.
+     * Reading from the PPUDATA register is delayed by one cycle, but rather than returning the data in the register, data is returned from an internal data buffer, {@link #ppuDataBuffer}.
      * The buffer is updated on every read from the PPUDATA register, but only after the previous contents have been returned to the CPU.
      */
     private int readPpuData() {
-        var data = dataBuffer;
-        dataBuffer = readVideoMemory(vramAddress.getRegister());
+        var data = ppuDataBuffer;
+        ppuDataBuffer = readVideoMemory(vramAddress.getRegister());
 
         if (vramAddress.getRegister() >= PALETTE_RAM_START) {
-            data = dataBuffer;
+            data = ppuDataBuffer;
         }
 
         // The VRAM address is incremented after each read from the PPUDATA register.
@@ -401,6 +395,9 @@ public class Ppu2C02Impl implements Ppu2C02 {
         return data;
     }
 
+    /**
+     * Only the registers {@link PpuMemoryMap#PPUSTATUS}, {@link PpuMemoryMap#OAMDATA} and {@link PpuMemoryMap#PPUDATA} are readable.
+     */
     @Override
     public int readRegister(int address) {
         return switch (address) {

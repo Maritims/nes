@@ -1,5 +1,8 @@
 package no.clueless.emulation.impl.ppu;
 
+import static no.clueless.emulation.impl.Masks.BOTTOM_5_BITS;
+import static no.clueless.emulation.impl.Masks.MASK_8BIT;
+
 public class PPUStatus {
     private int register;
 
@@ -8,7 +11,7 @@ public class PPUStatus {
     }
 
     public void setRegister(int register) {
-        this.register = register & 0xFF;
+        this.register = register & MASK_8BIT;
     }
 
     public int getUnused() {
@@ -16,7 +19,7 @@ public class PPUStatus {
     }
 
     public void setUnused(int unused) {
-        this.register = (this.register & 0x1F) | (unused & 0x1F);
+        this.register = (this.register & BOTTOM_5_BITS) | (unused & BOTTOM_5_BITS);
     }
 
     public boolean isSpriteOverflow() {

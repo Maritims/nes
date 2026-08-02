@@ -1,5 +1,6 @@
 package no.clueless.emulation.impl.ppu;
 
+import static no.clueless.emulation.impl.Masks.BOTTOM_5_BITS;
 import static no.clueless.emulation.impl.Masks.MASK_12BIT;
 
 /**
@@ -21,7 +22,7 @@ public class LoopyRegister {
      * Coarse X is stored in bits 1-5.
      */
     public int getCoarseX() {
-        return register & 0x1F;
+        return register & BOTTOM_5_BITS;
     }
 
     public void setCoarseX(int value) {

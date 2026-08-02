@@ -1,5 +1,7 @@
 package no.clueless.emulation.impl.ppu;
 
+import static no.clueless.emulation.impl.Masks.MASK_8BIT;
+
 /**
  * Represents the Object Attribute Memory.
  */
@@ -16,7 +18,7 @@ public class OAM {
      * @return An 8-bit value.
      */
     public int read(int address) {
-        return oam[address & 0xFF] & 0xFF;
+        return oam[address & MASK_8BIT] & MASK_8BIT;
     }
 
     /**
@@ -26,7 +28,7 @@ public class OAM {
      * @param data    An 8-bit value.
      */
     public void write(int address, int data) {
-        oam[address & 0xFF] = data & 0xFF;
+        oam[address & MASK_8BIT] = data & MASK_8BIT;
     }
 
     /**
