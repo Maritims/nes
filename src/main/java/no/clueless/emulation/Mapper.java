@@ -9,11 +9,11 @@ public interface Mapper {
     }
 
     default boolean isValidPrgAddress(int address) {
-        return address >= getPrgStart() &&  address <= 0xFFFF;
+        return address >= getPrgStart() && address <= 0xFFFF;
     }
 
     default boolean isValidChrAddress(int address) {
-        return address >= 0x0000 &&  address <= 0x1FFF;
+        return address >= 0x0000 && address <= 0x1FFF;
     }
 
     /**
@@ -29,10 +29,11 @@ public interface Mapper {
      * Maps a PRG write request (from CPU address space) or mapper register write.
      *
      * @param address  A 16-bit CPU bus address.
+     * @param data An 8-bit value.
      * @param callback Callback executed with the translated PRG offset if writing to PRG-RAM.
      * @return true if the address was handled by this mapper, false otherwise.
      */
-    boolean mapPrgWrite(int address, IntConsumer callback);
+    boolean mapPrgWrite(int address, int data, IntConsumer callback);
 
     /**
      * Maps a CHR read request (from PPU address space) to an absolute CHR offset.
@@ -56,5 +57,6 @@ public interface Mapper {
         return false;
     }
 
-    default void clearIrq() {}
+    default void clearIrq() {
+    }
 }

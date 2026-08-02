@@ -1,4 +1,4 @@
-package no.clueless.emulation.impl.cartridge;
+package no.clueless.emulation.impl.cartridge.mappers.nrom;
 
 import no.clueless.emulation.Mapper;
 
@@ -32,7 +32,7 @@ public class Mapper000 implements Mapper {
     }
 
     @Override
-    public boolean mapPrgWrite(int address, IntConsumer callback) {
+    public boolean mapPrgWrite(int address, int ignored, IntConsumer callback) {
         if(isValidPrgAddress(address)) {
             address -= getPrgStart();
             callback.accept(mapCpuAddress(address));

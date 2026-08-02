@@ -22,7 +22,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private final PPUMask   mask;
     private final PPUStatus status;
     private       int       oamaddr;
-    private       OAM       oamdata;
+    private       OAM       oamdata = new OAM();
     private       int       ppuscroll;
     private       int       ppuaddr;
     private       int       ppudata;

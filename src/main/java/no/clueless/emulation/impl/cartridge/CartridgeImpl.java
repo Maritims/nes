@@ -2,6 +2,8 @@ package no.clueless.emulation.impl.cartridge;
 
 import no.clueless.emulation.Cartridge;
 import no.clueless.emulation.Mapper;
+import no.clueless.emulation.impl.cartridge.mappers.mmc.Mapper001;
+import no.clueless.emulation.impl.cartridge.mappers.nrom.Mapper000;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -78,9 +80,9 @@ public class CartridgeImpl implements Cartridge {
     }
 
     @Override
-    public void writePrg(int address, int value) {
+    public void writePrg(int address, int data) {
         address &= 0xFFFF;
-        mapper.mapPrgWrite(address & 0xFFFF, mappedAddress -> prgRom[mappedAddress & 0xFFFF] = (byte) (value & 0xFF));
+        mapper.mapPrgWrite(address & 0xFFFF, data, mappedAddress -> prgRom[mappedAddress & 0xFFFF] = (byte) (data & 0xFF));
     }
 
     @Override
