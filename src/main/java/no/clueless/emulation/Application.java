@@ -12,13 +12,13 @@ import java.io.*;
 
 public class Application {
     public static void main(String[] args) throws IOException {
-        //var       filename = "Super Mario Bros. (Japan, USA).nes";
+        var       filename = "Super Mario Bros. (Japan, USA).nes";
         //var       filename = "1.Branch_Basics.nes";
         //var       filename = "2.Backward_Branch.nes";
         //var       filename = "3.Forward_Branch.nes";
         //var       filename = "cpu_dummy_reads.nes";
         //var       filename = "cpu_dummy_writes_ppumem.nes";
-        var       filename = "ppu_vbl_nmi.nes";
+        //var       filename = "ppu_vbl_nmi.nes";
         Cartridge cartridge;
         try (var is = Application.class.getClassLoader().getResourceAsStream(filename)) {
             if (is == null) {
