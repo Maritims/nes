@@ -43,13 +43,23 @@ public class KlausDormannTest {
         }
 
         @Override
-        public Controller getController1() {
-            return null;
+        public int getController1() {
+            return 0;
         }
 
         @Override
-        public Controller getController2() {
-            return null;
+        public void setController1(int controller) {
+
+        }
+
+        @Override
+        public int getController2() {
+            return 0;
+        }
+
+        @Override
+        public void setController2(int controller) {
+
         }
 
         @Override

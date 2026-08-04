@@ -8,12 +8,14 @@ import org.slf4j.LoggerFactory;
 import static no.clueless.emulation.impl.CpuMemoryMap.*;
 
 public class BusImpl implements Bus {
-    private static final Logger     log = LoggerFactory.getLogger(BusImpl.class);
+    private static final Logger     log              = LoggerFactory.getLogger(BusImpl.class);
     private final        Cpu6502    cpu;
     private final        Ppu2C02    ppu;
     private final        Apu2A03    apu;
     private final        Controller controller1;
     private final        Controller controller2;
+    private final        int[]      controllers      = new int[2];
+    private final        int[]      controller_state = new int[2];
 
     private final int[]     cpuRam          = new int[2048];
     private       Cartridge cartridge;
@@ -60,13 +62,23 @@ public class BusImpl implements Bus {
     }
 
     @Override
-    public Controller getController1() {
-        return controller1;
+    public int getController1() {
+        return controllers[0];
     }
 
     @Override
-    public Controller getController2() {
-        return controller2;
+    public void setController1(int controller) {
+        controllers[0] = controller;
+    }
+
+    @Override
+    public int getController2() {
+        return controllers[1];
+    }
+
+    @Override
+    public void setController2(int controller) {
+        controllers[1] = controller;
     }
 
     @Override
@@ -105,31 +117,19 @@ public class BusImpl implements Bus {
     public int read(int address) {
         var data = 0x00;
 
-        if (address >= RAM_START && address <= RAM_END) {
+        if (address >= 0x0000 && address < 0x2000) {
             data = cpuRam[address % cpuRam.length];
-        } else if (address >= PPU_REGISTER_START && address <= PPU_REGISTER_END) {
+        } else if (address >= 0x2000 && address < 0x4000) {
             data = ppu.readRegister(address);
-        } else if (address >= APU_START && address <= APU_END) {
+        } else if (address == 0x4015) {
             data = apu.readRegister(address);
-        } else if (address >= IO_START && address <= IO_END) {
-            if (address == IO_START) {
-                //log.info("Intercepted read to {}", "%04X".formatted(address));
-                data = controller1.readDataPort() & 0x01;
-            } else {
-                if (controller2 != null) {
-                    data = controller2.readDataPort() & 0x01;
-                }
-            }
-        } else if (address >= APU_TEST_START && address <= APU_TEST_END) {
-            // APU and I/O test
-            data = apu.readRegister(address);
+        } else if (address >= 0x4016 && address <= 0x4017) {
+            //log.debug("Controller read");
+            data = (controller_state[address & 0x0001] & 0x80) > 0 ? 1 : 0;
+            controller_state[address & 0x0001] <<= 1;
         } else if (address >= PRG_ROM_START && address <= PRG_ROM_END) {
             // Cartridge
             data = cartridge.readPrg(address).orElseThrow();
-        } else if (address >= WRAM_START && address <= WRAM_END) {
-            data = wram[address - WRAM_START];
-        } else {
-            //log.warn("Read from unknown address: {}", "$%04X".formatted(address));
         }
 
         return data & 0xFF;
@@ -139,24 +139,16 @@ public class BusImpl implements Bus {
 
     @Override
     public void write(int address, int data) {
-        if (address >= RAM_START && address <= RAM_END) {
+        if (address >= 0x0000 && address < 0x2000) {
             cpuRam[address % cpuRam.length] = data & 0xFF;
-        } else if (address >= PPU_REGISTER_START && address <= PPU_REGISTER_END) {
+        } else if (address >= 0x2000 && address < 0x4000) {
             ppu.writeRegister(address, data);
-        } else if (address >= APU_START && address <= APU_END) {
+        } else if ((address >= 0x4000 && address <= 0x4013) || address == 0x4015 || address == 0x4017) {
             apu.writeRegister(address, data);
-        } else if (address >= IO_START && address <= IO_END) {
-            if (address == IO_START) {
-                controller1.setStrobeState((data & 0x01) == 1);
-            } else {
-                if (controller2 != null) {
-                    controller2.setStrobeState((data & 0x01) == 1);
-                }
-            }
-        } else if (address >= WRAM_START && address <= WRAM_END) {
-            //cartridge.writePrg(address, data);
-            log.warn("Writing {} to {}", "%02X".formatted(data), "%04X".formatted(address));
-            wram[address - WRAM_START] = data & 0xFF;
+        } else if (address == 0x4014) {
+            // TODO: DMA
+        } else if (address >= 0x4016 && address <= 0x4017) {
+            controller_state[address & 0x0001] = controllers[address & 0x0001];
         }
     }
 

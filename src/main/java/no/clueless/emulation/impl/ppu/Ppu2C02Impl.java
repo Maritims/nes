@@ -384,8 +384,12 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private int readPpuStatus() {
         var data = (status.getRegister() & BYTE_TOP_3_BITS) | (ppuDataBuffer & BOTTOM_5_BITS);
 
+
         // Clear the VBLANK flag.
         status.setVerticalBlank(false);
+
+        // TEMPORARY: We have ot mock this to avoid ending up in an infinite loop on the Super Mario Bros. start screen.
+        status.setSpriteZeroHit(true);
 
         // Clear the write-latch.
         addressLatch = 0;

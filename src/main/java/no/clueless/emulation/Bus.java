@@ -13,9 +13,14 @@ public interface Bus {
 
     Cartridge getCartridge();
 
-    Controller getController1();
+    int getController1();
 
-    Controller getController2();
+    void setController1(int controller);
+
+    int getController2();
+
+    void setController2(int controller);
+
     // endregion
 
     // region System methods

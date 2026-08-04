@@ -5,13 +5,11 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 
-public class GameWindow extends JFrame implements KeyListener {
+public class GameWindow extends JFrame {
     private final StatusBar   statusBar;
-    private final KeyListener keyListener;
 
-    public GameWindow(GamePanel gamePanel, CpuPanel cpuPanel, PpuPanel ppuPanel, KeyListener keyListener) {
+    public GameWindow(GamePanel gamePanel, CpuPanel cpuPanel, PpuPanel ppuPanel) {
         this.statusBar       = new StatusBar();
-        this.keyListener     = keyListener;
 
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setTitle("NES");
@@ -29,22 +27,6 @@ public class GameWindow extends JFrame implements KeyListener {
         setVisible(true);
         pack();
         setLocationRelativeTo(null);
-        addKeyListener(this);
-    }
-
-    @Override
-    public void keyTyped(KeyEvent e) {
-        keyListener.keyTyped(e);
-    }
-
-    @Override
-    public void keyPressed(KeyEvent e) {
-        keyListener.keyPressed(e);
-    }
-
-    @Override
-    public void keyReleased(KeyEvent e) {
-        keyListener.keyReleased(e);
     }
 
     public void setFps(double fps) {

@@ -53,22 +53,36 @@ public class Application {
         nes.insertCartridge(cartridge);
         nes.reset();
 
-        var gameLoop = new GameLoop(nes);
-        var cpuPanel = new CpuPanel(cpu);
-        var ppuPanel = new PpuPanel(ppu);
+        frameBuffer.setKeyListener(new KeyListener() {
+            private int setOrClear(int original, int bitmask, boolean isPressed) {
+                return isPressed ? original | bitmask : original & ~bitmask;
+            }
 
-        var gameWindow = new GameWindow(frameBuffer, cpuPanel, ppuPanel, new KeyListener() {
             private void handleKeyEvent(KeyEvent e, boolean isPressed) {
-                switch (e.getKeyCode()) {
-                    case KeyEvent.VK_SPACE -> nes.getController1().setButtonState(NESControllerImpl.Button.SELECT, isPressed);
-                    case KeyEvent.VK_ENTER -> nes.getController1().setButtonState(NESControllerImpl.Button.START, isPressed);
-                    case KeyEvent.VK_UP -> nes.getController1().setButtonState(NESControllerImpl.Button.UP, isPressed);
-                    case KeyEvent.VK_DOWN -> nes.getController1().setButtonState(NESControllerImpl.Button.DOWN, isPressed);
-                    case KeyEvent.VK_LEFT -> nes.getController1().setButtonState(NESControllerImpl.Button.LEFT, isPressed);
-                    case KeyEvent.VK_RIGHT -> nes.getController1().setButtonState(NESControllerImpl.Button.RIGHT, isPressed);
-                    case KeyEvent.VK_A -> nes.getController1().setButtonState(NESControllerImpl.Button.A, isPressed);
-                    case KeyEvent.VK_B -> nes.getController1().setButtonState(NESControllerImpl.Button.B, isPressed);
+                var controller1 = nes.getController1();
+
+                var button = switch (e.getKeyCode()) {
+                    case KeyEvent.VK_SPACE -> NESControllerImpl.Button.SELECT;
+                    case KeyEvent.VK_ENTER -> NESControllerImpl.Button.START;
+                    case KeyEvent.VK_UP -> NESControllerImpl.Button.UP;
+                    case KeyEvent.VK_DOWN -> NESControllerImpl.Button.DOWN;
+                    case KeyEvent.VK_LEFT -> NESControllerImpl.Button.LEFT;
+                    case KeyEvent.VK_RIGHT -> NESControllerImpl.Button.RIGHT;
+                    case KeyEvent.VK_A -> NESControllerImpl.Button.A;
+                    case KeyEvent.VK_B -> NESControllerImpl.Button.B;
+                    case KeyEvent.VK_R -> {
+                        nes.reset();
+                        yield null;
+                    }
+                    default -> null;
+                };
+
+                if (button == null) {
+                    return;
                 }
+
+                var newValue = setOrClear(controller1, button.getBitmask(),  isPressed);
+                nes.setController1(newValue);
             }
 
             @Override
@@ -86,6 +100,12 @@ public class Application {
                 handleKeyEvent(e, false);
             }
         });
+
+        var gameLoop = new GameLoop(nes);
+        var cpuPanel = new CpuPanel(cpu);
+        var ppuPanel = new PpuPanel(ppu);
+
+        var gameWindow = new GameWindow(frameBuffer, cpuPanel, ppuPanel);
 
         gameLoop.setFpsListener(event -> gameWindow.setFps(event.getFps()));
         gameLoop.setCpuMhzListener(event -> {
