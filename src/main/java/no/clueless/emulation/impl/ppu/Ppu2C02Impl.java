@@ -20,7 +20,8 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private final PPUMask   mask;
     private final PPUStatus status;
     private       int       oamaddr;
-    private       OAM       oamdata = new OAM();
+    private       OAM       primaryOAM   = OAM.PRIMARY;
+    private       OAM       secondaryOAM = OAM.SECONDARY;
     private       int       ppuscroll;
     private       int       ppuaddr;
     private       int       ppudata;
@@ -296,8 +297,42 @@ public class Ppu2C02Impl implements Ppu2C02 {
         return rgb;
     }
 
+    private int oamIndex;
+    private int secondaryOamIndex;
+
     @Override
     public void clock() {
+        // During all visible scanlines, the PPU scans through OAM to determine which sprites to render on the next scanline.
+        // Sprites found to be within range are copied into the secondary OAM, which is then used to initialize eight internal sprite output units.
+        if (scanLine >= 0 && scanLine <= 239) {
+            if (cycle >= 1 && cycle <= 64) {
+                if (cycle == 1) {
+                    oamIndex          = 0;
+                    secondaryOamIndex = 0;
+                }
+
+                // Secondary OAM (32-byte buffer for current sprites on scanline) is initialized to $FF - attempting to read $2004 will return $FF.
+                secondaryOAM.fill(0xFF);
+            }
+
+            if (cycle >= 65 && cycle <= 256) {
+                if (cycle == 65) {
+                    oamIndex          = 0;
+                    secondaryOamIndex = 0;
+                }
+
+                if (cycle % 2 == 0) {
+                    // On even cycles, data is written to secondary OAM (unless secondary OAM is full, in which case it will read the value in secondary OAM instead).
+                } else {
+                    // On odd cycles, data is read from (primary) OAM.
+                }
+            }
+
+            if (cycle >= 257 && cycle <= 320) {
+                // TODO: Sprite fetches.
+            }
+        }
+
         if (scanLine >= -1 && scanLine < 240) {
             if (scanLine == 0 && cycle == 0 && oddFrame && (mask.isRenderBackground() || mask.isRenderSprites())) {
                 cycle = 1;
@@ -381,20 +416,9 @@ public class Ppu2C02Impl implements Ppu2C02 {
                     vramAddress.transferVerticalBits(tempVramAddress);
                 }
             }
-
-            if (cycle == 257 && scanLine >= 0) {
-
-            }
-
-            if (cycle == 340) {
-
-            }
         }
 
-        if (scanLine == 240) {
-            // The post render scanline. Nothing happens here.
-        }
-
+        // Vertical blanking lines.
         if (scanLine >= 241 && scanLine <= 260) {
             if (scanLine == 241 && cycle == 1) {
                 status.setVerticalBlank(true);
@@ -484,7 +508,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
     public int readRegister(int address) {
         return switch (address) {
             case PPUSTATUS -> readPpuStatus();
-            case OAMDATA -> oamdata.read(oamaddr);
+            case OAMDATA -> primaryOAM.read(oamaddr);
             case PPUDATA -> readPpuData();
             default -> {
                 log.warn("Unknown register: {}", "%04X".formatted(address));
@@ -556,7 +580,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 oamaddr = data;
                 break;
             case OAMDATA:
-                oamdata.write(oamaddr, data);
+                primaryOAM.write(oamaddr, data);
                 break;
             case PPUSCROLL:
                 writePpuScroll(data);
@@ -575,7 +599,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     @Override
     public void writeOAM(int dmaAddress, int dmaData) {
-        oamdata.write(oamaddr, dmaAddress);
+        primaryOAM.write(oamaddr, dmaAddress);
     }
 
     @Override

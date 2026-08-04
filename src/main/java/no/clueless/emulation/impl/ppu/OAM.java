@@ -1,15 +1,32 @@
 package no.clueless.emulation.impl.ppu;
 
+import java.util.Arrays;
+
 import static no.clueless.emulation.impl.Masks.MASK_8BIT;
 
 /**
  * Represents the Object Attribute Memory.
  */
 public class OAM {
+    private final int[] oam;
+
+    private OAM(int size) {
+        oam = new int[size];
+    }
+
     /**
      * 64 sprites * 4 bytes each = 256 bytes. Any content should be masked to 0xFF to fit in the OAM.
      */
-    private final int[] oam = new int[256];
+    public static OAM PRIMARY   = new OAM(256);
+    public static OAM SECONDARY = new OAM(32);
+
+    /**
+     * Fills the OAM with an 8-bit value.
+     * @param value An 8-bit value.
+     */
+    public void fill(int value) {
+        Arrays.fill(oam, value & 0xFF);
+    }
 
     /**
      * Read from OAM.
