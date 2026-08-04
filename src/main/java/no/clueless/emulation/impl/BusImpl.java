@@ -20,8 +20,8 @@ public class BusImpl implements Bus {
     private       int       dmaPage;
     private       int       dmaAddress;
     private       boolean   isDmaTransfer;
-    private       int       dmaData;
-    private       boolean   isDmaDummy      = true;
+    private       int     dmaData;
+    private       boolean isDmaAlignmentCycle = true;
 
     public BusImpl(Cpu6502 cpu, Ppu2C02 ppu, Apu2A03 apu, Controller controller1, Controller controller2) {
         if (cpu == null) {
@@ -98,20 +98,29 @@ public class BusImpl implements Bus {
         apu.clock();
         apu.clock();
 
+        // OAM DMA halts the CPU, performs an optional alignment cycle, and then gets and puts 256 times, taking 513 or 514 cycles. It attempts to halt on the first CPU cycle after the $4014 write.
         if (isDmaTransfer) {
-            if (isDmaDummy) {
+            // Check if the DMA is currently in a dummy cycle (used for DMC DMA alignment/initiation)
+            if (isDmaAlignmentCycle) {
+                // DMC DMA dummy cycles wait for a CPU read cycle to successfully halt/sync the CPU
                 if (isBusReadCycle) {
-                    isDmaDummy = false;
+                    isDmaAlignmentCycle = false;
                 }
             } else {
                 if (isBusReadCycle) {
+                    // GET cycle: Read a byte from CPU memory (e.g., from the DMA page in RAM/ROM)
                     dmaData = read(dmaPage << 8 | dmaAddress);
                 } else {
+                    // PUT cycle: Write the previously fetched byte to the PPU's OAM (Object Attribute Memory)
                     ppu.writeOAM(dmaAddress & MASK_16BIT, dmaData & MASK_16BIT);
+
+                    // Advance the low-byte of the OAM address; wraps around after 256 bytes
                     dmaAddress = (dmaAddress + 1) & MASK_8BIT;
+
+                    // Once all 256 bytes are transferred, complete the DMA process and reset alignment cycle state.
                     if (dmaAddress == 0x00) {
-                        isDmaTransfer = false;
-                        isDmaDummy    = true;
+                        isDmaTransfer       = false;
+                        isDmaAlignmentCycle = true;
                     }
                 }
             }
@@ -180,8 +189,8 @@ public class BusImpl implements Bus {
         totalClockCount = 0;
         dmaPage         = 0x00;
         dmaAddress      = 0x00;
-        dmaData         = 0x00;
-        isDmaDummy      = true;
-        isDmaTransfer   = false;
+        dmaData             = 0x00;
+        isDmaAlignmentCycle = true;
+        isDmaTransfer       = false;
     }
 }
