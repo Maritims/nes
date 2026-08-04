@@ -111,7 +111,7 @@ public class BusImpl implements Bus {
             data = apu.readRegister(address);
         } else if (address >= IO_START && address <= IO_END) {
             if (address == IO_START) {
-                log.info("Intercepted read to {}", "%04X".formatted(address));
+                //log.info("Intercepted read to {}", "%04X".formatted(address));
                 data = controller1.readDataPort() & 0x01;
             } else {
                 if (controller2 != null) {

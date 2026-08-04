@@ -6,6 +6,8 @@ public interface FrameBuffer {
 
     void setPixel(int x, int y, int rgb);
 
+    void setStatus(double fps, double cpuMhz);
+
     void render();
 
     int convertRgbToInt(int red, int green, int blue);

@@ -37,7 +37,7 @@ public class Application {
         bus.insertCartridge(cartridge);
         bus.reset();
 
-        var emulationThread = new Thread(() -> {
+        /*var emulationThread = new Thread(() -> {
             final var targetFps     = 60.0988;
             final var optimalTimeNs = (long) (1_000_000_000 / targetFps);
             var       nextFrameTime = System.nanoTime() + optimalTimeNs;
@@ -85,6 +85,8 @@ public class Application {
             }
         }, "NES-Emulation-Thread");
 
-        emulationThread.start();
+        emulationThread.start();*/
+
+        new NESGameLoop(bus).start();
     }
 }

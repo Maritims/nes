@@ -35,4 +35,10 @@ public interface Ppu2C02 {
     boolean isNmi();
 
     void handleNmi();
+
+    boolean isFrameComplete();
+
+    void setFrameComplete(boolean frameComplete);
+
+    FrameBuffer getFrameBuffer();
 }

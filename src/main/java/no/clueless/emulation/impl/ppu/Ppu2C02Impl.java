@@ -13,9 +13,7 @@ import static no.clueless.emulation.impl.Masks.*;
 import static no.clueless.emulation.impl.PpuMemoryMap.*;
 
 public class Ppu2C02Impl implements Ppu2C02 {
-    private static final Logger log                        = LoggerFactory.getLogger(Ppu2C02Impl.class);
-    public static final  int    LOWER_PRE_RENDER_SCAN_LINE = -1;
-    public static final  int    UPPER_PRE_RENDER_SCAN_LINE = 261;
+    private static final Logger log = LoggerFactory.getLogger(Ppu2C02Impl.class);
 
     // region Registers
     private final PPUCtrl   control;
@@ -31,8 +29,9 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private final LoopyRegister vramAddress;
     private final LoopyRegister tempVramAddress = new LoopyRegister();
 
-    private int fineX;
-    private int addressLatch;
+    private int     fineX;
+    private int     addressLatch;
+    private boolean isFrameComplete;
 
     private void resetRegisters() {
         control.setRegister(0);
@@ -230,15 +229,16 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     @Override
     public void clock() {
-        if (scanLine >= LOWER_PRE_RENDER_SCAN_LINE && scanLine < 240) {
+        if (scanLine >= -1 && scanLine < 240) {
             if (scanLine == 0 && cycle == 0 && oddFrame && (mask.isRenderBackground() || mask.isRenderSprites())) {
                 cycle = 1;
             }
 
-            if (scanLine == LOWER_PRE_RENDER_SCAN_LINE && cycle == 1) {
+            if (scanLine == -1 && cycle == 1) {
                 status.setVerticalBlank(false);
                 status.setSpriteZeroHit(false);
                 status.setSpriteOverflow(false);
+                isFrameComplete = false;
             }
 
             if ((cycle >= 2 && cycle <= 257) || (cycle >= 321 && cycle < 338)) {
@@ -302,7 +302,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 backgroundNextTileId = readVideoMemory(PPU_REGISTER_START | (vramAddress.getRegister() & MASK_12BIT));
             }
 
-            if (scanLine == LOWER_PRE_RENDER_SCAN_LINE && cycle >= 280 && cycle < 305) {
+            if (scanLine == -1 && cycle >= 280 && cycle < 305) {
                 if (mask.isRenderSprites() || mask.isRenderBackground()) {
                     vramAddress.transferVerticalBits(tempVramAddress);
                 }
@@ -337,21 +337,23 @@ public class Ppu2C02Impl implements Ppu2C02 {
         if (cycle >= 341) {
             cycle = 0;
             scanLine++;
-            if (scanLine >= UPPER_PRE_RENDER_SCAN_LINE) {
-                scanLine = LOWER_PRE_RENDER_SCAN_LINE;
-                oddFrame = !oddFrame;
+            if (scanLine >= 261) {
+                scanLine        = -1;
+                isFrameComplete = true;
+                oddFrame        = !oddFrame;
             }
         }
     }
 
     @Override
     public void reset() {
-        fineX         = 0;
-        addressLatch  = 0;
-        ppuDataBuffer = 0;
-        scanLine      = 0;
-        cycle         = 0;
-        oddFrame      = false;
+        fineX           = 0;
+        addressLatch    = 0;
+        ppuDataBuffer   = 0;
+        scanLine        = 0;
+        cycle           = 0;
+        isFrameComplete = false;
+        oddFrame        = false;
 
         resetShifters();
         resetRegisters();
@@ -495,6 +497,21 @@ public class Ppu2C02Impl implements Ppu2C02 {
     @Override
     public void handleNmi() {
         nmi = false;
+    }
+
+    @Override
+    public boolean isFrameComplete() {
+        return isFrameComplete;
+    }
+
+    @Override
+    public void setFrameComplete(boolean frameComplete) {
+        isFrameComplete = false;
+    }
+
+    @Override
+    public FrameBuffer getFrameBuffer() {
+        return frameBuffer;
     }
 
     public int readVideoMemory(int address) {
