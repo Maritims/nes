@@ -1,6 +1,6 @@
 package no.clueless.emulation.util;
 
-import no.clueless.emulation.FrameBuffer;
+import no.clueless.emulation.gui.FrameBuffer;
 import no.clueless.emulation.impl.controller.NESControllerImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -76,10 +76,6 @@ public class SwingFrameBuffer extends JFrame implements FrameBuffer {
         });
     }
 
-    public void setStatus(double fps, double cpuMhz) {
-        SwingUtilities.invokeLater(() -> statusLabel.setText(String.format("FPS: %.2f | CPU %.3f MHz", fps, cpuMhz)));
-    }
-
     @Override
     public void setPixel(int x, int y, int rgb) {
         if (x >= 0 && y >= 0 && x < FrameBuffer.WIDTH && y < FrameBuffer.HEIGHT) {
@@ -93,6 +89,6 @@ public class SwingFrameBuffer extends JFrame implements FrameBuffer {
     }
 
     public int convertRgbToInt(int red, int green, int blue) {
-        return ((red & 0xFF) << 16) | ((green & 0xFF) << 8) | (blue & 0xFF);
+        return RgbToIntConverter.convertRgbToInt(red, green, blue);
     }
 }

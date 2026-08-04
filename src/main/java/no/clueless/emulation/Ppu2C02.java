@@ -1,9 +1,19 @@
 package no.clueless.emulation;
 
+import no.clueless.emulation.gui.FrameBuffer;
+
 /**
  * Represents the NES Picture Processing Unit, the 2C02.
  */
 public interface Ppu2C02 {
+    int getScanLine();
+
+    int getCycle();
+
+    boolean isNmi();
+
+    boolean isVerticalBlank();
+
     void connectToCartridge(Cartridge cartridge);
 
     /**
@@ -31,8 +41,6 @@ public interface Ppu2C02 {
      * @param value   An 8-bit value.
      */
     void writeRegister(int address, int value);
-
-    boolean isNmi();
 
     void handleNmi();
 

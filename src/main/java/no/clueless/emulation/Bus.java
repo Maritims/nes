@@ -1,7 +1,5 @@
 package no.clueless.emulation;
 
-import java.util.List;
-
 /**
  * Represents the bus.
  */

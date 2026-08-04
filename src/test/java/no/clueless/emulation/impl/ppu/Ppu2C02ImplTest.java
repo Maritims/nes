@@ -1,6 +1,6 @@
 package no.clueless.emulation.impl.ppu;
 
-import no.clueless.emulation.FrameBuffer;
+import no.clueless.emulation.gui.FrameBuffer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;

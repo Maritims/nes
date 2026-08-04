@@ -1,7 +1,7 @@
 package no.clueless.emulation.impl.ppu;
 
 import no.clueless.emulation.Cartridge;
-import no.clueless.emulation.FrameBuffer;
+import no.clueless.emulation.gui.FrameBuffer;
 import no.clueless.emulation.Ppu2C02;
 import no.clueless.emulation.impl.PpuMemoryMap;
 import org.slf4j.Logger;
@@ -56,11 +56,11 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private boolean   nmi;
 
     public Ppu2C02Impl(PPUCtrl control, PPUMask mask, PPUStatus status, LoopyRegister vramAddress, FrameBuffer frameBuffer) {
-        this.control     = control;
-        this.mask        = mask;
-        this.status      = status;
-        this.vramAddress = vramAddress;
-        this.frameBuffer = frameBuffer;
+        this.control       = control;
+        this.mask          = mask;
+        this.status        = status;
+        this.vramAddress   = vramAddress;
+        this.frameBuffer   = frameBuffer;
 
         palette[0x00] = frameBuffer.convertRgbToInt(84, 84, 84);
         palette[0x01] = frameBuffer.convertRgbToInt(0, 30, 116);
@@ -174,8 +174,23 @@ public class Ppu2C02Impl implements Ppu2C02 {
     // endregion
 
     @Override
+    public int getScanLine() {
+        return scanLine;
+    }
+
+    @Override
+    public int getCycle() {
+        return cycle;
+    }
+
+    @Override
     public boolean isNmi() {
         return nmi;
+    }
+
+    @Override
+    public boolean isVerticalBlank() {
+        return false;
     }
 
     public void setScanLine(int scanLine) {
@@ -325,8 +340,11 @@ public class Ppu2C02Impl implements Ppu2C02 {
             if (scanLine == 241 && cycle == 1) {
                 status.setVerticalBlank(true);
                 if (control.getEnableNmi()) {
+                    log.debug("Setting NMI");
                     nmi = true;
                 }
+
+                isFrameComplete = true;
             }
         }
 
@@ -339,7 +357,6 @@ public class Ppu2C02Impl implements Ppu2C02 {
             scanLine++;
             if (scanLine >= 261) {
                 scanLine        = -1;
-                isFrameComplete = true;
                 oddFrame        = !oddFrame;
             }
         }
@@ -496,6 +513,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     @Override
     public void handleNmi() {
+        log.debug("Clearing NMI");
         nmi = false;
     }
 

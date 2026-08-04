@@ -5,8 +5,6 @@ import no.clueless.emulation.impl.cartridge.CartridgeImpl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.List;
-
 import static no.clueless.emulation.impl.CpuMemoryMap.*;
 
 public class BusImpl implements Bus {
@@ -80,11 +78,15 @@ public class BusImpl implements Bus {
     @Override
     public void clock() {
         ppu.clock();
+        ppu.clock();
+        ppu.clock();
         apu.clock();
 
-        if (totalClockCount % 3 == 0) {
+        /*if (totalClockCount % 3 == 0) {
             cpu.clock();
-        }
+        }*/
+
+        cpu.clock();
 
         if (ppu.isNmi()) {
             ppu.handleNmi();
@@ -145,6 +147,8 @@ public class BusImpl implements Bus {
             apu.writeRegister(address, data);
         } else if (address == IO_START) {
             controller1.setStrobeState((data & 0x01) == 1);
+
+            log.debug("address={}, data={}", address, data);
 
             if (controller2 != null) {
                 controller2.setStrobeState((data & 0x01) == 1);

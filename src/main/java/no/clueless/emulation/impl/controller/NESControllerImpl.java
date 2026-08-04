@@ -1,10 +1,21 @@
 package no.clueless.emulation.impl.controller;
 
 import no.clueless.emulation.Controller;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class NESControllerImpl implements Controller {
+    private static final Logger log = LoggerFactory.getLogger(NESControllerImpl.class);
+
     public enum Button {
-        A(0x01), B(0x02), SELECT(0x4), START(0x8), UP(0x10), DOWN(0x20), LEFT(0x40), RIGHT(0x80);
+        A(0x80),
+        B(0x40),
+        SELECT(0x20),
+        START(0x10),
+        UP(0x08),
+        DOWN(0x04),
+        LEFT(0x02),
+        RIGHT(0x01);
 
         private final int bitmask;
 
@@ -37,11 +48,11 @@ public class NESControllerImpl implements Controller {
     @Override
     public int readDataPort() {
         if (strobeState) {
-            shiftRegister = buttonStates;
+            return buttonStates & 0x01;
         }
 
         var bit = shiftRegister & 0x01;
-        shiftRegister = (shiftRegister >> 1) | 0x80;
+        shiftRegister = (shiftRegister >> 1);
         return bit;
     }
 
@@ -51,10 +62,13 @@ public class NESControllerImpl implements Controller {
             throw new IllegalArgumentException("Invalid button type for NESControllerImpl");
         }
 
+        log.debug("setButtonState: button={}, isPressed={}", button, isPressed);
+
+        var bitmask = ((Button) button).getBitmask();
         if (isPressed) {
-            buttonStates |= ((Button) button).getBitmask();
+            buttonStates |= bitmask;
         } else {
-            buttonStates &= ~((Button) button).getBitmask();
+            buttonStates &= ~bitmask;
         }
     }
 }
