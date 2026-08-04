@@ -42,7 +42,7 @@ public interface Ppu2C02 {
      */
     void writeRegister(int address, int value);
 
-    void handleNmi();
+    void clearNmi();
 
     boolean isFrameComplete();
 

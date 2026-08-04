@@ -89,7 +89,7 @@ public class BusImpl implements Bus {
         cpu.clock();
 
         if (ppu.isNmi()) {
-            ppu.handleNmi();
+            ppu.clearNmi();
             cpu.nmi();
         }
 

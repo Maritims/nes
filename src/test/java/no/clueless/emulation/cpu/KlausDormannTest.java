@@ -9,6 +9,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.mock;
 
 public class KlausDormannTest {
 
@@ -79,7 +80,7 @@ public class KlausDormannTest {
 
     @Test
     public void runFunctionalTest() throws IOException {
-        var cpu6502 = new Cpu6502Impl(true);
+        var cpu6502 = new Cpu6502Impl(mock(), true);
         var bus     = new TestBus(cpu6502);
 
         // Klaus Dormann's test binary is a 64KB image

@@ -340,7 +340,6 @@ public class Ppu2C02Impl implements Ppu2C02 {
             if (scanLine == 241 && cycle == 1) {
                 status.setVerticalBlank(true);
                 if (control.getEnableNmi()) {
-                    log.debug("Setting NMI");
                     nmi = true;
                 }
 
@@ -512,8 +511,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
     }
 
     @Override
-    public void handleNmi() {
-        log.debug("Clearing NMI");
+    public void clearNmi() {
         nmi = false;
     }
 

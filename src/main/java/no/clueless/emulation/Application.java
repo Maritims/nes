@@ -9,6 +9,7 @@ import no.clueless.emulation.impl.apu.Apu2A03Impl;
 import no.clueless.emulation.impl.cartridge.CartridgeImpl;
 import no.clueless.emulation.impl.controller.NESControllerImpl;
 import no.clueless.emulation.impl.cpu.Cpu6502Impl;
+import no.clueless.emulation.impl.cpu.CpuHistory;
 import no.clueless.emulation.impl.ppu.Ppu2C02Impl;
 
 import java.awt.event.KeyEvent;
@@ -38,7 +39,8 @@ public class Application {
         //var       filename = "ppu_vbl_nmi.nes";
         var cartridge = loadCartridge(filename);
 
-        var cpu         = new Cpu6502Impl(false);
+        var cpuHistory  = new CpuHistory();
+        var cpu         = new Cpu6502Impl(cpuHistory, false);
         var controller  = new NESControllerImpl();
         var frameBuffer = new GamePanel();
         var ppu         = new Ppu2C02Impl(frameBuffer);
@@ -84,7 +86,7 @@ public class Application {
         gameLoop.setFpsListener(event -> gameWindow.setFps(event.getFps()));
         gameLoop.setCpuMhzListener(event -> {
             gameWindow.setCpuMhz(event.getCpuMhz());
-            cpuPanel.updateStatus();
+            cpuPanel.updateStatus(cpuHistory.dumpInstructions());
             ppuPanel.updateStatus();
         });
 

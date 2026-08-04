@@ -20,7 +20,7 @@ public class NesTest {
     public void runNesTest() throws Exception {
         var romPath   = Paths.get("src/test/resources/nestest/nestest.nes");
         var cartridge = new CartridgeImpl(romPath);
-        var cpu       = new Cpu6502Impl(false);
+        var cpu       = new Cpu6502Impl(mock(), false);
         var bus       = new BusImpl(cpu, mock(), mock(), mock(), mock());
         bus.insertCartridge(cartridge);
         bus.reset();
@@ -94,7 +94,7 @@ public class NesTest {
     public void verifyNametableContentsAfterCpuExecution() throws Exception {
         var romPath   = Paths.get("src/test/resources/Super Mario Bros. (Japan, USA).nes");
         var cartridge = new CartridgeImpl(romPath);
-        var cpu       = new Cpu6502Impl(false);
+        var cpu       = new Cpu6502Impl(mock(), false);
         var ppu       = new Ppu2C02Impl(mock());
         var bus       = new BusImpl(cpu, ppu, mock(), mock(), mock());
 

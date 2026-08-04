@@ -3,6 +3,7 @@ package no.clueless.emulation.util;
 import no.clueless.emulation.impl.BusImpl;
 import no.clueless.emulation.impl.cartridge.CartridgeImpl;
 import no.clueless.emulation.impl.cpu.Cpu6502Impl;
+import no.clueless.emulation.impl.cpu.CpuHistory;
 import no.clueless.emulation.impl.ppu.Ppu2C02Impl;
 
 import javax.swing.*;
@@ -15,8 +16,9 @@ public class PpuVisualizer {
         var romPath   = Paths.get("src/test/resources/nestest/nestest.nes");
         var cartridge = new CartridgeImpl(romPath);
 
-        var cpu = new Cpu6502Impl(false);
-        var ppu = new Ppu2C02Impl(null);
+        var cpuHistory = new CpuHistory();
+        var cpu        = new Cpu6502Impl(cpuHistory, false);
+        var ppu        = new Ppu2C02Impl(null);
 
         // Pass cpu and ppu into your Bus
         var bus = new BusImpl(cpu, ppu, null, null, null);

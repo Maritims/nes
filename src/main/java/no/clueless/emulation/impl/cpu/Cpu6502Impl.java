@@ -10,21 +10,23 @@ import static no.clueless.emulation.impl.Masks.MASK_16BIT;
 import static no.clueless.emulation.impl.Masks.MASK_8BIT;
 
 public class Cpu6502Impl implements Cpu6502 {
-    private static final Logger log        = LoggerFactory.getLogger(Cpu6502Impl.class);
+    private static final Logger log = LoggerFactory.getLogger(Cpu6502Impl.class);
 
-    private final boolean isDecimalModeEnabled;
-    private       int     totalClockCount = 0;
-    private       int     a               = 0x00;
-    private       int     x               = 0x00;
-    private       int     y               = 0x00;
-    private       int     sp              = 0xFF;
-    private       int     pc              = 0x0000;
-    private       int     status          = 0x00;
+    private final CpuHistory cpuHistory;
+    private final boolean    isDecimalModeEnabled;
+    private       int        totalClockCount = 0;
+    private       int        a               = 0x00;
+    private       int        x               = 0x00;
+    private       int        y               = 0x00;
+    private       int        sp              = 0xFF;
+    private       int        pc              = 0x0000;
+    private       int        status          = 0x00;
 
     private Bus bus;
     private int cycles = 0;
 
-    public Cpu6502Impl(boolean isDecimalModeEnabled) {
+    public Cpu6502Impl(CpuHistory cpuHistory, boolean isDecimalModeEnabled) {
+        this.cpuHistory           = cpuHistory;
         this.isDecimalModeEnabled = isDecimalModeEnabled;
     }
 
@@ -191,8 +193,8 @@ public class Cpu6502Impl implements Cpu6502 {
         this.bus = bus;
     }
 
-    private String previousDisassembly = "";
-    private int previousDisassemblyCount = 0;
+    private String  previousDisassembly      = "";
+    private int     previousDisassemblyCount = 0;
     private boolean isStalling;
 
     @Override
@@ -217,9 +219,10 @@ public class Cpu6502Impl implements Cpu6502 {
 
             var currentDisassembly = Disassembler.disassemble(originalPc, instruction.opcode(), instruction.addressingMode(), resolvedAddress.address());
             //log.info("{}", currentDisassembly);
+            cpuHistory.logInstruction(currentDisassembly);
 
             if (!currentDisassembly.equals(previousDisassembly)) {
-                previousDisassembly = currentDisassembly;
+                previousDisassembly      = currentDisassembly;
                 previousDisassemblyCount = 1;
             } else {
                 previousDisassemblyCount++;

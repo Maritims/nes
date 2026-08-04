@@ -11,7 +11,7 @@ public class Disassembler {
         sb.append("%s".formatted(opcode.name()));
 
         var addressingModeStr = switch (addressingMode) {
-            case IMM -> "#$%04X".formatted(pc + 1);
+            case IMM -> "#$%02X".formatted(address & 0xFF);
             case IMP -> "{IMP}";
             case ABS -> "$%04X {ABS}".formatted(address & 0xFFFF);
             case ZP0 -> "$%02X {ZP0}".formatted(address & 0xFF);

@@ -15,7 +15,7 @@ class Cpu6502ImplTest {
 
     @BeforeEach
     void setUp() {
-        cpu = new Cpu6502Impl(false);
+        cpu = new Cpu6502Impl(mock(), false);
     }
 
     @Test

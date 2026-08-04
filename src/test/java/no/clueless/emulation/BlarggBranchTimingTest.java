@@ -31,7 +31,7 @@ class BlarggBranchTimingTest {
     @DisplayName("Run Blargg Branch Timing ROMs")
     void testBranchTimingRom(String romFilename) throws Exception {
         var romPath     = Paths.get("src/test/resources/blargg/branch_timing_tests", romFilename);
-        var cpu         = new Cpu6502Impl(false);
+        var cpu         = new Cpu6502Impl(mock(), false);
         var frameBuffer = new SwingFrameBuffer("NES", 3, mock());
         var ppu         = new Ppu2C02Impl(frameBuffer);
         var apu         = new Apu2A03Impl();

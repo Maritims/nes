@@ -4,6 +4,7 @@ import no.clueless.emulation.Cpu6502;
 
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 
 public class CpuPanel extends StatsPanel {
     private final JLabel pcLabel          = new JLabel("0x0000");
@@ -12,6 +13,9 @@ public class CpuPanel extends StatsPanel {
     private final JLabel yLabel           = new JLabel("0x00");
     private final JLabel spLabel          = new JLabel("0x00");
     private final JLabel pLabel           = new JLabel("[--]");
+
+    private final DefaultListModel<String> cpuHistoryModel = new DefaultListModel<>();
+    private final JList<String>            cpuHistoryList  = new JList<>(cpuHistoryModel);
 
     private final Cpu6502 cpu;
 
@@ -27,10 +31,18 @@ public class CpuPanel extends StatsPanel {
         addRow(createRow("SP:", spLabel, getStatsFont()));
         addRow(createRow("P:", pLabel, getStatsFont()));
 
+        cpuHistoryList.setFont(getStatsFont());
+        cpuHistoryList.setSelectionMode(ListSelectionModel.MULTIPLE_INTERVAL_SELECTION);
+
+        var scrollPane = new JScrollPane(cpuHistoryList);
+        scrollPane.setBorder(BorderFactory.createTitledBorder("Last instructions"));
+        scrollPane.setPreferredSize(new Dimension(360, 320));
+        //add(scrollPane);
+
         setPreferredSize(new Dimension(360, getPreferredSize().height));
     }
 
-    public void updateStatus() {
+    public void updateStatus(List<String> cpuHistoryList) {
         pcLabel.setText("0x%04X".formatted(cpu.getProgramCounter()));
         accumulatorLabel.setText("0x%02X".formatted(cpu.getAccumulator()));
         xLabel.setText("0x%02X".formatted(cpu.getX()));
@@ -49,5 +61,21 @@ public class CpuPanel extends StatsPanel {
                 ((p & 0x01) != 0 ? "C" : "-")
         );
         pLabel.setText("[%s]".formatted(flags));
+
+        if (cpuHistoryList != null && !cpuHistoryList.isEmpty()) {
+            cpuHistoryModel.clear();
+            for(var instruction : cpuHistoryList) {
+                cpuHistoryModel.addElement(instruction);
+            }
+
+            var lastIndex = cpuHistoryModel.size() - 1;
+            if (lastIndex >= 0) {
+                this.cpuHistoryList.ensureIndexIsVisible(lastIndex);
+            }
+        }
+    }
+
+    public void updateStatus() {
+        updateStatus(null);
     }
 }

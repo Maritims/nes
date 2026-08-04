@@ -18,7 +18,7 @@ public class SuperMariosBrosTest {
     @Test
     public void run() throws IOException {
         var romPath     = Paths.get("src/test/resources/Super Mario Bros. (Japan, USA).nes");
-        var cpu         = new Cpu6502Impl(false);
+        var cpu         = new Cpu6502Impl(mock(), false);
         var controller  = new NESControllerImpl();
         var frameBuffer = new SwingFrameBuffer("NES", 3, controller);
         var ppu         = new Ppu2C02Impl(frameBuffer);
