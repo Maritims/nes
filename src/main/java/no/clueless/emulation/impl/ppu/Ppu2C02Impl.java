@@ -190,7 +190,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     @Override
     public boolean isVerticalBlank() {
-        return false;
+        return status.isVerticalBlank();
     }
 
     public void setScanLine(int scanLine) {

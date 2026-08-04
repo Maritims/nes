@@ -11,12 +11,16 @@ import no.clueless.emulation.impl.controller.NESControllerImpl;
 import no.clueless.emulation.impl.cpu.Cpu6502Impl;
 import no.clueless.emulation.impl.cpu.CpuHistory;
 import no.clueless.emulation.impl.ppu.Ppu2C02Impl;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.event.KeyEvent;
 import java.awt.event.KeyListener;
 import java.io.*;
 
 public class Application {
+    private static final Logger log = LoggerFactory.getLogger(Application.class);
+
     private static Cartridge loadCartridge(String filename) {
         try (var is = Application.class.getClassLoader().getResourceAsStream(filename)) {
             if (is == null) {
@@ -86,8 +90,10 @@ public class Application {
         gameLoop.setFpsListener(event -> gameWindow.setFps(event.getFps()));
         gameLoop.setCpuMhzListener(event -> {
             gameWindow.setCpuMhz(event.getCpuMhz());
-            cpuPanel.updateStatus(cpuHistory.dumpInstructions());
+            cpuPanel.updateStatus();
             ppuPanel.updateStatus();
+
+            log.debug(String.join("\n", cpuHistory.dumpInstructions()));
         });
 
         gameLoop.start();

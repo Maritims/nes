@@ -145,13 +145,13 @@ public class BusImpl implements Bus {
             ppu.writeRegister(address, data);
         } else if (address >= APU_START && address <= APU_END) {
             apu.writeRegister(address, data);
-        } else if (address == IO_START) {
-            controller1.setStrobeState((data & 0x01) == 1);
-
-            log.debug("address={}, data={}", address, data);
-
-            if (controller2 != null) {
-                controller2.setStrobeState((data & 0x01) == 1);
+        } else if (address >= IO_START && address <= IO_END) {
+            if (address == IO_START) {
+                controller1.setStrobeState((data & 0x01) == 1);
+            } else {
+                if (controller2 != null) {
+                    controller2.setStrobeState((data & 0x01) == 1);
+                }
             }
         } else if (address >= WRAM_START && address <= WRAM_END) {
             //cartridge.writePrg(address, data);
