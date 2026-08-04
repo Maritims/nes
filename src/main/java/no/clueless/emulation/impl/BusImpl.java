@@ -2,24 +2,26 @@ package no.clueless.emulation.impl;
 
 import no.clueless.emulation.*;
 import no.clueless.emulation.impl.cartridge.CartridgeImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import static no.clueless.emulation.impl.CpuMemoryMap.*;
+import static no.clueless.emulation.impl.Masks.MASK_16BIT;
+import static no.clueless.emulation.impl.Masks.MASK_8BIT;
 
 public class BusImpl implements Bus {
-    private static final Logger     log              = LoggerFactory.getLogger(BusImpl.class);
-    private final        Cpu6502    cpu;
-    private final        Ppu2C02    ppu;
-    private final        Apu2A03    apu;
-    private final        Controller controller1;
-    private final        Controller controller2;
-    private final        int[]      controllers      = new int[2];
-    private final        int[]      controller_state = new int[2];
+    private final Cpu6502 cpu;
+    private final Ppu2C02 ppu;
+    private final Apu2A03 apu;
+    private final int[]   controllers      = new int[2];
+    private final int[]   controller_state = new int[2];
 
     private final int[]     cpuRam          = new int[2048];
     private       Cartridge cartridge;
     private       int       totalClockCount = 0;
+    private       int       dmaPage;
+    private       int       dmaAddress;
+    private       boolean   isDmaTransfer;
+    private       int       dmaData;
+    private       boolean   isDmaDummy      = true;
 
     public BusImpl(Cpu6502 cpu, Ppu2C02 ppu, Apu2A03 apu, Controller controller1, Controller controller2) {
         if (cpu == null) {
@@ -32,11 +34,9 @@ public class BusImpl implements Bus {
             throw new IllegalArgumentException("apu cannot be null");
         }
 
-        this.cpu         = cpu;
-        this.ppu         = ppu;
-        this.apu         = apu;
-        this.controller1 = controller1;
-        this.controller2 = controller2;
+        this.cpu = cpu;
+        this.ppu = ppu;
+        this.apu = apu;
 
         this.cpu.connectToBus(this);
     }
@@ -87,18 +87,39 @@ public class BusImpl implements Bus {
         this.ppu.connectToCartridge(cartridge);
     }
 
+    private boolean isBusReadCycle = true;
+
     @Override
     public void clock() {
         ppu.clock();
         ppu.clock();
         ppu.clock();
         apu.clock();
+        apu.clock();
+        apu.clock();
 
-        /*if (totalClockCount % 3 == 0) {
+        if (isDmaTransfer) {
+            if (isDmaDummy) {
+                if (isBusReadCycle) {
+                    isDmaDummy = false;
+                }
+            } else {
+                if (isBusReadCycle) {
+                    dmaData = read(dmaPage << 8 | dmaAddress);
+                } else {
+                    ppu.writeOAM(dmaAddress & MASK_16BIT, dmaData & MASK_16BIT);
+                    dmaAddress = (dmaAddress + 1) & MASK_8BIT;
+                    if (dmaAddress == 0x00) {
+                        isDmaTransfer = false;
+                        isDmaDummy    = true;
+                    }
+                }
+            }
+        } else {
             cpu.clock();
-        }*/
+        }
 
-        cpu.clock();
+        isBusReadCycle = !isBusReadCycle;
 
         if (ppu.isNmi()) {
             ppu.clearNmi();
@@ -109,8 +130,6 @@ public class BusImpl implements Bus {
             cartridge.getMapper().clearIrq();
             cpu.irq();
         }
-
-        totalClockCount++;
     }
 
     @Override
@@ -135,8 +154,6 @@ public class BusImpl implements Bus {
         return data & 0xFF;
     }
 
-    private final int[] wram = new int[8192];
-
     @Override
     public void write(int address, int data) {
         if (address >= 0x0000 && address < 0x2000) {
@@ -146,7 +163,10 @@ public class BusImpl implements Bus {
         } else if ((address >= 0x4000 && address <= 0x4013) || address == 0x4015 || address == 0x4017) {
             apu.writeRegister(address, data);
         } else if (address == 0x4014) {
-            // TODO: DMA
+            // Initialize DMA transfer.
+            dmaPage       = data;
+            dmaAddress    = 0x00;
+            isDmaTransfer = true;
         } else if (address >= 0x4016 && address <= 0x4017) {
             controller_state[address & 0x0001] = controllers[address & 0x0001];
         }
@@ -157,5 +177,11 @@ public class BusImpl implements Bus {
         cpu.reset();
         ppu.reset();
         cartridge.reset();
+        totalClockCount = 0;
+        dmaPage         = 0x00;
+        dmaAddress      = 0x00;
+        dmaData         = 0x00;
+        isDmaDummy      = true;
+        isDmaTransfer   = false;
     }
 }

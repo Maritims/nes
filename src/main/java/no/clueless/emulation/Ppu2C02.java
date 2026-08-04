@@ -1,6 +1,7 @@
 package no.clueless.emulation;
 
 import no.clueless.emulation.gui.FrameBuffer;
+import no.clueless.emulation.impl.ppu.OAM;
 
 /**
  * Represents the NES Picture Processing Unit, the 2C02.
@@ -41,6 +42,14 @@ public interface Ppu2C02 {
      * @param value   An 8-bit value.
      */
     void writeRegister(int address, int value);
+
+    /**
+     * Writes an 8-bit value to a 16-bit address in the {@link OAM}.
+     *
+     * @param dmaAddress A 16-bit address.
+     * @param dmaData    An 8-bit value.
+     */
+    void writeOAM(int dmaAddress, int dmaData);
 
     void clearNmi();
 

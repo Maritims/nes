@@ -574,6 +574,11 @@ public class Ppu2C02Impl implements Ppu2C02 {
     }
 
     @Override
+    public void writeOAM(int dmaAddress, int dmaData) {
+        oamdata.write(oamaddr, dmaAddress);
+    }
+
+    @Override
     public void clearNmi() {
         nmi = false;
     }
