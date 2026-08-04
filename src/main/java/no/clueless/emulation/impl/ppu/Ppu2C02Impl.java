@@ -56,11 +56,11 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private boolean   nmi;
 
     public Ppu2C02Impl(PPUCtrl control, PPUMask mask, PPUStatus status, LoopyRegister vramAddress, FrameBuffer frameBuffer) {
-        this.control       = control;
-        this.mask          = mask;
-        this.status        = status;
-        this.vramAddress   = vramAddress;
-        this.frameBuffer   = frameBuffer;
+        this.control     = control;
+        this.mask        = mask;
+        this.status      = status;
+        this.vramAddress = vramAddress;
+        this.frameBuffer = frameBuffer;
 
         palette[0x00] = frameBuffer.convertRgbToInt(84, 84, 84);
         palette[0x01] = frameBuffer.convertRgbToInt(0, 30, 116);
@@ -151,6 +151,22 @@ public class Ppu2C02Impl implements Ppu2C02 {
         backgroundShifterAttributeLow  = (backgroundShifterAttributeLow & 0xFF00) | ((backgroundNextTileAttribute & 0b01) != 0 ? 0xFF : 0x00);
         backgroundShifterAttributeHigh = (backgroundShifterAttributeHigh & 0xFF00) | ((backgroundNextTileAttribute & 0b10) != 0 ? 0xFF : 0x00);
     }
+    // endregion
+
+    // region Sprite evaluation
+    /**
+     * The number of sprites to draw.
+     */
+    private int   spriteCount;
+    /**
+     * One shifter per sprite.
+     */
+    private int[] spriteShifterPatternLow  = new int[8];
+    /**
+     * One shifter per sprite.
+     */
+    private int[] spriteShifterPatternHigh = new int[8];
+    // endregion
 
     public void updateShifters() {
         if (mask.isRenderBackground()) {
@@ -158,6 +174,12 @@ public class Ppu2C02Impl implements Ppu2C02 {
             backgroundShifterPatternHigh   = (backgroundShifterPatternHigh << 1) & MASK_16BIT;
             backgroundShifterAttributeLow  = (backgroundShifterAttributeLow << 1) & MASK_16BIT;
             backgroundShifterAttributeHigh = (backgroundShifterAttributeHigh << 1) & MASK_16BIT;
+        }
+
+        if (mask.isRenderSprites() && cycle >= 1 && cycle <= 257) {
+            for (var i = 0; i < spriteCount; i++) {
+                // TODO: Output sprites by shifting.
+            }
         }
     }
 
@@ -171,7 +193,6 @@ public class Ppu2C02Impl implements Ppu2C02 {
         backgroundShifterAttributeLow  = 0;
         backgroundShifterAttributeHigh = 0;
     }
-    // endregion
 
     @Override
     public int getScanLine() {
@@ -226,12 +247,45 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
         }
 
+        var foregroundPixel    = 0x00;
+        var foregroundPalette  = 0x00;
+        var foregroundPriority = 0x00;
+
+        if (mask.isRenderSprites()) {
+            if (mask.isRenderSpritesLeft() || (cycle >= 9)) {
+                // TODO: Render sprites.
+            }
+        }
+
         var pixel   = 0x00;
         var palette = 0x00;
 
-        if (backgroundPixel == 0) {
+        if (backgroundPixel == 0 && foregroundPixel == 0) {
+            // Both pixels are transparent, no one wins.
             pixel   = 0x00;
             palette = 0x00;
+        } else if (backgroundPixel == 0 && foregroundPixel > 0) {
+            // The background pixel is transparent, but the foreground pixel is visible.
+            // The foreground pixel wins!
+            pixel   = foregroundPixel;
+            palette = foregroundPalette;
+        } else if (backgroundPixel > 0 && foregroundPixel == 0) {
+            // The background pixel is visible, but the foreground pixel is transparent.
+            // The background pixel wins!
+            pixel   = backgroundPixel;
+            palette = backgroundPalette;
+        } else if (backgroundPixel > 0 && foregroundPixel > 0) {
+            if (foregroundPriority > 0) {
+                // The foreground pixel is more important.
+                pixel   = foregroundPixel;
+                palette = foregroundPalette;
+            } else {
+                // The background pixel is more important.
+                pixel   = backgroundPixel;
+                palette = backgroundPalette;
+            }
+
+            // TODO: Sprite Zero Hit detection.
         } else {
             pixel   = backgroundPixel;
             palette = backgroundPalette;
@@ -254,6 +308,11 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 status.setSpriteZeroHit(false);
                 status.setSpriteOverflow(false);
                 isFrameComplete = false;
+
+                for (var i = 0; i < 8; i++) {
+                    spriteShifterPatternLow[i]  = 0;
+                    spriteShifterPatternHigh[i] = 0;
+                }
             }
 
             if ((cycle >= 2 && cycle <= 257) || (cycle >= 321 && cycle < 338)) {
@@ -355,8 +414,8 @@ public class Ppu2C02Impl implements Ppu2C02 {
             cycle = 0;
             scanLine++;
             if (scanLine >= 261) {
-                scanLine        = -1;
-                oddFrame        = !oddFrame;
+                scanLine = -1;
+                oddFrame = !oddFrame;
             }
         }
     }
