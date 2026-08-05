@@ -112,7 +112,7 @@ public class BusImpl implements Bus {
                     dmaData = read(dmaPage << 8 | dmaAddress);
                 } else {
                     // PUT cycle: Write the previously fetched byte to the PPU's OAM (Object Attribute Memory)
-                    ppu.writeOAM(dmaAddress & MASK_16BIT, dmaData & MASK_16BIT);
+                    ppu.writePrimaryOAM(dmaAddress & MASK_16BIT, dmaData & MASK_16BIT);
 
                     // Advance the low-byte of the OAM address; wraps around after 256 bytes
                     dmaAddress = (dmaAddress + 1) & MASK_8BIT;

@@ -15,17 +15,12 @@ import static no.clueless.emulation.impl.PpuMemoryMap.*;
 public class Ppu2C02Impl implements Ppu2C02 {
     private static final Logger log = LoggerFactory.getLogger(Ppu2C02Impl.class);
 
-    // region Registers
     private final PPUCtrl   control;
     private final PPUMask   mask;
     private final PPUStatus status;
     private       int       oamaddr;
-    private       OAM       primaryOAM   = OAM.PRIMARY;
-    private       OAM       secondaryOAM = OAM.SECONDARY;
-    private       int       ppuscroll;
-    private       int       ppuaddr;
-    private       int       ppudata;
-    private       int       oamdma;
+    private final OAM       primaryOAM   = OAM.PRIMARY;
+    private final OAM       secondaryOAM = OAM.SECONDARY;
 
     private final LoopyRegister vramAddress;
     private final LoopyRegister tempVramAddress = new LoopyRegister();
@@ -34,20 +29,12 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private int     addressLatch;
     private boolean isFrameComplete;
 
-    private void resetRegisters() {
-        control.setRegister(0);
-        mask.setRegister(0);
-        status.setRegister(0);
-        vramAddress.setRegister(0);
-        tempVramAddress.setRegister(0);
-    }
-    // endregion
-
-    private final FrameBuffer    frameBuffer;
-    private final PatternTable[] patternTables = new PatternTable[]{new PatternTable(), new PatternTable()};
-    private final int[][]        nameTables    = new int[2][1024];
-    private final int[]          paletteTable  = new int[32];
-    private final int[]          palette       = new int[64];
+    private final FrameBuffer     frameBuffer;
+    private final PatternTable[]  patternTables = new PatternTable[]{new PatternTable(), new PatternTable()};
+    private final int[][]         nameTables    = new int[2][1024];
+    private final int[]           paletteTable  = new int[32];
+    private final int[]           palette       = new int[64];
+    private final SpriteEvaluator spriteEvaluator;
 
     private int       scanLine = 0;
     private int       cycle    = 0;
@@ -57,11 +44,12 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private boolean   nmi;
 
     public Ppu2C02Impl(PPUCtrl control, PPUMask mask, PPUStatus status, LoopyRegister vramAddress, FrameBuffer frameBuffer) {
-        this.control     = control;
-        this.mask        = mask;
-        this.status      = status;
-        this.vramAddress = vramAddress;
-        this.frameBuffer = frameBuffer;
+        this.control         = control;
+        this.mask            = mask;
+        this.status          = status;
+        this.vramAddress     = vramAddress;
+        this.frameBuffer     = frameBuffer;
+        this.spriteEvaluator = new SpriteEvaluator(this);
 
         palette[0x00] = frameBuffer.convertRgbToInt(84, 84, 84);
         palette[0x01] = frameBuffer.convertRgbToInt(0, 30, 116);
@@ -136,6 +124,27 @@ public class Ppu2C02Impl implements Ppu2C02 {
         this(new PPUCtrl(), new PPUMask(), new PPUStatus(), new LoopyRegister(), frameBuffer);
     }
 
+    private void resetRegisters() {
+        control.setRegister(0);
+        mask.setRegister(0);
+        status.setRegister(0);
+        vramAddress.setRegister(0);
+        tempVramAddress.setRegister(0);
+    }
+
+    private void resetShifters() {
+        backgroundNextTileId           = 0;
+        backgroundNextTileAttribute    = 0;
+        backgroundNextTileLsb          = 0;
+        backgroundNextTileMsb          = 0;
+        backgroundShifterPatternLow    = 0;
+        backgroundShifterPatternHigh   = 0;
+        backgroundShifterAttributeLow  = 0;
+        backgroundShifterAttributeHigh = 0;
+
+        spriteEvaluator.resetShifters();
+    }
+
     // region Background rendering
     private int backgroundNextTileId           = 0x00;
     private int backgroundNextTileAttribute    = 0x00;
@@ -155,18 +164,11 @@ public class Ppu2C02Impl implements Ppu2C02 {
     // endregion
 
     // region Sprite evaluation
-    /**
-     * The number of sprites to draw.
-     */
-    private int   spriteCount;
-    /**
-     * One shifter per sprite.
-     */
-    private int[] spriteShifterPatternLow  = new int[8];
-    /**
-     * One shifter per sprite.
-     */
-    private int[] spriteShifterPatternHigh = new int[8];
+    private int     spriteCount;
+    private int[]   spriteShifterPatternLow  = new int[8];
+    private int[]   spriteShifterPatternHigh = new int[8];
+    private boolean isSpriteZeroBeingRendered;
+    private boolean isSpriteZeroHitPossible;
     // endregion
 
     public void updateShifters() {
@@ -177,22 +179,32 @@ public class Ppu2C02Impl implements Ppu2C02 {
             backgroundShifterAttributeHigh = (backgroundShifterAttributeHigh << 1) & MASK_16BIT;
         }
 
-        if (mask.isRenderSprites() && cycle >= 1 && cycle <= 257) {
-            for (var i = 0; i < spriteCount; i++) {
-                // TODO: Output sprites by shifting.
-            }
-        }
+        spriteEvaluator.updateShifters();
     }
 
-    private void resetShifters() {
-        backgroundNextTileId           = 0;
-        backgroundNextTileAttribute    = 0;
-        backgroundNextTileLsb          = 0;
-        backgroundNextTileMsb          = 0;
-        backgroundShifterPatternLow    = 0;
-        backgroundShifterPatternHigh   = 0;
-        backgroundShifterAttributeLow  = 0;
-        backgroundShifterAttributeHigh = 0;
+    @Override
+    public PPUCtrl getControl() {
+        return control;
+    }
+
+    @Override
+    public PPUMask getMask() {
+        return mask;
+    }
+
+    @Override
+    public PPUStatus getStatus() {
+        return status;
+    }
+
+    @Override
+    public OAM getPrimaryOAM() {
+        return primaryOAM;
+    }
+
+    @Override
+    public OAM getSecondaryOAM() {
+        return secondaryOAM;
     }
 
     @Override
@@ -248,23 +260,16 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
         }
 
-        var foregroundPixel    = 0x00;
-        var foregroundPalette  = 0x00;
-        var foregroundPriority = 0x00;
-
-        if (mask.isRenderSprites()) {
-            if (mask.isRenderSpritesLeft() || (cycle >= 9)) {
-                // TODO: Render sprites.
-            }
-        }
+        var foregroundPixelAndPalette = spriteEvaluator.getFinalPixelAndPalette();
+        var foregroundPixel           = foregroundPixelAndPalette.pixel();
+        var foregroundPalette         = foregroundPixelAndPalette.palette();
+        var foregroundPriority        = foregroundPixelAndPalette.priority();
 
         var pixel   = 0x00;
         var palette = 0x00;
 
         if (backgroundPixel == 0 && foregroundPixel == 0) {
             // Both pixels are transparent, no one wins.
-            pixel   = 0x00;
-            palette = 0x00;
         } else if (backgroundPixel == 0 && foregroundPixel > 0) {
             // The background pixel is transparent, but the foreground pixel is visible.
             // The foreground pixel wins!
@@ -286,52 +291,20 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 palette = backgroundPalette;
             }
 
-            // TODO: Sprite Zero Hit detection.
-        } else {
+            spriteEvaluator.detectSpriteZeroCollision();
+        }/* else {
             pixel   = backgroundPixel;
             palette = backgroundPalette;
-        }
+        }*/
 
         //noinspection UnnecessaryLocalVariable
         var rgb = this.palette[readVideoMemory(PALETTE_RAM_START + (palette << 2) + pixel) & 0x3F];
         return rgb;
     }
 
-    private int oamIndex;
-    private int secondaryOamIndex;
-
     @Override
     public void clock() {
-        // During all visible scanlines, the PPU scans through OAM to determine which sprites to render on the next scanline.
-        // Sprites found to be within range are copied into the secondary OAM, which is then used to initialize eight internal sprite output units.
-        if (scanLine >= 0 && scanLine <= 239) {
-            if (cycle >= 1 && cycle <= 64) {
-                if (cycle == 1) {
-                    oamIndex          = 0;
-                    secondaryOamIndex = 0;
-                }
-
-                // Secondary OAM (32-byte buffer for current sprites on scanline) is initialized to $FF - attempting to read $2004 will return $FF.
-                secondaryOAM.fill(0xFF);
-            }
-
-            if (cycle >= 65 && cycle <= 256) {
-                if (cycle == 65) {
-                    oamIndex          = 0;
-                    secondaryOamIndex = 0;
-                }
-
-                if (cycle % 2 == 0) {
-                    // On even cycles, data is written to secondary OAM (unless secondary OAM is full, in which case it will read the value in secondary OAM instead).
-                } else {
-                    // On odd cycles, data is read from (primary) OAM.
-                }
-            }
-
-            if (cycle >= 257 && cycle <= 320) {
-                // TODO: Sprite fetches.
-            }
-        }
+        spriteEvaluator.onPpuCycle();
 
         if (scanLine >= -1 && scanLine < 240) {
             if (scanLine == 0 && cycle == 0 && oddFrame && (mask.isRenderBackground() || mask.isRenderSprites())) {
@@ -461,7 +434,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
     /**
      * Reading from the PPUSTATUS register will clear the VBLANK flag in {@link #control}.
      * <p>
-     * Only the 3 biths furthest to the left in the PPUSTATUS register contain status information.
+     * Only the 3 bits furthest to the left in the PPUSTATUS register contain status information.
      * However, when reading the PPUSTATUS register, the bottom 5 bits is expected to contain data from the previous PPU bus operation.
      */
     private int readPpuStatus() {
@@ -478,6 +451,11 @@ public class Ppu2C02Impl implements Ppu2C02 {
         addressLatch = 0;
 
         return data;
+    }
+
+    @Override
+    public void writePrimaryOAM(int address, int value) {
+        primaryOAM.write(address, value);
     }
 
     /**
@@ -595,11 +573,6 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 log.warn("Unknown register: {}", "%04X".formatted(address));
                 break;
         }
-    }
-
-    @Override
-    public void writeOAM(int dmaAddress, int dmaData) {
-        primaryOAM.write(oamaddr, dmaAddress);
     }
 
     @Override
