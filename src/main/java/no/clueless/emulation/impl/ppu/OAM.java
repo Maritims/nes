@@ -63,6 +63,10 @@ public class OAM {
         oam[n][m] = value;
     }
 
+    public void set (int n, int value) {
+        Arrays.fill(oam[n], value);
+    }
+
     /**
      * Gets a sprite entry from the OAM.
      *

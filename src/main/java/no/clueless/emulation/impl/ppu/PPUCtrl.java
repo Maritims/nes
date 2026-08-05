@@ -77,6 +77,15 @@ public class PPUCtrl {
         return (register & 0x20) >> 5;
     }
 
+    /**
+     * Convenience function for retrieving the sprite height based on the sprite size flag.
+     *
+     * @return 16 if the sprite size flag is not set, otherwise 8.
+     */
+    public int getSpriteHeight() {
+        return getSpriteSize() == 0 ? 8 : 16;
+    }
+
     public void setSpriteSize(boolean isSpriteSize) {
         if (isSpriteSize) {
             register |= 0x20;
