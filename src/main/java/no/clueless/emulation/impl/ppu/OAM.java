@@ -1,7 +1,6 @@
 package no.clueless.emulation.impl.ppu;
 
 import java.util.Arrays;
-import java.util.Objects;
 
 import static no.clueless.emulation.impl.Masks.MASK_8BIT;
 
@@ -76,72 +75,11 @@ public class OAM {
     }
 
     /**
-     * Represents a sprite entry.
-     *
+     * @param y          The Y coordinate of the sprite (byte 0).
+     * @param tileIndex  The index of the tile (byte 1).
+     * @param attributes The attributes of the sprite (byte 2).
+     * @param x          The X coordinate of the sprite (byte 3).
      */
-    public static final class Entry {
-        private final int y;
-        private final int tileIndex;
-        private final int attributes;
-        private       int x;
-
-        /**
-         * @param y          The Y coordinate of the sprite (byte 0).
-         * @param tileIndex  The index of the tile (byte 1).
-         * @param attributes The attributes of the sprite (byte 2).
-         * @param x          The X coordinate of the sprite (byte 3).
-         */
-        public Entry(int y, int tileIndex, int attributes, int x) {
-            this.y          = y;
-            this.tileIndex  = tileIndex;
-            this.attributes = attributes;
-            this.x          = x;
-        }
-
-        public int getY() {
-            return y;
-        }
-
-        public int getTileIndex() {
-            return tileIndex;
-        }
-
-        public int getAttributes() {
-            return attributes;
-        }
-
-        public int getX() {
-            return x;
-        }
-
-        public void decrementX() {
-            x -= 1;
-        }
-
-        @Override
-        public boolean equals(Object obj) {
-            if (obj == this) return true;
-            if (obj == null || obj.getClass() != this.getClass()) return false;
-            var that = (Entry) obj;
-            return this.y == that.y &&
-                    this.tileIndex == that.tileIndex &&
-                    this.attributes == that.attributes &&
-                    this.x == that.x;
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(y, tileIndex, attributes, x);
-        }
-
-        @Override
-        public String toString() {
-            return "Entry[" +
-                    "y=" + y + ", " +
-                    "tileIndex=" + tileIndex + ", " +
-                    "attributes=" + attributes + ", " +
-                    "x=" + x + ']';
-        }
-
+    public record Entry(int y, int tileIndex, int attributes, int x) {
     }
 }
