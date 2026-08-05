@@ -163,14 +163,6 @@ public class Ppu2C02Impl implements Ppu2C02 {
     }
     // endregion
 
-    // region Sprite evaluation
-    private int     spriteCount;
-    private int[]   spriteShifterPatternLow  = new int[8];
-    private int[]   spriteShifterPatternHigh = new int[8];
-    private boolean isSpriteZeroBeingRendered;
-    private boolean isSpriteZeroHitPossible;
-    // endregion
-
     public void updateShifters() {
         if (mask.isRenderBackground()) {
             backgroundShifterPatternLow    = (backgroundShifterPatternLow << 1) & MASK_16BIT;
@@ -317,10 +309,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 status.setSpriteOverflow(false);
                 isFrameComplete = false;
 
-                for (var i = 0; i < 8; i++) {
-                    spriteShifterPatternLow[i]  = 0;
-                    spriteShifterPatternHigh[i] = 0;
-                }
+                spriteEvaluator.resetShifters();
             }
 
             if ((cycle >= 2 && cycle <= 257) || (cycle >= 321 && cycle < 338)) {

@@ -16,26 +16,21 @@ public final class SpriteEvaluator {
     private       boolean isSecondaryOAMFull;
 
     /**
-     * An integer representing the current step of evaluation (Step 1: Finding Sprites, Step 2: Copying Data, Step 3: Overflow Search).
-     */
-    private int     evalState;
-    /**
      * An integer representing the sprite number (0-63).
      */
-    private int     n;
+    private int n;
     /**
      * An integer representing the byte within the sprite (0-3).
      */
-    private int     m;
+    private int m;
     /**
      * An integer pointing to the current byte being written in secondary OAM (0-3).
      */
-    private int     secondaryOamByteIndex;
+    private int secondaryOamByteIndex;
     /**
      * An 8-bit buffer for OAM reads.
      */
-    private int     spriteLatch;
-    private boolean isReadyForDataCopy;
+    private int spriteLatch;
 
     public SpriteEvaluator(Ppu2C02 ppu) {
         this.ppu = ppu;
@@ -48,7 +43,6 @@ public final class SpriteEvaluator {
     public void resetShifters() {
         Arrays.fill(spriteShifterPatternLow, 0x00);
         Arrays.fill(spriteShifterPatternHigh, 0x00);
-        Arrays.fill(spriteXLatches, 0x00);
     }
 
     public void updateShifters() {
@@ -127,15 +121,18 @@ public final class SpriteEvaluator {
      * <p>Sprites found to be within range are copied into the secondary OAM, which is then used to initialize eight internal sprite output units.</p>
      */
     public void onPpuCycle() {
-        if (ppu.getScanLine() < 0 || ppu.getScanLine() > 239) {
+        var scanLine = ppu.getScanLine();
+        var cycle    = ppu.getCycle();
+
+        if (scanLine < 0 || scanLine > 239) {
             // Invisible scan line.
             return;
         }
 
         // Cycles 1-64: Secondary OAM (32-byte buffer for current sprites on scanline) is initialized to $FF - attempting to read $2004 will return $FF.
-        if (ppu.getCycle() >= 1 && ppu.getCycle() <= 64) {
+        if (cycle >= 1 && cycle <= 64) {
             // Reset internal state for the new scan line.
-            if (ppu.getCycle() == 1) {
+            if (cycle == 1) {
                 n                     = 0;
                 m                     = 0;
                 secondaryOamByteIndex = 0;
@@ -144,19 +141,18 @@ public final class SpriteEvaluator {
             }
 
             // The secondary OAM can only be written to on even cycles.
-            if (ppu.getCycle() % 2 == 0) {
-                var targetIndex = (ppu.getCycle() / 2) - 1;
+            if (cycle % 2 == 0) {
+                var targetIndex = ((cycle / 2) - 1) % 8;
                 ppu.getSecondaryOAM().set(targetIndex, 0xFF);
             }
-            return;
         }
 
         // Cycles 65-256: Sprite evaluation
-        else if (ppu.getCycle() >= 65 && ppu.getCycle() <= 256) {
-            if (ppu.getCycle() % 2 == 1) {
+        else if (cycle >= 65 && cycle <= 256) {
+            if (cycle % 2 == 1) {
                 // On odd cycles, data is read from (primary) OAM.
                 spriteLatch = ppu.getPrimaryOAM().get(n, m);
-            } else if (ppu.getCycle() % 2 == 0) {
+            } else {
                 // On even cycles, data is written to secondary OAM (unless secondary OAM is full, in which case it will read the value in secondary OAM instead).
                 if (isSecondaryOAMFull()) {
                     // Step 3
@@ -164,7 +160,7 @@ public final class SpriteEvaluator {
                     var spriteY      = sprite.y();
                     var spriteHeight = ppu.getControl().getSpriteSize() == 0 ? 8 : 16;
 
-                    if (ppu.getScanLine() >= spriteY && ppu.getScanLine() < spriteY + spriteHeight) {
+                    if (scanLine >= spriteY && scanLine < spriteY + spriteHeight) {
                         // Step 3a: If the value is in range, set the sprite overflow flag in $2002.
                         ppu.getStatus().setSpriteOverflow(true);
                     }
@@ -178,7 +174,7 @@ public final class SpriteEvaluator {
 
                     if (m == 0) {
                         // 1a. If Y-coordinate is in range, copy remaining bytes of sprite data (OAM[n][1] thru OAM[n][3]) into secondary OAM.
-                        if (isSpriteInRange(spriteLatch, ppu.getScanLine(), ppu.getControl().getSpriteHeight())) {
+                        if (isSpriteInRange(spriteLatch, scanLine, ppu.getControl().getSpriteHeight())) {
                             // Set m and secondaryOamByteIndex in preparation for the next write cycle.
                             m                     = 1;
                             secondaryOamByteIndex = 1;
@@ -218,21 +214,19 @@ public final class SpriteEvaluator {
         }
 
         // Cycles 257-320: Sprite fetches (8 sprites total, 8 cycles per sprite)
-        else if (ppu.getCycle() >= 257 && ppu.getCycle() <= 320) {
+        else if (cycle >= 257 && cycle <= 320) {
             // 1-4: Read the Y-coordinate, tile number, attributes, and X-coordinate of the selected sprite from secondary OAM
             // 5-8: Read the X-coordinate of the selected sprite from secondary OAM 4 times (while the PPU fetches the sprite tile data)
             // For the first empty sprite slot, this will consist of sprite #63's Y-coordinate followed by 3 $FF bytes; for subsequent empty sprite slots, this will be four $FF bytes
 
-            var offset      = ppu.getCycle() - 257; // Cycles through 257-320 takes exactly 64 cycles.
+            var offset      = cycle - 257; // Cycles through 257-320 takes exactly 64 cycles.
             var spriteIndex = offset / 8; // Secondary OAM holds up to 8 sprites.
             var subCycle    = offset % 8;
 
             if (spriteIndex < spriteCount) {
                 if (subCycle < 4) {
-                    var spriteByte = ppu.getSecondaryOAM().get(spriteIndex, subCycle);
                     // TODO: Load into shifters.
                 } else {
-                    var spriteX = ppu.getSecondaryOAM().get(spriteIndex, 3);
                     // TODO: Table fetches.
                 }
             } else {
@@ -242,7 +236,7 @@ public final class SpriteEvaluator {
                     var dummyByte = 0xFF;
                 }
             }
-        } else if (ppu.getCycle() == 340) {
+        } else if (cycle == 340) {
             for (var i = 0; i < spriteCount; i++) {
                 var sprite                   = ppu.getSecondaryOAM().getSprite(i);
                 var spritePatternBitsLow     = 0;
@@ -255,12 +249,12 @@ public final class SpriteEvaluator {
                         // Sprite is not flipped vertically.
                         spritePatternAddressLow = (ppu.getControl().getSpritePatternTableAddress() << 12) // Which pattern table?
                                 | (sprite.tileIndex() << 4) // Which cell?
-                                | (ppu.getScanLine() - sprite.y()); // Which row in cell?
+                                | (scanLine - sprite.y()); // Which row in cell?
                     } else {
                         // Sprite is flipped vertically.
                         spritePatternAddressLow = (ppu.getControl().getSpritePatternTableAddress() << 12) // Which pattern table?
                                 | (sprite.tileIndex() << 4) // Which cell?
-                                | (7 - (ppu.getScanLine() - sprite.y())); // Which row in cell?
+                                | (7 - (scanLine - sprite.y())); // Which row in cell?
                     }
                 } else {
                     // TODO: 8x16 mode.
