@@ -63,8 +63,14 @@ public class OAM {
         oam[n][m] = value;
     }
 
-    public void set (int n, int value) {
-        Arrays.fill(oam[n], value);
+    public int getByte(int flatIndex) {
+        var idx = flatIndex & 0x1F;
+        return oam[idx / 4][idx % 4];
+    }
+
+    public void setByte(int flatIndex, int value) {
+        var idx = flatIndex & 0x1F;
+        oam[idx / 4][idx % 4] = value;
     }
 
     /**

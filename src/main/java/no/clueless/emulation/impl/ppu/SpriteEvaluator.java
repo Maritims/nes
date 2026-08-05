@@ -121,8 +121,9 @@ public final class SpriteEvaluator {
      * <p>Sprites found to be within range are copied into the secondary OAM, which is then used to initialize eight internal sprite output units.</p>
      */
     public void onPpuCycle() {
-        var scanLine = ppu.getScanLine();
-        var cycle    = ppu.getCycle();
+        var scanLine     = ppu.getScanLine();
+        var cycle        = ppu.getCycle();
+        var spriteHeight = ppu.getControl().getSpriteSize() == 0 ? 8 : 16;
 
         if (scanLine < 0 || scanLine > 239) {
             // Invisible scan line.
@@ -142,8 +143,8 @@ public final class SpriteEvaluator {
 
             // The secondary OAM can only be written to on even cycles.
             if (cycle % 2 == 0) {
-                var targetIndex = ((cycle / 2) - 1) % 8;
-                ppu.getSecondaryOAM().set(targetIndex, 0xFF);
+                var byteIndex = (cycle / 2) - 1;
+                ppu.getSecondaryOAM().setByte(byteIndex, 0xFF);
             }
         }
 
@@ -156,11 +157,7 @@ public final class SpriteEvaluator {
                 // On even cycles, data is written to secondary OAM (unless secondary OAM is full, in which case it will read the value in secondary OAM instead).
                 if (isSecondaryOAMFull()) {
                     // Step 3
-                    var sprite       = ppu.getSecondaryOAM().getSprite(m);
-                    var spriteY      = sprite.y();
-                    var spriteHeight = ppu.getControl().getSpriteSize() == 0 ? 8 : 16;
-
-                    if (scanLine >= spriteY && scanLine < spriteY + spriteHeight) {
+                    if (isSpriteInRange(spriteLatch, scanLine, spriteHeight)) {
                         // Step 3a: If the value is in range, set the sprite overflow flag in $2002.
                         ppu.getStatus().setSpriteOverflow(true);
                     }
@@ -174,7 +171,7 @@ public final class SpriteEvaluator {
 
                     if (m == 0) {
                         // 1a. If Y-coordinate is in range, copy remaining bytes of sprite data (OAM[n][1] thru OAM[n][3]) into secondary OAM.
-                        if (isSpriteInRange(spriteLatch, scanLine, ppu.getControl().getSpriteHeight())) {
+                        if (isSpriteInRange(spriteLatch, scanLine, spriteHeight)) {
                             // Set m and secondaryOamByteIndex in preparation for the next write cycle.
                             m                     = 1;
                             secondaryOamByteIndex = 1;
