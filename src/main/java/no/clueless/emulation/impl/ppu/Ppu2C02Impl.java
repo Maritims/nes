@@ -26,10 +26,10 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private boolean oddFrame = false;
     private boolean nmi;
 
-    public Ppu2C02Impl(PixelListener pixelListener) {
+    public Ppu2C02Impl(PixelListener pixelListener, PpuRegisters registers, PpuBus ppuBus) {
         this.pixelListener   = pixelListener;
-        this.registers       = new PpuRegisters();
-        this.bus             = new PpuBus(new PaletteRAM(() -> registers.mask().isGrayscale()));
+        this.registers       = registers;
+        this.bus             = ppuBus;
         this.registerHandler = new PpuRegisterHandler(registers, bus::read, bus::write);
         this.spriteEvaluator = new SpriteEvaluator(this, registers, bus, this::getCycle, this::getScanLine);
         this.pixelCompositor = new PixelCompositor(new NESPalette(), registers, bus, registerHandler, spriteEvaluator);

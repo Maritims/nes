@@ -8,7 +8,11 @@ import no.clueless.emulation.impl.controller.NESControllerImpl;
 import no.clueless.emulation.impl.cpu.Cpu6502Impl;
 import no.clueless.emulation.impl.cpu.CpuHistory;
 import no.clueless.emulation.impl.ppu.NESPalette;
+import no.clueless.emulation.impl.ppu.PaletteRAM;
 import no.clueless.emulation.impl.ppu.Ppu2C02Impl;
+import no.clueless.emulation.impl.ppu.event.RenderListener;
+import no.clueless.emulation.impl.ppu.register.PpuBus;
+import no.clueless.emulation.impl.ppu.register.PpuRegisters;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -45,7 +49,10 @@ public class Application {
         var cpu        = new Cpu6502Impl(cpuHistory, false);
         var controller = new NESControllerImpl();
         var gamePanel  = new GamePanel();
-        var ppu        = new Ppu2C02Impl(gamePanel);
+        var registers  = new PpuRegisters();
+        var paletteRAM = new PaletteRAM(() -> registers.mask().isGrayscale());
+        var ppuBus     = new PpuBus(paletteRAM);
+        var ppu        = new Ppu2C02Impl(gamePanel, registers, ppuBus);
         var apu        = new Apu2A03Impl();
         var nes        = new BusImpl(cpu, ppu, apu, controller, null);
         nes.insertCartridge(cartridge);
@@ -99,10 +106,19 @@ public class Application {
             }
         });
 
-        var gameLoop = new GameLoop(nes, gamePanel);
-        var cpuPanel = new CpuPanel(cpu);
-        var ppuPanel = new PpuPanel(ppu);
-        var paletteViewPanel = new PaletteViewPanel(new NESPalette(), null);
+        var paletteViewPanel = new PaletteViewPanel(new NESPalette(), paletteRAM);
+
+        var renderListener = new RenderListener() {
+            @Override
+            public void render() {
+                gamePanel.render();
+                paletteViewPanel.render();
+            }
+        };
+
+        var gameLoop         = new GameLoop(nes, renderListener);
+        var cpuPanel         = new CpuPanel(cpu);
+        var ppuPanel         = new PpuPanel(ppu);
 
         var gameWindow = new GameWindow(gamePanel, cpuPanel, ppuPanel, paletteViewPanel);
 

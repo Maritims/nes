@@ -18,7 +18,7 @@ public class PpuVisualizer {
 
         var cpuHistory = new CpuHistory();
         var cpu        = new Cpu6502Impl(cpuHistory, false);
-        var ppu        = new Ppu2C02Impl(null);
+        var ppu        = new Ppu2C02Impl(null, null, null);
 
         // Pass cpu and ppu into your Bus
         var bus = new BusImpl(cpu, ppu, null, null, null);
