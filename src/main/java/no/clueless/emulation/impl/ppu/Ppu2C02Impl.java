@@ -7,19 +7,16 @@ import no.clueless.emulation.impl.ppu.register.PpuBus;
 import no.clueless.emulation.impl.ppu.register.PpuRegisterHandler;
 import no.clueless.emulation.impl.ppu.register.PpuRegisters;
 
-import static no.clueless.emulation.impl.Masks.*;
-import static no.clueless.emulation.impl.PpuMemoryMap.*;
-
 public class Ppu2C02Impl implements Ppu2C02 {
-    private final PpuRegisterHandler registerHandler;
     private final PpuRegisters       registers;
     private final PpuBus             bus;
+    private final PpuRegisterHandler registerHandler;
+    private final PixelListener      pixelListener;
+    private final SpriteEvaluator    spriteEvaluator;
     private final PixelCompositor    pixelCompositor;
+    private final BackgroundPipeline backgroundPipeline;
 
     private boolean isFrameComplete;
-
-    private final PixelListener   pixelListener;
-    private final SpriteEvaluator spriteEvaluator;
 
     private int     scanLine = 0;
     private int     cycle    = 0;
@@ -27,54 +24,13 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private boolean nmi;
 
     public Ppu2C02Impl(PixelListener pixelListener, PpuRegisters registers, PpuBus ppuBus) {
-        this.pixelListener   = pixelListener;
-        this.registers       = registers;
-        this.bus             = ppuBus;
-        this.registerHandler = new PpuRegisterHandler(registers, bus::read, bus::write);
-        this.spriteEvaluator = new SpriteEvaluator(this, registers, bus, this::getCycle, this::getScanLine);
-        this.pixelCompositor = new PixelCompositor(new NESPalette(), registers, bus, registerHandler, spriteEvaluator);
-    }
-
-    private void resetShifters() {
-        backgroundNextTileId           = 0;
-        backgroundNextTileAttribute    = 0;
-        backgroundNextTileLsb          = 0;
-        backgroundNextTileMsb          = 0;
-        backgroundShifterPatternLow    = 0;
-        backgroundShifterPatternHigh   = 0;
-        backgroundShifterAttributeLow  = 0;
-        backgroundShifterAttributeHigh = 0;
-
-        spriteEvaluator.resetShifters();
-    }
-
-    // region Background rendering
-    private int backgroundNextTileId           = 0x00;
-    private int backgroundNextTileAttribute    = 0x00;
-    private int backgroundNextTileLsb          = 0x00;
-    private int backgroundNextTileMsb          = 0x00;
-    private int backgroundShifterPatternLow    = 0x0000;
-    private int backgroundShifterPatternHigh   = 0x0000;
-    private int backgroundShifterAttributeLow  = 0x0000;
-    private int backgroundShifterAttributeHigh = 0x0000;
-
-    public void loadBackgroundShifters() {
-        backgroundShifterPatternLow    = (backgroundShifterPatternLow & 0xFF00) | (backgroundNextTileLsb & 0x00FF);
-        backgroundShifterPatternHigh   = (backgroundShifterPatternHigh & 0xFF00) | (backgroundNextTileMsb & 0x00FF);
-        backgroundShifterAttributeLow  = (backgroundShifterAttributeLow & 0xFF00) | ((backgroundNextTileAttribute & 0b01) != 0 ? 0xFF : 0x00);
-        backgroundShifterAttributeHigh = (backgroundShifterAttributeHigh & 0xFF00) | ((backgroundNextTileAttribute & 0b10) != 0 ? 0xFF : 0x00);
-    }
-    // endregion
-
-    public void updateShifters() {
-        if (registers.mask().isRenderBackground()) {
-            backgroundShifterPatternLow    = (backgroundShifterPatternLow << 1) & MASK_16BIT;
-            backgroundShifterPatternHigh   = (backgroundShifterPatternHigh << 1) & MASK_16BIT;
-            backgroundShifterAttributeLow  = (backgroundShifterAttributeLow << 1) & MASK_16BIT;
-            backgroundShifterAttributeHigh = (backgroundShifterAttributeHigh << 1) & MASK_16BIT;
-        }
-
-        spriteEvaluator.updateShifters();
+        this.registers          = registers;
+        this.bus                = ppuBus;
+        this.registerHandler    = new PpuRegisterHandler(registers, bus::read, bus::write);
+        this.pixelListener      = pixelListener;
+        this.spriteEvaluator    = new SpriteEvaluator(this, registers, bus, this::getCycle, this::getScanLine);
+        this.pixelCompositor    = new PixelCompositor(new NESPalette(), registers, bus, registerHandler, spriteEvaluator);
+        this.backgroundPipeline = new BackgroundPipeline(registers, bus::read);
     }
 
     @Override
@@ -143,72 +99,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 spriteEvaluator.resetShifters();
             }
 
-            if ((cycle >= 2 && cycle <= 257) || (cycle >= 321 && cycle < 338)) {
-                // Shift registers to the left to feed the pixel to the screen.
-                updateShifters();
-
-                // Run the background fetcher pipeline to load the next tile's pattern and attribute data.
-                switch ((cycle - 1) % 8) {
-                    case 0:
-                        loadBackgroundShifters();
-                        backgroundNextTileId = bus.read(0x2000 | (registers.vramAddress().getRegister() & MASK_12BIT));
-                        break;
-                    case 2:
-                        backgroundNextTileAttribute = bus.read(ATTRIBUTE_TABLE_0_START
-                                | (registers.vramAddress().getNameTableY() & 0x0C00)
-                                | registers.vramAddress().getNameTableX()
-                                | ((registers.vramAddress().getCoarseY() >> 2) << 3)
-                                | (registers.vramAddress().getCoarseX() >> 2));
-
-                        if ((registers.vramAddress().getCoarseY() & 0x02) != 0) {
-                            backgroundNextTileAttribute >>= 4;
-                        }
-                        if ((registers.vramAddress().getCoarseX() & 0x02) != 0) {
-                            backgroundNextTileAttribute >>= 2;
-                        }
-                        backgroundNextTileAttribute &= BOTTOM_2_BITS;
-                        break;
-                    case 4:
-                        backgroundNextTileLsb = bus.read((registers.control().getBackgroundPatternTableAddress() << 12)
-                                + ((backgroundNextTileId << 4) & MASK_16BIT)
-                                + (registers.vramAddress().getFineY()));
-                        break;
-                    case 6:
-                        backgroundNextTileMsb = bus.read((registers.control().getBackgroundPatternTableAddress() << 12)
-                                + ((backgroundNextTileId << 4) & MASK_16BIT)
-                                + (registers.vramAddress().getFineY() + 8));
-                        break;
-                    case 7:
-                        if (registers.mask().isRenderSprites() || registers.mask().isRenderBackground()) {
-                            registers.vramAddress().incrementX();
-                        }
-                        break;
-                }
-            }
-
-            if (cycle == 256) {
-                if (registers.mask().isRenderSprites() || registers.mask().isRenderBackground()) {
-                    registers.vramAddress().IncrementY();
-                }
-            }
-
-            if (cycle == 257) {
-                loadBackgroundShifters();
-
-                if (registers.mask().isRenderSprites() || registers.mask().isRenderBackground()) {
-                    registers.vramAddress().transferHorizontalBits(registers.tempVramAddress());
-                }
-            }
-
-            if (cycle == 338 || cycle == 340) {
-                backgroundNextTileId = bus.read(0x2000 | (registers.vramAddress().getRegister() & MASK_12BIT));
-            }
-
-            if (scanLine == -1 && cycle >= 280 && cycle < 305) {
-                if (registers.mask().isRenderSprites() || registers.mask().isRenderBackground()) {
-                    registers.vramAddress().transferVerticalBits(registers.tempVramAddress());
-                }
-            }
+            backgroundPipeline.onTick(cycle, scanLine);
         }
 
         // Vertical blanking lines.
@@ -223,7 +114,13 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
         }
 
-        var finalPixelColor = pixelCompositor.compose(cycle, backgroundShifterPatternLow, backgroundShifterPatternHigh, backgroundShifterAttributeLow, backgroundShifterAttributeHigh);
+        var finalPixelColor = pixelCompositor.compose(
+                cycle,
+                backgroundPipeline.getShifterPatternLow(),
+                backgroundPipeline.getShifterPatternHigh(),
+                backgroundPipeline.getShifterAttributeLow(),
+                backgroundPipeline.getShifterAttributeHigh()
+        );
         pixelListener.setPixel(cycle - 1, scanLine, finalPixelColor);
 
         cycle++;
@@ -245,7 +142,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
         isFrameComplete = false;
         oddFrame        = false;
 
-        resetShifters();
+        backgroundPipeline.resetShifters();
         registerHandler.reset();
     }
 
