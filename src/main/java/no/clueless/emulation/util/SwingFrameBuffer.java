@@ -16,7 +16,6 @@ public class SwingFrameBuffer extends JFrame implements FrameBuffer {
     private static final Logger        log = LoggerFactory.getLogger(SwingFrameBuffer.class);
     private final        BufferedImage image;
     private final        int[]         pixels;
-    private final        JLabel        statusLabel;
 
     public SwingFrameBuffer(String title, int scale, NESControllerImpl controller) {
         image  = new BufferedImage(FrameBuffer.WIDTH, FrameBuffer.HEIGHT, BufferedImage.TYPE_INT_RGB);
@@ -35,7 +34,7 @@ public class SwingFrameBuffer extends JFrame implements FrameBuffer {
         panel.setPreferredSize(new Dimension(FrameBuffer.WIDTH * scale, FrameBuffer.HEIGHT * scale));
         add(panel, BorderLayout.CENTER);
 
-        statusLabel = new JLabel("FPS: 0.0", SwingConstants.LEFT);
+        var statusLabel = new JLabel("FPS: 0.0", SwingConstants.LEFT);
         statusLabel.setBorder(BorderFactory.createEmptyBorder(2, 5, 2, 5));
         statusLabel.setFont(new Font(Font.MONOSPACED, Font.PLAIN, 12));
         add(statusLabel, BorderLayout.SOUTH);
@@ -88,7 +87,4 @@ public class SwingFrameBuffer extends JFrame implements FrameBuffer {
         repaint();
     }
 
-    public int convertRgbToInt(int red, int green, int blue) {
-        return RgbToIntConverter.convertRgbToInt(red, green, blue);
-    }
 }
