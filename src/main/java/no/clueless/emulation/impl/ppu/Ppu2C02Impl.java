@@ -60,12 +60,32 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     @Override
     public void setFrameComplete(boolean frameComplete) {
-        isFrameComplete = false;
+        isFrameComplete = frameComplete;
     }
 
     @Override
     public boolean isVerticalBlank() {
         return registers.status().isVerticalBlank();
+    }
+
+    @Override
+    public int getFineX() {
+        return registerHandler.getFineX();
+    }
+
+    @Override
+    public int getFineY() {
+        return registers.vramAddress().getFineY();
+    }
+
+    @Override
+    public int getCoarseX() {
+        return registers.vramAddress().getCoarseX();
+    }
+
+    @Override
+    public int getCoarseY() {
+        return registers.vramAddress().getCoarseY();
     }
 
     public void setScanLine(int scanLine) {
@@ -114,14 +134,16 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
         }
 
-        var finalPixelColor = pixelCompositor.compose(
-                cycle,
-                backgroundPipeline.getShifterPatternLow(),
-                backgroundPipeline.getShifterPatternHigh(),
-                backgroundPipeline.getShifterAttributeLow(),
-                backgroundPipeline.getShifterAttributeHigh()
-        );
-        pixelListener.setPixel(cycle - 1, scanLine, finalPixelColor);
+        if (scanLine >= 0 && scanLine <= 240 && cycle >= 1 && cycle <= 256) {
+            var finalPixelColor = pixelCompositor.compose(
+                    cycle,
+                    backgroundPipeline.getShifterPatternLow(),
+                    backgroundPipeline.getShifterPatternHigh(),
+                    backgroundPipeline.getShifterAttributeLow(),
+                    backgroundPipeline.getShifterAttributeHigh()
+            );
+            pixelListener.setPixel(cycle - 1, scanLine, finalPixelColor);
+        }
 
         cycle++;
 

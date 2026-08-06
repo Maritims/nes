@@ -73,10 +73,7 @@ public class PixelCompositor {
             }
 
             spriteEvaluator.detectSpriteZeroCollision();
-        }/* else {
-            pixel   = backgroundPixel;
-            palette = backgroundPalette;
-        }*/
+        }
 
         //noinspection UnnecessaryLocalVariable
         var rgb = this.palette.get(bus.read(PALETTE_RAM_START + (palette << 2) + pixel) & 0x3F);

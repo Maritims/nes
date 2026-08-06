@@ -23,8 +23,8 @@ public class GameWindow extends JFrame {
         var eastWrapper = new JPanel(new BorderLayout());
         eastWrapper.setOpaque(false);
         eastWrapper.add(cpuPanel, BorderLayout.NORTH);
-        eastWrapper.add(ppuPanel, BorderLayout.NORTH);
-        eastWrapper.add(paletteViewPanel, BorderLayout.NORTH);
+        eastWrapper.add(ppuPanel, BorderLayout.CENTER);
+        eastWrapper.add(paletteViewPanel, BorderLayout.SOUTH);
 
         add(gamePanel, BorderLayout.CENTER);
         add(eastWrapper, BorderLayout.EAST);

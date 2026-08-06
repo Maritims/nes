@@ -14,6 +14,14 @@ public interface Ppu2C02 {
 
     boolean isVerticalBlank();
 
+    int getFineX();
+
+    int getFineY();
+
+    int getCoarseX();
+
+    int getCoarseY();
+
     void connectToCartridge(Cartridge cartridge);
 
     void clock();

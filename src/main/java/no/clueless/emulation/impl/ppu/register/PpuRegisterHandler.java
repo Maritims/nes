@@ -98,8 +98,8 @@ public class PpuRegisterHandler {
      */
     private void writeControl(int data) {
         registers.control().setRegister(data);
-        registers.tempVramAddress().setNameTableX((registers.control().getNameTableX() & 0x400) != 0);
-        registers.tempVramAddress().setNameTableY((registers.control().getNameTableY() & 0x800) != 0);
+        registers.tempVramAddress().setNameTableX((data & 0x01) != 0);
+        registers.tempVramAddress().setNameTableY((data & 0x02) != 0);
     }
 
     /**

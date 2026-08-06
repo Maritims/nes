@@ -13,14 +13,14 @@ public class BusImpl implements Bus {
     private final int[]   controllers      = new int[2];
     private final int[]   controller_state = new int[2];
 
-    private final int[]     cpuRam          = new int[2048];
+    private final int[]     cpuRam              = new int[2048];
     private       Cartridge cartridge;
-    private       int       totalClockCount = 0;
+    private       int       totalClockCount     = 0;
     private       int       dmaPage;
     private       int       dmaAddress;
     private       boolean   isDmaTransfer;
-    private       int     dmaData;
-    private       boolean isDmaAlignmentCycle = true;
+    private       int       dmaData;
+    private       boolean   isDmaAlignmentCycle = true;
 
     public BusImpl(Cpu6502 cpu, Ppu2C02 ppu, Apu2A03 apu, Controller controller1, Controller controller2) {
         if (cpu == null) {
@@ -185,9 +185,9 @@ public class BusImpl implements Bus {
         cpu.reset();
         ppu.reset();
         cartridge.reset();
-        totalClockCount = 0;
-        dmaPage         = 0x00;
-        dmaAddress      = 0x00;
+        totalClockCount     = 0;
+        dmaPage             = 0x00;
+        dmaAddress          = 0x00;
         dmaData             = 0x00;
         isDmaAlignmentCycle = true;
         isDmaTransfer       = false;
