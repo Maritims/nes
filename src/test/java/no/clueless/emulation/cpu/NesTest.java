@@ -95,7 +95,7 @@ public class NesTest {
         var romPath   = Paths.get("src/test/resources/Super Mario Bros. (Japan, USA).nes");
         var cartridge = new CartridgeImpl(romPath);
         var cpu       = new Cpu6502Impl(mock(), false);
-        var ppu       = new Ppu2C02Impl(mock());
+        var ppu       = new Ppu2C02Impl(mock(), mock(), mock());
         var bus       = new BusImpl(cpu, ppu, mock(), mock(), mock());
 
         bus.insertCartridge(cartridge);

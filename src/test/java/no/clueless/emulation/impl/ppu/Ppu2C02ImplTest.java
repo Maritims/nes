@@ -87,7 +87,7 @@ class Ppu2C02ImplTest {
         status      = spy(new PpuStatus());
         v           = spy(new LoopyRegister());
         frameBuffer = mock(FrameBuffer.class);
-        sut         = new Ppu2C02Impl(frameBuffer);
+        sut         = new Ppu2C02Impl(frameBuffer, mock(), mock());
     }
 
     @Test

@@ -1,8 +1,5 @@
 package no.clueless.emulation.impl.ppu.register;
 
-import static no.clueless.emulation.impl.Masks.BOTTOM_5_BITS;
-import static no.clueless.emulation.impl.Masks.MASK_12BIT;
-
 /**
  * Represents the Loopy Register.
  * <p>Source: <a href="https://www.nesdev.org/wiki/PPU_scrolling#PPU_internal_registers">https://www.nesdev.org/wiki/PPU_scrolling#PPU_internal_registers</a></p>
@@ -22,7 +19,7 @@ public class LoopyRegister {
      * Coarse X is stored in bits 1-5.
      */
     public int getCoarseX() {
-        return register & BOTTOM_5_BITS;
+        return register & 0x1F;
     }
 
     public void setCoarseX(int value) {
@@ -84,7 +81,7 @@ public class LoopyRegister {
      * The value of the nametable index is stored in bits 11-12.
      */
     public int getNameTableIndex() {
-        return register & MASK_12BIT;
+        return (register >> 10) & 0x03;
     }
 
     public int getUnused() {
@@ -92,7 +89,7 @@ public class LoopyRegister {
     }
 
     public void setUnused(int unused) {
-        this.register = unused & 0x80;
+        this.register = (register & ~0x80) | (unused & 0x80);
     }
 
     /**
