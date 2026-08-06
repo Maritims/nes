@@ -81,8 +81,8 @@ public class BackgroundPipeline {
                     break;
                 case 2:
                     nextTileAttribute = readBus.apply(ATTRIBUTE_TABLE_0_START
-                            | (registers.vramAddress().getNameTableY() & 0x0C00)
-                            | registers.vramAddress().getNameTableX()
+                            | (registers.vramAddress().getNameTableY() << 11)
+                            | (registers.vramAddress().getNameTableX() << 10)
                             | ((registers.vramAddress().getCoarseY() >> 2) << 3)
                             | (registers.vramAddress().getCoarseX() >> 2));
 
