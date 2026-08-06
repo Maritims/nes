@@ -1,9 +1,8 @@
 package no.clueless.emulation.impl.ppu.register;
 
 import no.clueless.emulation.Cartridge;
+import no.clueless.emulation.impl.ppu.PaletteRAM;
 import no.clueless.emulation.impl.ppu.PatternTable;
-
-import java.util.function.BooleanSupplier;
 
 import static no.clueless.emulation.impl.Masks.MASK_12BIT;
 import static no.clueless.emulation.impl.Masks.MASK_8BIT;
@@ -13,14 +12,12 @@ import static no.clueless.emulation.impl.PpuMemoryMap.PALETTE_RAM_END;
 public class PpuBus {
     private final PatternTable[] patternTables = new PatternTable[]{new PatternTable(), new PatternTable()};
     private final int[][]        nameTables    = new int[2][1024];
-    private final int[]          paletteTable  = new int[32];
-
-    private final BooleanSupplier grayscale;
+    private final PaletteRAM     paletteRAM;
 
     private Cartridge cartridge;
 
-    public PpuBus(BooleanSupplier grayscale) {
-        this.grayscale = grayscale;
+    public PpuBus(PaletteRAM paletteRAM) {
+        this.paletteRAM = paletteRAM;
     }
 
     public void connectToCartridge(Cartridge cartridge) {
@@ -73,7 +70,8 @@ public class PpuBus {
             if (address == 0x0014) address = 0x0004;
             if (address == 0x0018) address = 0x0008;
             if (address == 0x001C) address = 0x000C;
-            data = paletteTable[address] & (grayscale.getAsBoolean() ? 0x30 : 0x3F);
+            //data = paletteTable[address] & (grayscale.getAsBoolean() ? 0x30 : 0x3F);
+            data = paletteRAM.read(address);
         }
 
         return data;
@@ -128,7 +126,8 @@ public class PpuBus {
             if (address == 0x0014) address = 0x0004;
             if (address == 0x0018) address = 0x0008;
             if (address == 0x001C) address = 0x000C;
-            paletteTable[address] = data;
+            //paletteTable[address] = data;
+            paletteRAM.write(address, data);
         }
     }
 }

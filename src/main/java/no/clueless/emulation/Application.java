@@ -1,15 +1,13 @@
 package no.clueless.emulation;
 
-import no.clueless.emulation.gui.CpuPanel;
-import no.clueless.emulation.gui.GamePanel;
-import no.clueless.emulation.gui.GameWindow;
-import no.clueless.emulation.gui.PpuPanel;
+import no.clueless.emulation.gui.*;
 import no.clueless.emulation.impl.BusImpl;
 import no.clueless.emulation.impl.apu.Apu2A03Impl;
 import no.clueless.emulation.impl.cartridge.CartridgeImpl;
 import no.clueless.emulation.impl.controller.NESControllerImpl;
 import no.clueless.emulation.impl.cpu.Cpu6502Impl;
 import no.clueless.emulation.impl.cpu.CpuHistory;
+import no.clueless.emulation.impl.ppu.NESPalette;
 import no.clueless.emulation.impl.ppu.Ppu2C02Impl;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -104,8 +102,9 @@ public class Application {
         var gameLoop = new GameLoop(nes, gamePanel);
         var cpuPanel = new CpuPanel(cpu);
         var ppuPanel = new PpuPanel(ppu);
+        var paletteViewPanel = new PaletteViewPanel(new NESPalette(), null);
 
-        var gameWindow = new GameWindow(gamePanel, cpuPanel, ppuPanel);
+        var gameWindow = new GameWindow(gamePanel, cpuPanel, ppuPanel, paletteViewPanel);
 
         gameLoop.setFpsListener(event -> gameWindow.setFps(event.getFps()));
         gameLoop.setCpuMhzListener(event -> {
