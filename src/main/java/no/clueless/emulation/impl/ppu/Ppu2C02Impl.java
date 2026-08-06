@@ -1,10 +1,8 @@
 package no.clueless.emulation.impl.ppu;
 
 import no.clueless.emulation.Cartridge;
-import no.clueless.emulation.gui.FrameBuffer;
 import no.clueless.emulation.Ppu2C02;
 
-import static no.clueless.emulation.impl.CpuMemoryMap.PPU_REGISTER_START;
 import static no.clueless.emulation.impl.Masks.*;
 import static no.clueless.emulation.impl.PpuMemoryMap.*;
 
@@ -16,7 +14,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     private boolean isFrameComplete;
 
-    private final FrameBuffer     frameBuffer;
+    private final PixelListener   pixelListener;
     private final SpriteEvaluator spriteEvaluator;
 
     private int     scanLine = 0;
@@ -24,8 +22,8 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private boolean oddFrame = false;
     private boolean nmi;
 
-    public Ppu2C02Impl(FrameBuffer frameBuffer) {
-        this.frameBuffer     = frameBuffer;
+    public Ppu2C02Impl(PixelListener pixelListener) {
+        this.pixelListener   = pixelListener;
         this.registers       = new PpuRegisters();
         this.bus             = new PpuBus(() -> registers.mask().isGrayscale());
         this.registerHandler = new PpuRegisterHandler(registers, bus::read, bus::write);
@@ -119,11 +117,6 @@ public class Ppu2C02Impl implements Ppu2C02 {
     }
 
     @Override
-    public FrameBuffer getFrameBuffer() {
-        return frameBuffer;
-    }
-
-    @Override
     public void connectToCartridge(Cartridge cartridge) {
         bus.connectToCartridge(cartridge);
     }
@@ -154,7 +147,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
                 switch ((cycle - 1) % 8) {
                     case 0:
                         loadBackgroundShifters();
-                        backgroundNextTileId = bus.read(PPU_REGISTER_START | (registers.vramAddress().getRegister() & MASK_12BIT));
+                        backgroundNextTileId = bus.read(0x2000 | (registers.vramAddress().getRegister() & MASK_12BIT));
                         break;
                     case 2:
                         backgroundNextTileAttribute = bus.read(ATTRIBUTE_TABLE_0_START
@@ -204,7 +197,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
 
             if (cycle == 338 || cycle == 340) {
-                backgroundNextTileId = bus.read(PPU_REGISTER_START | (registers.vramAddress().getRegister() & MASK_12BIT));
+                backgroundNextTileId = bus.read(0x2000 | (registers.vramAddress().getRegister() & MASK_12BIT));
             }
 
             if (scanLine == -1 && cycle >= 280 && cycle < 305) {
@@ -227,7 +220,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
         }
 
         var finalPixelColor = pixelCompositor.compose(cycle, backgroundShifterPatternLow, backgroundShifterPatternHigh, backgroundShifterAttributeLow, backgroundShifterAttributeHigh);
-        frameBuffer.setPixel(cycle - 1, scanLine, finalPixelColor);
+        pixelListener.pixelUpdated(cycle - 1, scanLine, finalPixelColor);
 
         cycle++;
 

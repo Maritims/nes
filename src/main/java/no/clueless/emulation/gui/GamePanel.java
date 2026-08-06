@@ -31,14 +31,7 @@ public class GamePanel extends JPanel implements FrameBuffer, KeyListener {
     }
 
     @Override
-    public void setPixel(int x, int y, int rgb) {
-        if (x >= 0 && y >= 0 && x < FrameBuffer.WIDTH && y < FrameBuffer.HEIGHT) {
-            pixels[y * FrameBuffer.WIDTH + x] = rgb;
-        }
-    }
-
-    @Override
-    public void render() {
+    public void renderUpdated() {
         repaint();
     }
 
@@ -55,5 +48,12 @@ public class GamePanel extends JPanel implements FrameBuffer, KeyListener {
     @Override
     public void keyReleased(KeyEvent e) {
         keyListener.keyReleased(e);
+    }
+
+    @Override
+    public void pixelUpdated(int x, int y, int rgb) {
+        if (x >= 0 && y >= 0 && x < FrameBuffer.WIDTH && y < FrameBuffer.HEIGHT) {
+            pixels[y * FrameBuffer.WIDTH + x] = rgb;
+        }
     }
 }

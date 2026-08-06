@@ -1,6 +1,5 @@
 package no.clueless.emulation.impl.ppu;
 
-import static no.clueless.emulation.impl.CpuMemoryMap.PRG_ROM_START;
 import static no.clueless.emulation.impl.PpuMemoryMap.PALETTE_RAM_START;
 
 public class PixelCompositor {
@@ -24,7 +23,7 @@ public class PixelCompositor {
 
         if (registers.mask().isRenderBackground()) {
             if (registers.mask().isRenderBackgroundLeft() || cycle >= 9) {
-                var bitMux = PRG_ROM_START >> registerHandler.getFineX();
+                var bitMux = 0x8000 >> registerHandler.getFineX();
 
                 var p0Pixel = (backgroundShifterPatternLow & bitMux) > 0 ? 1 : 0;
                 var p1Pixel = (backgroundShifterPatternHigh & bitMux) > 0 ? 1 : 0;

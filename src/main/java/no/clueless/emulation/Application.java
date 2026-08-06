@@ -43,17 +43,17 @@ public class Application {
         //var       filename = "ppu_vbl_nmi.nes";
         var cartridge = loadCartridge(filename);
 
-        var cpuHistory  = new CpuHistory();
-        var cpu         = new Cpu6502Impl(cpuHistory, false);
-        var controller  = new NESControllerImpl();
-        var frameBuffer = new GamePanel();
-        var ppu         = new Ppu2C02Impl(frameBuffer);
-        var apu         = new Apu2A03Impl();
-        var nes         = new BusImpl(cpu, ppu, apu, controller, null);
+        var cpuHistory = new CpuHistory();
+        var cpu        = new Cpu6502Impl(cpuHistory, false);
+        var controller = new NESControllerImpl();
+        var gamePanel  = new GamePanel();
+        var ppu        = new Ppu2C02Impl(gamePanel);
+        var apu        = new Apu2A03Impl();
+        var nes        = new BusImpl(cpu, ppu, apu, controller, null);
         nes.insertCartridge(cartridge);
         nes.reset();
 
-        frameBuffer.setKeyListener(new KeyListener() {
+        gamePanel.setKeyListener(new KeyListener() {
             private int setOrClear(int original, int bitmask, boolean isPressed) {
                 return isPressed ? original | bitmask : original & ~bitmask;
             }
@@ -81,7 +81,7 @@ public class Application {
                     return;
                 }
 
-                var newValue = setOrClear(controller1, button.getBitmask(),  isPressed);
+                var newValue = setOrClear(controller1, button.getBitmask(), isPressed);
                 nes.setController1(newValue);
             }
 
@@ -101,11 +101,11 @@ public class Application {
             }
         });
 
-        var gameLoop = new GameLoop(nes);
+        var gameLoop = new GameLoop(nes, gamePanel);
         var cpuPanel = new CpuPanel(cpu);
         var ppuPanel = new PpuPanel(ppu);
 
-        var gameWindow = new GameWindow(frameBuffer, cpuPanel, ppuPanel);
+        var gameWindow = new GameWindow(gamePanel, cpuPanel, ppuPanel);
 
         gameLoop.setFpsListener(event -> gameWindow.setFps(event.getFps()));
         gameLoop.setCpuMhzListener(event -> {

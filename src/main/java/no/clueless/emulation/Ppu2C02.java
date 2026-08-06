@@ -1,6 +1,5 @@
 package no.clueless.emulation;
 
-import no.clueless.emulation.gui.FrameBuffer;
 import no.clueless.emulation.impl.ppu.OAM;
 
 /**
@@ -52,6 +51,4 @@ public interface Ppu2C02 {
     boolean isFrameComplete();
 
     void setFrameComplete(boolean frameComplete);
-
-    FrameBuffer getFrameBuffer();
 }

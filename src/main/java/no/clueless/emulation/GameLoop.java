@@ -4,6 +4,8 @@ import no.clueless.emulation.event.CpuMhzEvent;
 import no.clueless.emulation.event.CpuMhzListener;
 import no.clueless.emulation.event.FpsEvent;
 import no.clueless.emulation.event.FpsListener;
+import no.clueless.emulation.gui.FrameBuffer;
+import no.clueless.emulation.impl.ppu.RenderListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -14,13 +16,15 @@ public class GameLoop implements Runnable {
     private static final Logger log                        = LoggerFactory.getLogger(GameLoop.class);
 
     private final Bus            nes;
+    private final RenderListener renderListener;
     private       boolean        isRunning;
     private       Thread         gameThread;
     private       FpsListener    fpsListener;
     private       CpuMhzListener cpuMhzListener;
 
-    public GameLoop(Bus nes) {
-        this.nes = nes;
+    public GameLoop(Bus nes, RenderListener renderListener) {
+        this.nes            = nes;
+        this.renderListener = renderListener;
     }
 
     public void setFpsListener(FpsListener fpsListener) {
@@ -101,7 +105,7 @@ public class GameLoop implements Runnable {
                 totalCyclesExecuted++;
 
                 if (nes.getPpu().isFrameComplete()) {
-                    nes.getPpu().getFrameBuffer().render();
+                    renderListener.renderUpdated();
                     nes.getPpu().setFrameComplete(false);
 
                     totalFramesRendered++;

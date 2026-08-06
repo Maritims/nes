@@ -3,7 +3,6 @@ package no.clueless.emulation.impl;
 import no.clueless.emulation.*;
 import no.clueless.emulation.impl.cartridge.CartridgeImpl;
 
-import static no.clueless.emulation.impl.CpuMemoryMap.*;
 import static no.clueless.emulation.impl.Masks.MASK_16BIT;
 import static no.clueless.emulation.impl.Masks.MASK_8BIT;
 
@@ -155,7 +154,7 @@ public class BusImpl implements Bus {
             //log.debug("Controller read");
             data = (controller_state[address & 0x0001] & 0x80) > 0 ? 1 : 0;
             controller_state[address & 0x0001] <<= 1;
-        } else if (address >= PRG_ROM_START && address <= PRG_ROM_END) {
+        } else if (address >= 0x8000 && address <= 0xFFFF) {
             // Cartridge
             data = cartridge.readPrg(address).orElseThrow();
         }

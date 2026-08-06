@@ -14,6 +14,10 @@ import static no.clueless.emulation.impl.PpuMemoryMap.PPUDATA;
 public class PpuRegisterHandler {
     private static final Logger log = org.slf4j.LoggerFactory.getLogger(PpuRegisterHandler.class);
 
+    private static void logUnknownRegister(int address) {
+        log.warn("Unknown register: {}", "%04X".formatted(address));
+    }
+
     private final PpuRegisters registers;
 
     private final Function<Integer, Integer>   readBus;
@@ -83,7 +87,7 @@ public class PpuRegisterHandler {
             case OAMDATA -> registers.primaryOAM().read(oamaddr);
             case PPUDATA -> readData();
             default -> {
-                log.warn("Unknown register: {}", "%04X".formatted(address));
+                logUnknownRegister(address);
                 yield 0x00;
             }
         };
@@ -163,7 +167,7 @@ public class PpuRegisterHandler {
                 writeData(data);
                 break;
             default:
-                log.warn("Unknown register: {}", "%04X".formatted(address));
+                logUnknownRegister(address);
                 break;
         }
     }
