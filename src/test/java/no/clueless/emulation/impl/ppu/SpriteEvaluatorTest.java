@@ -1,6 +1,7 @@
 package no.clueless.emulation.impl.ppu;
 
 import no.clueless.emulation.Ppu2C02;
+import no.clueless.emulation.impl.ppu.register.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -18,7 +19,7 @@ class SpriteEvaluatorTest {
     PpuControl control;
     PpuStatus  status;
     OAM        primaryOAM;
-    OAM             secondaryOAM;
+    OAM        secondaryOAM;
     Ppu2C02         ppu;
     SpriteEvaluator sut;
 

@@ -1,4 +1,4 @@
-package no.clueless.emulation.impl.ppu;
+package no.clueless.emulation.impl.ppu.register;
 
 import static no.clueless.emulation.impl.Masks.BOTTOM_5_BITS;
 import static no.clueless.emulation.impl.Masks.MASK_12BIT;

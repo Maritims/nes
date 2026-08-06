@@ -1,4 +1,4 @@
-package no.clueless.emulation.impl.ppu;
+package no.clueless.emulation.impl.ppu.register;
 
 import no.clueless.emulation.impl.PpuMemoryMap;
 import org.slf4j.Logger;

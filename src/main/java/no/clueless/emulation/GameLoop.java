@@ -4,8 +4,7 @@ import no.clueless.emulation.event.CpuMhzEvent;
 import no.clueless.emulation.event.CpuMhzListener;
 import no.clueless.emulation.event.FpsEvent;
 import no.clueless.emulation.event.FpsListener;
-import no.clueless.emulation.gui.FrameBuffer;
-import no.clueless.emulation.impl.ppu.RenderListener;
+import no.clueless.emulation.impl.ppu.event.RenderListener;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -105,7 +104,7 @@ public class GameLoop implements Runnable {
                 totalCyclesExecuted++;
 
                 if (nes.getPpu().isFrameComplete()) {
-                    renderListener.renderUpdated();
+                    renderListener.render();
                     nes.getPpu().setFrameComplete(false);
 
                     totalFramesRendered++;

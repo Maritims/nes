@@ -1,6 +1,8 @@
 package no.clueless.emulation.impl.ppu;
 
 import no.clueless.emulation.Ppu2C02;
+import no.clueless.emulation.impl.ppu.register.PpuBus;
+import no.clueless.emulation.impl.ppu.register.PpuRegisters;
 
 import java.util.Arrays;
 import java.util.function.IntSupplier;

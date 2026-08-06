@@ -1,6 +1,6 @@
 package no.clueless.emulation;
 
-import no.clueless.emulation.impl.ppu.OAM;
+import no.clueless.emulation.impl.ppu.register.OAM;
 
 /**
  * Represents the NES Picture Processing Unit, the 2C02.

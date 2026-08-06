@@ -1,5 +1,9 @@
 package no.clueless.emulation.impl.ppu;
 
+import no.clueless.emulation.impl.ppu.register.PpuBus;
+import no.clueless.emulation.impl.ppu.register.PpuRegisterHandler;
+import no.clueless.emulation.impl.ppu.register.PpuRegisters;
+
 import static no.clueless.emulation.impl.PpuMemoryMap.PALETTE_RAM_START;
 
 public class PixelCompositor {

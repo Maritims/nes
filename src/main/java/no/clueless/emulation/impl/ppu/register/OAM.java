@@ -1,4 +1,4 @@
-package no.clueless.emulation.impl.ppu;
+package no.clueless.emulation.impl.ppu.register;
 
 import java.util.Arrays;
 

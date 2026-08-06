@@ -1,6 +1,10 @@
 package no.clueless.emulation.impl.ppu;
 
 import no.clueless.emulation.gui.FrameBuffer;
+import no.clueless.emulation.impl.ppu.register.LoopyRegister;
+import no.clueless.emulation.impl.ppu.register.PpuControl;
+import no.clueless.emulation.impl.ppu.register.PpuMask;
+import no.clueless.emulation.impl.ppu.register.PpuStatus;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -13,7 +17,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 class Ppu2C02ImplTest {
-    private PpuControl control;
+    private PpuControl    control;
     private PpuMask       mask;
     private PpuStatus     status;
     private LoopyRegister v;

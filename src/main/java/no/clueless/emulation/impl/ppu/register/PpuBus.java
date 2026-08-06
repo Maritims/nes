@@ -1,6 +1,7 @@
-package no.clueless.emulation.impl.ppu;
+package no.clueless.emulation.impl.ppu.register;
 
 import no.clueless.emulation.Cartridge;
+import no.clueless.emulation.impl.ppu.PatternTable;
 
 import java.util.function.BooleanSupplier;
 

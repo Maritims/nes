@@ -2,6 +2,10 @@ package no.clueless.emulation.impl.ppu;
 
 import no.clueless.emulation.Cartridge;
 import no.clueless.emulation.Ppu2C02;
+import no.clueless.emulation.impl.ppu.event.PixelListener;
+import no.clueless.emulation.impl.ppu.register.PpuBus;
+import no.clueless.emulation.impl.ppu.register.PpuRegisterHandler;
+import no.clueless.emulation.impl.ppu.register.PpuRegisters;
 
 import static no.clueless.emulation.impl.Masks.*;
 import static no.clueless.emulation.impl.PpuMemoryMap.*;
@@ -220,7 +224,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
         }
 
         var finalPixelColor = pixelCompositor.compose(cycle, backgroundShifterPatternLow, backgroundShifterPatternHigh, backgroundShifterAttributeLow, backgroundShifterAttributeHigh);
-        pixelListener.pixelUpdated(cycle - 1, scanLine, finalPixelColor);
+        pixelListener.setPixel(cycle - 1, scanLine, finalPixelColor);
 
         cycle++;
 
