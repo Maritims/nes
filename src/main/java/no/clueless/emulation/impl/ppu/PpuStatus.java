@@ -3,7 +3,7 @@ package no.clueless.emulation.impl.ppu;
 import static no.clueless.emulation.impl.Masks.BOTTOM_5_BITS;
 import static no.clueless.emulation.impl.Masks.MASK_8BIT;
 
-public class PPUStatus {
+public class PpuStatus {
     private int register;
 
     public int getRegister() {

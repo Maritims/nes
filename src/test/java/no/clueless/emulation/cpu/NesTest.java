@@ -115,7 +115,7 @@ public class NesTest {
             StringBuilder sb = new StringBuilder();
             for (int col = 0; col < 32; col++) {
                 int vramAddr  = 0x2000 + (row * 32) + col;
-                int tileIndex = ppu.readVideoMemory(vramAddr); // Read raw VRAM tile index
+                int tileIndex = ppu.readPpuBus(vramAddr); // Read raw VRAM tile index
 
                 // Convert tile index to ASCII character if printable, else show '.'
                 char c = (tileIndex >= 32 && tileIndex <= 126) ? (char) tileIndex : '.';

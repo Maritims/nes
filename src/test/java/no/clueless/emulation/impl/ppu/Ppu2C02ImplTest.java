@@ -13,9 +13,9 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
 class Ppu2C02ImplTest {
-    private PPUCtrl       control;
-    private PPUMask       mask;
-    private PPUStatus     status;
+    private PpuControl control;
+    private PpuMask       mask;
+    private PpuStatus     status;
     private LoopyRegister v;
     private FrameBuffer   frameBuffer;
     private Ppu2C02Impl   sut;
@@ -78,12 +78,12 @@ class Ppu2C02ImplTest {
 
     @BeforeEach
     void setUp() {
-        control     = spy(new PPUCtrl());
-        mask        = spy(new PPUMask());
-        status      = spy(new PPUStatus());
+        control     = spy(new PpuControl());
+        mask        = spy(new PpuMask());
+        status      = spy(new PpuStatus());
         v           = spy(new LoopyRegister());
         frameBuffer = mock(FrameBuffer.class);
-        sut         = new Ppu2C02Impl(control, mask, status, v, frameBuffer);
+        sut         = new Ppu2C02Impl(frameBuffer);
     }
 
     @Test

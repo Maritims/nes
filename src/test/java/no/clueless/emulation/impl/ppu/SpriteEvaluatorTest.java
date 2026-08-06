@@ -15,9 +15,9 @@ import static org.mockito.Mockito.*;
 
 class SpriteEvaluatorTest {
 
-    PPUCtrl         control;
-    PPUStatus       status;
-    OAM             primaryOAM;
+    PpuControl control;
+    PpuStatus  status;
+    OAM        primaryOAM;
     OAM             secondaryOAM;
     Ppu2C02         ppu;
     SpriteEvaluator sut;
@@ -33,17 +33,12 @@ class SpriteEvaluatorTest {
 
     @BeforeEach
     void setUp() {
-        control      = mock(PPUCtrl.class);
-        status       = mock(PPUStatus.class);
+        control      = mock(PpuControl.class);
+        status       = mock(PpuStatus.class);
         primaryOAM   = mock(OAM.class);
         secondaryOAM = mock(OAM.class);
         ppu          = mock(Ppu2C02.class);
-        sut          = spy(new SpriteEvaluator(ppu));
-
-        when(ppu.getControl()).thenReturn(control);
-        when(ppu.getStatus()).thenReturn(status);
-        when(ppu.getPrimaryOAM()).thenReturn(primaryOAM);
-        when(ppu.getSecondaryOAM()).thenReturn(secondaryOAM);
+        sut          = spy(new SpriteEvaluator(ppu, mock(PpuRegisters.class), mock(PpuBus.class), () -> 0, () -> 0));
     }
 
     @ParameterizedTest

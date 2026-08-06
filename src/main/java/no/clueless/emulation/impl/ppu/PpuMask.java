@@ -2,7 +2,7 @@ package no.clueless.emulation.impl.ppu;
 
 import static no.clueless.emulation.impl.Masks.MASK_8BIT;
 
-public class PPUMask {
+public class PpuMask {
     private int register;
 
     public int getRegister() {
