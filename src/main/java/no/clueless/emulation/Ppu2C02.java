@@ -37,7 +37,7 @@ public interface Ppu2C02 {
      */
     void writeRegister(int address, int value);
 
-    int readPpuBus(int address);
+    int readBus(int address);
 
     /**
      * Writes an 8-bit value to a 16-bit address in the {@link OAM}.

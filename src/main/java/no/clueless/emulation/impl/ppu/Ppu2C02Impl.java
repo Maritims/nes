@@ -5,15 +5,14 @@ import no.clueless.emulation.gui.FrameBuffer;
 import no.clueless.emulation.Ppu2C02;
 
 import static no.clueless.emulation.impl.CpuMemoryMap.PPU_REGISTER_START;
-import static no.clueless.emulation.impl.CpuMemoryMap.PRG_ROM_START;
 import static no.clueless.emulation.impl.Masks.*;
 import static no.clueless.emulation.impl.PpuMemoryMap.*;
 
 public class Ppu2C02Impl implements Ppu2C02 {
-    private final NESPalette         palette;
     private final PpuRegisterHandler registerHandler;
     private final PpuRegisters       registers;
     private final PpuBus             bus;
+    private final PixelCompositor    pixelCompositor;
 
     private boolean isFrameComplete;
 
@@ -27,11 +26,11 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     public Ppu2C02Impl(FrameBuffer frameBuffer) {
         this.frameBuffer     = frameBuffer;
-        this.palette         = new NESPalette();
         this.registers       = new PpuRegisters();
         this.bus             = new PpuBus(() -> registers.mask().isGrayscale());
         this.registerHandler = new PpuRegisterHandler(registers, bus::read, bus::write);
         this.spriteEvaluator = new SpriteEvaluator(this, registers, bus, this::getCycle, this::getScanLine);
+        this.pixelCompositor = new PixelCompositor(new NESPalette(), registers, bus, registerHandler, spriteEvaluator);
     }
 
     private void resetShifters() {
@@ -127,68 +126,6 @@ public class Ppu2C02Impl implements Ppu2C02 {
     @Override
     public void connectToCartridge(Cartridge cartridge) {
         bus.connectToCartridge(cartridge);
-    }
-
-    private int getFinalPixelColor() {
-        var backgroundPixel   = 0x00;
-        var backgroundPalette = 0x00;
-
-        if (registers.mask().isRenderBackground()) {
-            if (registers.mask().isRenderBackgroundLeft() || cycle >= 9) {
-                var bitMux = PRG_ROM_START >> registerHandler.getFineX();
-
-                var p0Pixel = (backgroundShifterPatternLow & bitMux) > 0 ? 1 : 0;
-                var p1Pixel = (backgroundShifterPatternHigh & bitMux) > 0 ? 1 : 0;
-
-                backgroundPixel = (p1Pixel << 1) | p0Pixel;
-
-                var backgroundPalette0 = (backgroundShifterAttributeLow & bitMux) > 0 ? 1 : 0;
-                var backgroundPalette1 = (backgroundShifterAttributeHigh & bitMux) > 0 ? 1 : 0;
-
-                backgroundPalette = (backgroundPalette1 << 1) | backgroundPalette0;
-            }
-        }
-
-        var foregroundPixelAndPalette = spriteEvaluator.getFinalPixelAndPalette();
-        var foregroundPixel           = foregroundPixelAndPalette.pixel();
-        var foregroundPalette         = foregroundPixelAndPalette.palette();
-        var foregroundPriority        = foregroundPixelAndPalette.priority();
-
-        var pixel   = 0x00;
-        var palette = 0x00;
-
-        if (backgroundPixel == 0 && foregroundPixel == 0) {
-            // Both pixels are transparent, no one wins.
-        } else if (backgroundPixel == 0 && foregroundPixel > 0) {
-            // The background pixel is transparent, but the foreground pixel is visible.
-            // The foreground pixel wins!
-            pixel   = foregroundPixel;
-            palette = foregroundPalette;
-        } else if (backgroundPixel > 0 && foregroundPixel == 0) {
-            // The background pixel is visible, but the foreground pixel is transparent.
-            // The background pixel wins!
-            pixel   = backgroundPixel;
-            palette = backgroundPalette;
-        } else if (backgroundPixel > 0 && foregroundPixel > 0) {
-            if (foregroundPriority > 0) {
-                // The foreground pixel is more important.
-                pixel   = foregroundPixel;
-                palette = foregroundPalette;
-            } else {
-                // The background pixel is more important.
-                pixel   = backgroundPixel;
-                palette = backgroundPalette;
-            }
-
-            spriteEvaluator.detectSpriteZeroCollision();
-        }/* else {
-            pixel   = backgroundPixel;
-            palette = backgroundPalette;
-        }*/
-
-        //noinspection UnnecessaryLocalVariable
-        var rgb = this.palette.get(bus.read(PALETTE_RAM_START + (palette << 2) + pixel) & 0x3F);
-        return rgb;
     }
 
     @Override
@@ -289,7 +226,8 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
         }
 
-        frameBuffer.setPixel(cycle - 1, scanLine, getFinalPixelColor());
+        var finalPixelColor = pixelCompositor.compose(cycle, backgroundShifterPatternLow, backgroundShifterPatternHigh, backgroundShifterAttributeLow, backgroundShifterAttributeHigh);
+        frameBuffer.setPixel(cycle - 1, scanLine, finalPixelColor);
 
         cycle++;
 
@@ -330,7 +268,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
     }
 
     @Override
-    public int readPpuBus(int address) {
+    public int readBus(int address) {
         return bus.read(address);
     }
 }
