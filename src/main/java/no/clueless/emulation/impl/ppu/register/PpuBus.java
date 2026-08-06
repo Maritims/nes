@@ -1,6 +1,7 @@
 package no.clueless.emulation.impl.ppu.register;
 
 import no.clueless.emulation.Cartridge;
+import no.clueless.emulation.impl.ppu.NameTables;
 import no.clueless.emulation.impl.ppu.PaletteRAM;
 import no.clueless.emulation.impl.ppu.PatternTable;
 
@@ -11,7 +12,7 @@ import static no.clueless.emulation.impl.PpuMemoryMap.PALETTE_RAM_END;
 
 public class PpuBus {
     private final PatternTable[] patternTables = new PatternTable[]{new PatternTable(), new PatternTable()};
-    private final int[][]        nameTables    = new int[2][1024];
+    private final NameTables     nameTables    = new NameTables();
     private final PaletteRAM     paletteRAM;
 
     private Cartridge cartridge;
@@ -41,28 +42,7 @@ public class PpuBus {
         } else if (address >= NAME_TABLE_START && address <= UNUSED_END) {
             if (cartridge != null) {
                 address &= MASK_12BIT;
-
-                if (cartridge.isMirroredVertically()) {
-                    if (address <= NAME_TABLE_SIZE_MINUS_ONE) {
-                        data = nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE];
-                    } else if (address <= 0x07FF) {
-                        data = nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE];
-                    } else if (address <= 0x0BFF) {
-                        data = nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE];
-                    } else {
-                        data = nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE];
-                    }
-                } else {
-                    if (address <= NAME_TABLE_SIZE_MINUS_ONE) {
-                        data = nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE];
-                    } else if (address <= 0x07FF) {
-                        data = nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE];
-                    } else if (address <= 0x0BFF) {
-                        data = nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE];
-                    } else {
-                        data = nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE];
-                    }
-                }
+                data = nameTables.read(address, cartridge.isMirroredVertically());
             }
         } else if (address >= PALETTE_RAM_START && address <= PALETTE_RAM_END) {
             data = paletteRAM.read(address);
@@ -90,27 +70,7 @@ public class PpuBus {
             address &= MASK_12BIT;
 
             if (cartridge != null) {
-                if (cartridge.isMirroredVertically()) {
-                    if (address <= NAME_TABLE_SIZE_MINUS_ONE) {
-                        nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
-                    } else if (address <= 0x07FF) {
-                        nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
-                    } else if (address <= 0x0BFF) {
-                        nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
-                    } else {
-                        nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
-                    }
-                } else {
-                    if (address <= NAME_TABLE_SIZE_MINUS_ONE) {
-                        nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
-                    } else if (address <= 0x07FF) {
-                        nameTables[0][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
-                    } else if (address <= 0x0BFF) {
-                        nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
-                    } else {
-                        nameTables[1][address & NAME_TABLE_SIZE_MINUS_ONE] = data;
-                    }
-                }
+                nameTables.write(address, data, cartridge.isMirroredVertically());
             }
         }
 
