@@ -54,8 +54,8 @@ public class PpuRegisterHandler {
         // Clear the VBLANK flag.
         registers.status().setVerticalBlank(false);
 
-        // TEMPORARY: We have ot mock this to avoid ending up in an infinite loop on the Super Mario Bros. start screen.
-        registers.status().setSpriteZeroHit(true);
+        // TEMPORARY: We have to mock this to avoid ending up in an infinite loop on the Super Mario Bros. start screen.
+        //registers.status().setSpriteZeroHit(true);
 
         // Clear the write-latch.
         addressLatch = 0;

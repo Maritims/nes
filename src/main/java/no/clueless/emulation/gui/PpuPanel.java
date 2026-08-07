@@ -6,14 +6,15 @@ import javax.swing.*;
 import java.awt.*;
 
 public class PpuPanel extends StatsPanel {
-    private final JLabel scanLineLabel = new JLabel("-1");
-    private final JLabel cycleLabel    = new JLabel("0");
-    private final JLabel nmiLabel      = new JLabel("false");
-    private final JLabel verticalBlank = new JLabel("false");
-    private final JLabel fineX         = new JLabel("0");
-    private final JLabel fineY         = new JLabel("0");
-    private final JLabel coarseX       = new JLabel("0");
-    private final JLabel coarseY       = new JLabel("0");
+    private final JLabel scanLineLabel    = new JLabel("-1");
+    private final JLabel cycleLabel       = new JLabel("0");
+    private final JLabel nmiLabel         = new JLabel("false");
+    private final JLabel verticalBlank    = new JLabel("false");
+    private final JLabel fineX            = new JLabel("0");
+    private final JLabel fineY            = new JLabel("0");
+    private final JLabel coarseX          = new JLabel("0");
+    private final JLabel coarseY          = new JLabel("0");
+    private final JLabel spriteCountLabel = new JLabel("0");
 
     private final Ppu2C02 ppu;
 
@@ -30,6 +31,7 @@ public class PpuPanel extends StatsPanel {
         addRow(createRow("Fine Y", fineY, getStatsFont()));
         addRow(createRow("Coarse X", coarseX, getStatsFont()));
         addRow(createRow("Coarse Y", coarseY, getStatsFont()));
+        addRow(createRow("Sprite count", spriteCountLabel, getStatsFont()));
 
         setPreferredSize(new Dimension(360, getPreferredSize().height));
     }
@@ -43,5 +45,6 @@ public class PpuPanel extends StatsPanel {
         fineY.setText("%d".formatted(ppu.getFineY()));
         coarseX.setText("%d".formatted(ppu.getCoarseX()));
         coarseY.setText("%d".formatted(ppu.getCoarseY()));
+        spriteCountLabel.setText("%d".formatted(ppu.getSpriteCount()));
     }
 }

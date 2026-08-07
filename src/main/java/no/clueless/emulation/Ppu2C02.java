@@ -22,6 +22,8 @@ public interface Ppu2C02 {
 
     int getCoarseY();
 
+    int getSpriteCount();
+
     void connectToCartridge(Cartridge cartridge);
 
     void clock();

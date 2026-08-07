@@ -49,11 +49,15 @@ public class PpuControl {
         }
     }
 
-    public int getSpritePatternTableAddress() {
+    public int getSpritePatternTableIndex() {
         return (register & 0x8) >> 3;
     }
 
-    public void setSpritePatternTableAddress(boolean value) {
+    public int getSpritePatternTableAddress() {
+        return getSpritePatternTableIndex() << 12;
+    }
+
+    public void setSpritePatternTableIndex(boolean value) {
         if (value) {
             register |= 0x8;
         } else {

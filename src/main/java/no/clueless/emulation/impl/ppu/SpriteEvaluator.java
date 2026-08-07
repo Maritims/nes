@@ -1,22 +1,23 @@
 package no.clueless.emulation.impl.ppu;
 
-import no.clueless.emulation.Ppu2C02;
 import no.clueless.emulation.impl.ppu.register.PpuBus;
 import no.clueless.emulation.impl.ppu.register.PpuRegisters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
-import java.util.function.IntSupplier;
 
 public final class SpriteEvaluator {
-    private final PpuRegisters registers;
-    private final PpuBus       ppuBus;
-    private final IntSupplier  cycle;
-    private final IntSupplier  scanLine;
+    private static final Logger       log = LoggerFactory.getLogger(SpriteEvaluator.class);
+    private final        PpuRegisters registers;
+    private final        PpuBus       ppuBus;
 
-    private final int[]   spriteShifterPatternLow  = new int[8];
-    private final int[]   spriteShifterPatternHigh = new int[8];
-    private final int[]   spriteXLatches           = new int[8];
+    private final int[]   shifterPatternLow  = new int[8];
+    private final int[]   shifterPatternHigh = new int[8];
+    private final int[]   spriteXLatches     = new int[8];
     private       int     spriteCount;
+    private       int     evaluatedSpriteCount;
+    private       boolean isSpriteZeroHitPossibleOnNextLine;
     private       boolean isSpriteZeroHitPossible;
     private       boolean isSpriteZeroBeingRendered;
     private       boolean isSecondaryOAMFull;
@@ -38,49 +39,71 @@ public final class SpriteEvaluator {
      */
     private int spriteLatch;
 
-    public SpriteEvaluator(Ppu2C02 ppu, PpuRegisters registers, PpuBus ppuBus, IntSupplier cycle, IntSupplier scanLine) {
+    public SpriteEvaluator(PpuRegisters registers, PpuBus ppuBus) {
         this.registers = registers;
         this.ppuBus    = ppuBus;
-        this.cycle     = cycle;
-        this.scanLine  = scanLine;
+    }
+
+    public int getShifterPatternLow(int spriteIndex) {
+        return shifterPatternLow[spriteIndex];
+    }
+
+    public int getShifterPatternHigh(int spriteIndex) {
+        return shifterPatternHigh[spriteIndex];
+    }
+
+    public boolean isSpriteZeroHitPossible() {
+        return isSpriteZeroHitPossible;
+    }
+
+    public boolean isSpriteZeroBeingRendered() {
+        return isSpriteZeroBeingRendered;
+    }
+
+    public int getSpriteCount() {
+        return spriteCount;
     }
 
     public boolean isSecondaryOAMFull() {
         return isSecondaryOAMFull;
     }
 
-    public void resetShifters() {
-        Arrays.fill(spriteShifterPatternLow, 0x00);
-        Arrays.fill(spriteShifterPatternHigh, 0x00);
+    public void latchSpriteZeroHitPossible() {
+        isSpriteZeroHitPossible = isSpriteZeroHitPossibleOnNextLine;
     }
 
-    public void updateShifters() {
-        if (registers.mask().isRenderSprites() && cycle.getAsInt() >= 1 && cycle.getAsInt() <= 257) {
+    public void resetShifters() {
+        Arrays.fill(shifterPatternLow, 0x00);
+        Arrays.fill(shifterPatternHigh, 0x00);
+    }
+
+    public void updateShifters(int cycle) {
+        if (registers.mask().isRenderSprites() && cycle >= 1 && cycle <= 257) {
             for (var i = 0; i < spriteCount; i++) {
                 if (spriteXLatches[i] > 0) {
                     spriteXLatches[i]--;
                 } else {
-                    spriteShifterPatternLow[i] <<= 1;
-                    spriteShifterPatternHigh[i] <<= 1;
+                    shifterPatternLow[i] <<= 1;
+                    shifterPatternHigh[i] <<= 1;
                 }
             }
         }
     }
 
-    public PixelInformation getFinalPixelAndPalette() {
+    public PixelInformation getFinalPixelAndPalette(int cycle) {
         var foregroundPixel    = 0x00;
         var foregroundPalette  = 0x00;
         var foregroundPriority = 0x00;
 
         if (registers.mask().isRenderSprites()) {
-            if (registers.mask().isRenderSpritesLeft() || (cycle.getAsInt() >= 9)) {
+            if (registers.mask().isRenderSpritesLeft() || (cycle >= 9)) {
                 isSpriteZeroBeingRendered = false;
 
                 for (var i = 0; i < spriteCount; i++) {
                     var sprite = registers.secondaryOAM().getSprite(i);
-                    if (sprite.x() == 0) {
-                        var foregroundPixelLow  = (spriteShifterPatternLow[i] & 0x80) > 0 ? 1 : 0;
-                        var foregroundPixelHigh = (spriteShifterPatternHigh[i] & 0x80) > 0 ? 1 : 0;
+                    if (spriteXLatches[i] == 0) {
+                        var foregroundPixelLow  = (shifterPatternLow[i] & 0x80) > 0 ? 1 : 0;
+                        var foregroundPixelHigh = (shifterPatternHigh[i] & 0x80) > 0 ? 1 : 0;
                         foregroundPixel = (foregroundPixelHigh << 1) | foregroundPixelLow;
 
                         foregroundPalette  = (sprite.attributes() & 0x30) + 0x04;
@@ -100,15 +123,15 @@ public final class SpriteEvaluator {
         return new PixelInformation(foregroundPixel, foregroundPalette, foregroundPriority);
     }
 
-    public void detectSpriteZeroCollision() {
+    public void detectSpriteZeroCollision(int cycle) {
         if (isSpriteZeroHitPossible && isSpriteZeroBeingRendered) {
             if (registers.mask().isRenderBackground() && registers.mask().isRenderSprites()) {
                 if (!registers.mask().isRenderBackgroundLeft() && !registers.mask().isRenderSpritesLeft()) {
-                    if (cycle.getAsInt() >= 9 && cycle.getAsInt() < 258) {
+                    if (cycle >= 9 && cycle < 258) {
                         registers.status().setSpriteZeroHit(true);
                     }
                 } else {
-                    if (cycle.getAsInt() >= 1 && cycle.getAsInt() < 258) {
+                    if (cycle >= 1 && cycle < 258) {
                         registers.status().setSpriteZeroHit(true);
                     }
                 }
@@ -125,13 +148,57 @@ public final class SpriteEvaluator {
         return scanLine >= spriteY && scanLine < spriteY + spriteHeight;
     }
 
+    private void fetchSpritePatternData(int spriteIndex, int scanLine) {
+        var sprite                = registers.secondaryOAM().getSprite(spriteIndex);
+        var spritePatternBitsLow  = 0;
+        var spritePatternBitsHigh = 0;
+        var row                   = scanLine - sprite.y();
+        var addressLow            = 0;
+
+        if (registers.control().getSpriteSize() == 0) {
+            // 8x8 sprites.
+
+            var table = registers.control().getSpritePatternTableAddress();
+
+            if (sprite.isFlippedVertically()) {
+                row = 7 - row;
+            }
+
+            addressLow = table | (sprite.tileIndex() << 4) | (row & 7);
+        } else {
+            // 16x16 sprites.
+
+            var topTile    = sprite.tileIndex() & 0xFE;
+            var bottomTile = sprite.tileIndex() | 1;
+            var table      = (sprite.tileIndex() & 1) << 12;
+
+            if (sprite.isFlippedVertically()) {
+                var tile = row < 8 ? topTile : bottomTile;
+                addressLow = table | (tile << 4) | (row & 7);
+            } else {
+                row = 15 - row;
+                var tile = row < 8 ? topTile : bottomTile;
+                addressLow = table | (tile << 4) | (row & 7);
+            }
+        }
+
+        spritePatternBitsLow  = ppuBus.read(addressLow);
+        spritePatternBitsHigh = ppuBus.read(addressLow + 8);
+
+        if (sprite.isFlippedHorizontally()) {
+            spritePatternBitsLow  = Integer.reverse(spritePatternBitsLow) >>> 24;
+            spritePatternBitsHigh = Integer.reverse(spritePatternBitsHigh) >>> 24;
+        }
+
+        shifterPatternLow[spriteIndex]  = spritePatternBitsLow;
+        shifterPatternHigh[spriteIndex] = spritePatternBitsHigh;
+    }
+
     /**
      * <p>During all visible scan lines, the PPU scans through OAM to determine which sprites to render on the next scan line.</p>
      * <p>Sprites found to be within range are copied into the secondary OAM, which is then used to initialize eight internal sprite output units.</p>
      */
-    public void onPpuCycle() {
-        var scanLine     = this.scanLine.getAsInt();
-        var cycle        = this.cycle.getAsInt();
+    public void evaluate(int cycle, int scanLine) {
         var spriteHeight = registers.control().getSpriteSize() == 0 ? 8 : 16;
 
         if (scanLine < 0 || scanLine > 239) {
@@ -147,7 +214,7 @@ public final class SpriteEvaluator {
                 m                     = 0;
                 secondaryOamByteIndex = 0;
                 isSecondaryOAMFull    = false;
-                spriteCount           = 0;
+                evaluatedSpriteCount  = 0;
             }
 
             // The secondary OAM can only be written to on even cycles.
@@ -159,6 +226,10 @@ public final class SpriteEvaluator {
 
         // Cycles 65-256: Sprite evaluation
         else if (cycle >= 65 && cycle <= 256) {
+            if (cycle == 65) {
+                isSpriteZeroHitPossibleOnNextLine = false;
+            }
+
             if (cycle % 2 == 1) {
                 // On odd cycles, data is read from (primary) OAM.
                 spriteLatch = registers.primaryOAM().get(n, m);
@@ -176,11 +247,16 @@ public final class SpriteEvaluator {
                     m = (m + 1) & 0x3;
                 } else {
                     // 1. Starting at n = 0, read a sprite's Y-coordinate (OAM[n][0], copying it to the next open slot in secondary OAM (unless 8 sprites have been found, in which case the write is ignored).
-                    registers.secondaryOAM().set(spriteCount, secondaryOamByteIndex, spriteLatch);
+                    registers.secondaryOAM().set(evaluatedSpriteCount, secondaryOamByteIndex, spriteLatch);
 
                     if (m == 0) {
                         // 1a. If Y-coordinate is in range, copy remaining bytes of sprite data (OAM[n][1] thru OAM[n][3]) into secondary OAM.
                         if (isSpriteInRange(spriteLatch, scanLine, spriteHeight)) {
+                            if (n == 0) {
+                                //log.debug("Sprite zero hit on scanline {}", scanLine);
+                                isSpriteZeroHitPossibleOnNextLine = true;
+                            }
+
                             // Set m and secondaryOamByteIndex in preparation for the next write cycle.
                             m                     = 1;
                             secondaryOamByteIndex = 1;
@@ -203,9 +279,9 @@ public final class SpriteEvaluator {
                             m                     = 0;
                             secondaryOamByteIndex = 0;
                             n                     = (n + 1) & 0x3F;
-                            spriteCount++;
+                            evaluatedSpriteCount++;
 
-                            if (spriteCount == 8) {
+                            if (evaluatedSpriteCount == 8) {
                                 // We've found 8 sprites and that's all the NES supports. It's time to stop.
                                 isSecondaryOAMFull = true;
                             }
@@ -221,61 +297,45 @@ public final class SpriteEvaluator {
 
         // Cycles 257-320: Sprite fetches (8 sprites total, 8 cycles per sprite)
         else if (cycle >= 257 && cycle <= 320) {
-            // 1-4: Read the Y-coordinate, tile number, attributes, and X-coordinate of the selected sprite from secondary OAM
-            // 5-8: Read the X-coordinate of the selected sprite from secondary OAM 4 times (while the PPU fetches the sprite tile data)
-            // For the first empty sprite slot, this will consist of sprite #63's Y-coordinate followed by 3 $FF bytes; for subsequent empty sprite slots, this will be four $FF bytes
-
-            var offset      = cycle - 257; // Cycles through 257-320 takes exactly 64 cycles.
+            var offset      = cycle - 257; // Cycles through 257-320 take exactly 64 cycles.
             var spriteIndex = offset / 8; // Secondary OAM holds up to 8 sprites.
             var subCycle    = offset % 8;
 
+            if (offset == 0) {
+                spriteCount = evaluatedSpriteCount;
+            }
+
             if (spriteIndex < spriteCount) {
-                if (subCycle < 4) {
-                    // TODO: Load into shifters.
-                } else {
-                    // TODO: Table fetches.
+                switch (subCycle) {
+                    case 0 -> spriteLatch = registers.secondaryOAM().get(spriteIndex, 0); // Read the Y coordinate of the selected sprite from secondary OAM.
+                    case 1 -> spriteLatch = registers.secondaryOAM().get(spriteIndex, 1); // Read the tile number of the selected sprite from secondary OAM.
+                    case 2 -> spriteLatch = registers.secondaryOAM().get(spriteIndex, 2); // Read the attributes of the selected sprite from secondary OAM.
+                    case 3 -> {
+                        spriteLatch                 = registers.secondaryOAM().get(spriteIndex, 3);
+                        spriteXLatches[spriteIndex] = spriteLatch;
+                    } // Read the X coordinate of the selected sprite from secondary OAM.
+                    case 4, 5, 6,
+                         7 -> {
+                        // Read the X coordinate of the selected sprite from secondary OAM 4 times
+                        spriteLatch = registers.secondaryOAM().get(spriteIndex, 3);
+                        // ..while the PPU fetches the sprite tile data
+                        fetchSpritePatternData(spriteIndex, scanLine);
+                    }
+                    default -> throw new IllegalStateException("Unexpected value: " + subCycle);
                 }
             } else {
                 if (spriteIndex == spriteCount) {
-                    var dummyByte = (subCycle == 0) ? registers.primaryOAM().get(63, 0) : 0xFF;
-                } else {
-                    var dummyByte = 0xFF;
-                }
-            }
-        } else if (cycle == 340) {
-            for (var i = 0; i < spriteCount; i++) {
-                var sprite                   = registers.secondaryOAM().getSprite(i);
-                var spritePatternBitsLow     = 0;
-                var spritePatternBitsHigh    = 0;
-                var spritePatternAddressLow  = 0;
-                var spritePatternAddressHigh = 0;
-
-                if (registers.control().getSpriteSize() == 0) {
-                    if ((sprite.attributes() & 0x80) == 0) {
-                        // Sprite is not flipped vertically.
-                        spritePatternAddressLow = (registers.control().getSpritePatternTableAddress() << 12) // Which pattern table?
-                                | (sprite.tileIndex() << 4) // Which cell?
-                                | (scanLine - sprite.y()); // Which row in cell?
+                    if (subCycle == 0) {
+                        // For the first empty sprite slot, this will consist of sprite #63's Y-coordinate
+                        spriteLatch = registers.primaryOAM().get(63, 0);
                     } else {
-                        // Sprite is flipped vertically.
-                        spritePatternAddressLow = (registers.control().getSpritePatternTableAddress() << 12) // Which pattern table?
-                                | (sprite.tileIndex() << 4) // Which cell?
-                                | (7 - (scanLine - sprite.y())); // Which row in cell?
+                        // ..followed by 3 $FF bytes
+                        spriteLatch = 0xFF;
                     }
                 } else {
-                    // TODO: 8x16 mode.
+                    // ..for subsequent empty sprite slots, this will be four $FF bytes
+                    spriteLatch = 0xFF;
                 }
-
-                spritePatternAddressHigh = spritePatternAddressLow + 8;
-                spritePatternBitsLow     = ppuBus.read(spritePatternAddressLow);
-                spritePatternBitsHigh    = ppuBus.read(spritePatternAddressHigh);
-
-                if ((sprite.attributes() & 0x40) == 0) {
-                    // TODO: Flip horizontally.
-                }
-
-                spriteShifterPatternLow[i]  = spritePatternBitsLow;
-                spriteShifterPatternHigh[i] = spritePatternBitsHigh;
             }
         }
     }

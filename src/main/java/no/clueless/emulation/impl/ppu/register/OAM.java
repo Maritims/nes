@@ -91,5 +91,12 @@ public class OAM {
      * @param x          The X coordinate of the sprite (byte 3).
      */
     public record Entry(int y, int tileIndex, int attributes, int x) {
+        public boolean isFlippedHorizontally() {
+            return (attributes & 0x40) != 0;
+        }
+
+        public boolean isFlippedVertically() {
+            return (attributes & 0x80) != 0;
+        }
     }
 }

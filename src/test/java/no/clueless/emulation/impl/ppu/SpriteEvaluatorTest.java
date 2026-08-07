@@ -39,7 +39,7 @@ class SpriteEvaluatorTest {
         primaryOAM   = mock(OAM.class);
         secondaryOAM = mock(OAM.class);
         ppu          = mock(Ppu2C02.class);
-        sut          = spy(new SpriteEvaluator(ppu, mock(PpuRegisters.class), mock(PpuBus.class), () -> 0, () -> 0));
+        sut          = spy(new SpriteEvaluator(mock(PpuRegisters.class), mock(PpuBus.class)));
     }
 
     @ParameterizedTest
@@ -106,7 +106,7 @@ class SpriteEvaluatorTest {
         when(ppu.getScanLine()).thenReturn(scanLine);
 
         // act
-        sut.onPpuCycle();
+        sut.evaluate(0, 0);
 
         // assert
         verify(ppu, never()).getCycle();
@@ -119,7 +119,7 @@ class SpriteEvaluatorTest {
         when(ppu.getCycle()).thenReturn(cycle);
 
         // act
-        sut.onPpuCycle();
+        sut.evaluate(0, 0);
 
         // assert
         verify(secondaryOAM, times(invocations)).fill(0xFF);
@@ -133,7 +133,7 @@ class SpriteEvaluatorTest {
         when(primaryOAM.getSprite(anyInt())).thenReturn(sprite);
 
         // act
-        sut.onPpuCycle();
+        sut.evaluate(0, 0);
 
         // assert
         verify(primaryOAM).get(anyInt(), anyInt());

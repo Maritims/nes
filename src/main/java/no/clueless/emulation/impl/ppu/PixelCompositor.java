@@ -3,25 +3,32 @@ package no.clueless.emulation.impl.ppu;
 import no.clueless.emulation.impl.ppu.register.PpuBus;
 import no.clueless.emulation.impl.ppu.register.PpuRegisterHandler;
 import no.clueless.emulation.impl.ppu.register.PpuRegisters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static no.clueless.emulation.impl.PpuMemoryMap.PALETTE_RAM_START;
 
 public class PixelCompositor {
-    private final NESPalette         palette;
+    private static final Logger log = LoggerFactory.getLogger(PixelCompositor.class);
+    private final NESPalette palette;
     private final PpuRegisters       registers;
     private final PpuBus             bus;
     private final PpuRegisterHandler registerHandler;
-    private final SpriteEvaluator    spriteEvaluator;
 
-    public PixelCompositor(NESPalette palette, PpuRegisters registers, PpuBus bus, PpuRegisterHandler registerHandler, SpriteEvaluator spriteEvaluator) {
+    public PixelCompositor(NESPalette palette, PpuRegisters registers, PpuBus bus, PpuRegisterHandler registerHandler) {
         this.palette         = palette;
         this.registers       = registers;
         this.bus             = bus;
         this.registerHandler = registerHandler;
-        this.spriteEvaluator = spriteEvaluator;
     }
 
-    public int compose(int cycle, int backgroundShifterPatternLow, int backgroundShifterPatternHigh, int backgroundShifterAttributeLow, int backgroundShifterAttributeHigh) {
+    public int compose(
+            int cycle,
+            int backgroundShifterPatternLow, int backgroundShifterPatternHigh,
+            int backgroundShifterAttributeLow, int backgroundShifterAttributeHigh,
+            int foregroundPixel, int foregroundPalette, int foregroundPriority,
+            Runnable onOpaquePixel
+    ) {
         var backgroundPixel   = 0x00;
         var backgroundPalette = 0x00;
 
@@ -41,10 +48,9 @@ public class PixelCompositor {
             }
         }
 
-        var foregroundPixelAndPalette = spriteEvaluator.getFinalPixelAndPalette();
-        var foregroundPixel           = foregroundPixelAndPalette.pixel();
-        var foregroundPalette         = foregroundPixelAndPalette.palette();
-        var foregroundPriority        = foregroundPixelAndPalette.priority();
+        if (backgroundPixel > 0 || foregroundPixel > 0) {
+            //log.debug("Cycle: {}, bg pixel: {}, fg pixel: {}", cycle, backgroundPixel, foregroundPixel);
+        }
 
         var pixel   = 0x00;
         var palette = 0x00;
@@ -72,7 +78,7 @@ public class PixelCompositor {
                 palette = backgroundPalette;
             }
 
-            spriteEvaluator.detectSpriteZeroCollision();
+            onOpaquePixel.run();
         }
 
         //noinspection UnnecessaryLocalVariable

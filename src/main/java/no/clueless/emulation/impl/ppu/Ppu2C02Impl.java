@@ -6,12 +6,17 @@ import no.clueless.emulation.impl.ppu.event.PixelListener;
 import no.clueless.emulation.impl.ppu.register.PpuBus;
 import no.clueless.emulation.impl.ppu.register.PpuRegisterHandler;
 import no.clueless.emulation.impl.ppu.register.PpuRegisters;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Ppu2C02Impl implements Ppu2C02 {
-    private final PpuRegisters       registers;
+    private static final Logger log = LoggerFactory.getLogger(Ppu2C02Impl.class);
+    private final PpuRegisters registers;
     private final PpuBus             bus;
     private final PpuRegisterHandler registerHandler;
-    private final PixelListener      pixelListener;
+    private final PixelListener      drawPixelListener;
     private final SpriteEvaluator    spriteEvaluator;
     private final PixelCompositor    pixelCompositor;
     private final BackgroundPipeline backgroundPipeline;
@@ -23,13 +28,13 @@ public class Ppu2C02Impl implements Ppu2C02 {
     private boolean oddFrame = false;
     private boolean nmi;
 
-    public Ppu2C02Impl(PixelListener pixelListener, PpuRegisters registers, PpuBus ppuBus) {
+    public Ppu2C02Impl(PixelListener drawPixelListener, PpuRegisters registers, PpuBus ppuBus) {
         this.registers          = registers;
         this.bus                = ppuBus;
         this.registerHandler    = new PpuRegisterHandler(registers, bus::read, bus::write);
-        this.pixelListener      = pixelListener;
-        this.spriteEvaluator    = new SpriteEvaluator(this, registers, bus, this::getCycle, this::getScanLine);
-        this.pixelCompositor    = new PixelCompositor(new NESPalette(), registers, bus, registerHandler, spriteEvaluator);
+        this.drawPixelListener  = drawPixelListener;
+        this.spriteEvaluator    = new SpriteEvaluator(registers, bus);
+        this.pixelCompositor    = new PixelCompositor(new NESPalette(), registers, bus, registerHandler);
         this.backgroundPipeline = new BackgroundPipeline(registers, bus::read);
     }
 
@@ -88,6 +93,11 @@ public class Ppu2C02Impl implements Ppu2C02 {
         return registers.vramAddress().getCoarseY();
     }
 
+    @Override
+    public int getSpriteCount() {
+        return spriteEvaluator.getSpriteCount();
+    }
+
     public void setScanLine(int scanLine) {
         this.scanLine = scanLine;
     }
@@ -103,8 +113,6 @@ public class Ppu2C02Impl implements Ppu2C02 {
 
     @Override
     public void clock() {
-        spriteEvaluator.onPpuCycle();
-
         if (scanLine >= -1 && scanLine < 240) {
             if (scanLine == 0 && cycle == 0 && oddFrame && (registers.mask().isRenderBackground() || registers.mask().isRenderSprites())) {
                 cycle = 1;
@@ -120,6 +128,12 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
 
             backgroundPipeline.onTick(cycle, scanLine);
+            spriteEvaluator.updateShifters(cycle);
+            spriteEvaluator.evaluate(cycle, scanLine);
+        }
+
+        if (scanLine >= 0 && scanLine < 240 && cycle == 1) {
+            spriteEvaluator.latchSpriteZeroHitPossible();
         }
 
         // Vertical blanking lines.
@@ -134,15 +148,29 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
         }
 
-        if (scanLine >= 0 && scanLine <= 240 && cycle >= 1 && cycle <= 256) {
+        var checkCollision = new AtomicBoolean(false);
+
+        if (scanLine >= 0 && scanLine < 240 && cycle >= 1 && cycle <= 256) {
+            var foregroundPixelInformation = spriteEvaluator.getFinalPixelAndPalette(cycle);
             var finalPixelColor = pixelCompositor.compose(
                     cycle,
                     backgroundPipeline.getShifterPatternLow(),
                     backgroundPipeline.getShifterPatternHigh(),
                     backgroundPipeline.getShifterAttributeLow(),
-                    backgroundPipeline.getShifterAttributeHigh()
+                    backgroundPipeline.getShifterAttributeHigh(),
+                    foregroundPixelInformation.pixel(),
+                    foregroundPixelInformation.palette(),
+                    foregroundPixelInformation.priority(),
+                    () -> {
+                        log.debug("Pixel {} is opaque", cycle);
+                        checkCollision.set(true);
+                    }
             );
-            pixelListener.setPixel(cycle - 1, scanLine, finalPixelColor);
+            drawPixelListener.setPixel(cycle - 1, scanLine, finalPixelColor);
+        }
+
+        if (checkCollision.get()) {
+            spriteEvaluator.detectSpriteZeroCollision(cycle);
         }
 
         cycle++;
