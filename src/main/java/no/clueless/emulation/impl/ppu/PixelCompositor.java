@@ -68,6 +68,8 @@ public class PixelCompositor {
             pixel   = backgroundPixel;
             palette = backgroundPalette;
         } else if (backgroundPixel > 0 && foregroundPixel > 0) {
+            onOpaquePixel.run();
+
             if (foregroundPriority > 0) {
                 // The foreground pixel is more important.
                 pixel   = foregroundPixel;
@@ -77,8 +79,6 @@ public class PixelCompositor {
                 pixel   = backgroundPixel;
                 palette = backgroundPalette;
             }
-
-            onOpaquePixel.run();
         }
 
         //noinspection UnnecessaryLocalVariable

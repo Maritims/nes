@@ -148,8 +148,7 @@ public class Ppu2C02Impl implements Ppu2C02 {
             }
         }
 
-        var checkCollision = new AtomicBoolean(false);
-
+        // PPixel drawing.
         if (scanLine >= 0 && scanLine < 240 && cycle >= 1 && cycle <= 256) {
             var foregroundPixelInformation = spriteEvaluator.getFinalPixelAndPalette(cycle);
             var finalPixelColor = pixelCompositor.compose(
@@ -161,16 +160,13 @@ public class Ppu2C02Impl implements Ppu2C02 {
                     foregroundPixelInformation.pixel(),
                     foregroundPixelInformation.palette(),
                     foregroundPixelInformation.priority(),
-                    () -> {
-                        log.debug("Pixel {} is opaque", cycle);
-                        checkCollision.set(true);
-                    }
+                    () -> spriteEvaluator.detectSpriteZeroCollision(cycle)
             );
             drawPixelListener.setPixel(cycle - 1, scanLine, finalPixelColor);
         }
 
-        if (checkCollision.get()) {
-            spriteEvaluator.detectSpriteZeroCollision(cycle);
+        if(scanLine >= -1 && scanLine < 240) {
+
         }
 
         cycle++;

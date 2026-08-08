@@ -2,6 +2,7 @@ package no.clueless.emulation.impl.ppu;
 
 import no.clueless.emulation.impl.ppu.register.PpuBus;
 import no.clueless.emulation.impl.ppu.register.PpuRegisters;
+import no.clueless.emulation.util.ByteFlipper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -42,22 +43,6 @@ public final class SpriteEvaluator {
     public SpriteEvaluator(PpuRegisters registers, PpuBus ppuBus) {
         this.registers = registers;
         this.ppuBus    = ppuBus;
-    }
-
-    public int getShifterPatternLow(int spriteIndex) {
-        return shifterPatternLow[spriteIndex];
-    }
-
-    public int getShifterPatternHigh(int spriteIndex) {
-        return shifterPatternHigh[spriteIndex];
-    }
-
-    public boolean isSpriteZeroHitPossible() {
-        return isSpriteZeroHitPossible;
-    }
-
-    public boolean isSpriteZeroBeingRendered() {
-        return isSpriteZeroBeingRendered;
     }
 
     public int getSpriteCount() {
@@ -106,14 +91,18 @@ public final class SpriteEvaluator {
                         var foregroundPixelHigh = (shifterPatternHigh[i] & 0x80) > 0 ? 1 : 0;
                         foregroundPixel = (foregroundPixelHigh << 1) | foregroundPixelLow;
 
-                        foregroundPalette  = (sprite.attributes() & 0x30) + 0x04;
+                        foregroundPalette  = (sprite.attributes() & 0x03) + 0x04;
                         foregroundPriority = (sprite.attributes() & 0x20) == 0 ? 1 : 0;
+
+                        if (foregroundPriority > 0) {
+                            log.debug("Cycle: {}, sprite: {}, fg pixel: {}, fg palette: {}, fg priority: {}", cycle, i, foregroundPixel, foregroundPalette, foregroundPriority);
+                        }
 
                         if (foregroundPixel != 0) {
                             if (i == 0) {
                                 isSpriteZeroBeingRendered = true;
-                                break;
                             }
+                            break;
                         }
                     }
                 }
@@ -124,17 +113,31 @@ public final class SpriteEvaluator {
     }
 
     public void detectSpriteZeroCollision(int cycle) {
+        log.info("Checking S0 Hit: possible={}, rendered={}, bgOn={}, sprOn={}",
+                isSpriteZeroHitPossible,
+                isSpriteZeroBeingRendered,
+                registers.mask().isRenderBackground(),
+                registers.mask().isRenderSprites()
+        );
+
+        // Sprite 0 hit cannot happen on cycle 256.
+        if (cycle < 1 || cycle > 256) {
+            return;
+        }
+
         if (isSpriteZeroHitPossible && isSpriteZeroBeingRendered) {
             if (registers.mask().isRenderBackground() && registers.mask().isRenderSprites()) {
-                if (!registers.mask().isRenderBackgroundLeft() && !registers.mask().isRenderSpritesLeft()) {
-                    if (cycle >= 9 && cycle < 258) {
-                        registers.status().setSpriteZeroHit(true);
-                    }
-                } else {
-                    if (cycle >= 1 && cycle < 258) {
-                        registers.status().setSpriteZeroHit(true);
+                var isRenderBackgroundLeft = registers.mask().isRenderBackgroundLeft();
+                var isRenderSpritesLeft    = registers.mask().isRenderSpritesLeft();
+
+                if(!isRenderBackgroundLeft || !isRenderSpritesLeft) {
+                    if (cycle < 9) {
+                        return;
                     }
                 }
+
+                log.info("Sprite 0 hit on cycle {}", cycle);
+                registers.status().setSpriteZeroHit(true);
             }
         }
     }
@@ -145,6 +148,7 @@ public final class SpriteEvaluator {
      * @return True if the sprite intersects with the scan line, otherwise false.
      */
     boolean isSpriteInRange(int spriteY, int scanLine, int spriteHeight) {
+        scanLine = scanLine == -1 ? 0 : scanLine;
         return scanLine >= spriteY && scanLine < spriteY + spriteHeight;
     }
 
@@ -186,8 +190,8 @@ public final class SpriteEvaluator {
         spritePatternBitsHigh = ppuBus.read(addressLow + 8);
 
         if (sprite.isFlippedHorizontally()) {
-            spritePatternBitsLow  = Integer.reverse(spritePatternBitsLow) >>> 24;
-            spritePatternBitsHigh = Integer.reverse(spritePatternBitsHigh) >>> 24;
+            spritePatternBitsLow  = ByteFlipper.flip(spritePatternBitsLow);
+            spritePatternBitsHigh = ByteFlipper.flip(spritePatternBitsHigh);
         }
 
         shifterPatternLow[spriteIndex]  = spritePatternBitsLow;
@@ -201,7 +205,7 @@ public final class SpriteEvaluator {
     public void evaluate(int cycle, int scanLine) {
         var spriteHeight = registers.control().getSpriteSize() == 0 ? 8 : 16;
 
-        if (scanLine < 0 || scanLine > 239) {
+        if (scanLine < -1 || scanLine > 239) {
             // Invisible scan line.
             return;
         }
@@ -257,7 +261,7 @@ public final class SpriteEvaluator {
                                 isSpriteZeroHitPossibleOnNextLine = true;
                             }
 
-                            // Set m and secondaryOamByteIndex in preparation for the next write cycle.
+                            // Set m and secondaryOamByteIndex in preparation for the next write-cycle.
                             m                     = 1;
                             secondaryOamByteIndex = 1;
                         } else {
@@ -269,7 +273,7 @@ public final class SpriteEvaluator {
                             }
                         }
                     } else {
-                        // Increment m and secondaryOamByteIndex in preparation for the next write cycle.
+                        // Increment m and secondaryOamByteIndex in preparation for the next write-cycle.
                         m++;
                         secondaryOamByteIndex++;
 
@@ -282,7 +286,7 @@ public final class SpriteEvaluator {
                             evaluatedSpriteCount++;
 
                             if (evaluatedSpriteCount == 8) {
-                                // We've found 8 sprites and that's all the NES supports. It's time to stop.
+                                // We've found 8 sprites, and that's all the NES supports. It's time to stop.
                                 isSecondaryOAMFull = true;
                             }
                             if (n == 0) {
@@ -318,7 +322,7 @@ public final class SpriteEvaluator {
                          7 -> {
                         // Read the X coordinate of the selected sprite from secondary OAM 4 times
                         spriteLatch = registers.secondaryOAM().get(spriteIndex, 3);
-                        // ..while the PPU fetches the sprite tile data
+                        // ...while the PPU fetches the sprite tile data
                         fetchSpritePatternData(spriteIndex, scanLine);
                     }
                     default -> throw new IllegalStateException("Unexpected value: " + subCycle);
@@ -329,11 +333,11 @@ public final class SpriteEvaluator {
                         // For the first empty sprite slot, this will consist of sprite #63's Y-coordinate
                         spriteLatch = registers.primaryOAM().get(63, 0);
                     } else {
-                        // ..followed by 3 $FF bytes
+                        // ...followed by 3 $FF bytes
                         spriteLatch = 0xFF;
                     }
                 } else {
-                    // ..for subsequent empty sprite slots, this will be four $FF bytes
+                    // ...for the following empty sprite slots, this will be four $FF bytes
                     spriteLatch = 0xFF;
                 }
             }
